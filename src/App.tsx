@@ -271,9 +271,21 @@ export default function App() {
                   } else {
                     setLoginError('Email não encontrado na lista de administradores.');
                   }
-                } catch (error) {
+                } catch (error: any) {
                   console.error("Erro ao fazer login:", error);
-                  setLoginError('Erro ao conectar com o banco de dados. Verifique a configuração do Firebase.');
+                  let message = 'Erro ao conectar com o banco de dados.';
+                  
+                  if (error.code === 'permission-denied') {
+                    message = 'Acesso negado. Verifique as regras do Firestore.';
+                  } else if (error.code === 'failed-precondition') {
+                    message = 'O Firestore precisa de um índice. Verifique o console.';
+                  } else if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+                    message = 'Configuração do Firebase ausente (Variáveis de Ambiente).';
+                  } else {
+                    message = `Erro: ${error.message || 'Verifique a configuração do Firebase.'}`;
+                  }
+                  
+                  setLoginError(message);
                 } finally {
                   setIsLoadingLogin(false);
                 }
