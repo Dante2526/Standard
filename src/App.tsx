@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Plus, Trash2, ChevronDown, Calendar, ChevronLeft, ChevronRight, User, Clock, AlertCircle, CheckCircle2, Download, GraduationCap, Briefcase } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronDown, Calendar, ChevronLeft, ChevronRight, User as UserIcon, Clock, AlertCircle, CheckCircle2, Download, GraduationCap, Briefcase } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { 
@@ -63,9 +63,9 @@ export default function App() {
   const [userStatuses, setUserStatuses] = useState<Record<number, 'estagio' | 'efetivado'>>({});
   const [activeTab, setActiveTab] = useState<'form' | 'timeline' | 'pending'>('timeline');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [email, setEmail] = useState('');
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isDownloading, setIsDownloading] = useState(false);
@@ -256,7 +256,7 @@ export default function App() {
               
               <form onSubmit={async (e) => {
                 e.preventDefault();
-                const trimmedEmail = email.trim().toLowerCase();
+                const trimmedEmail = loginEmail.trim().toLowerCase();
                 if (!trimmedEmail) return;
                 
                 setIsLoadingLogin(true);
@@ -297,8 +297,8 @@ export default function App() {
                   <input
                     type="email"
                     id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
                     placeholder="nome@empresa.com.br"
                     className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
                     required
@@ -339,8 +339,10 @@ export default function App() {
                   <h1 className="text-2xl font-bold text-gray-900">Usuários</h1>
                   <p className="text-gray-500">Selecione um usuário em estágio</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium cursor-pointer" onClick={() => setIsLoggedIn(false)}>
-                  {email.charAt(0).toUpperCase()}
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium cursor-pointer" onClick={() => setIsLoggedIn(false)}>
+                    {loginEmail.charAt(0).toUpperCase()}
+                  </div>
                 </div>
               </div>
 
@@ -377,7 +379,7 @@ export default function App() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                          <User className="w-5 h-5" />
+                          <UserIcon className="w-5 h-5" />
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900">{trainee.name}</h3>
@@ -432,7 +434,7 @@ export default function App() {
               
               <div className="text-center mb-10">
                 <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-4">
-                  <User className="w-8 h-8" />
+                  <UserIcon className="w-8 h-8" />
                 </div>
                 <h1 className="text-2xl font-bold text-gray-900">{selectedTrainee.name}</h1>
                 <p className="text-gray-500">Selecione a situação atual do usuário</p>
