@@ -23,6 +23,8 @@ import {
   isValid
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from './firebase';
 
 const LOCAL_OPTIONS = [
   "RECEPÇÃO", "VIRADOR", "GIROFLEX", "CLASSIFICAÇÃO", 
@@ -47,13 +49,6 @@ type Trainee = {
 };
 
 export default function App() {
-  const classes: ClassItem[] = [
-    { id: 1, name: 'TURM A', students: 32, time: '08:00 - 12:00', color: 'bg-blue-500' },
-    { id: 2, name: 'TURMA B', students: 28, time: '13:00 - 17:00', color: 'bg-green-500' },
-    { id: 3, name: 'TURMA C', students: 35, time: '18:00 - 22:00', color: 'bg-orange-500' },
-    { id: 4, name: 'TURMA C', students: 30, time: '08:00 - 12:00', color: 'bg-purple-500' },
-  ];
-
   const trainees: Trainee[] = [
     { id: 1, name: 'João Silva', matricula: '12345', funcao: 'Operador de Empilhadeira', progress: 45, status: 'active' },
     { id: 2, name: 'Maria Santos', matricula: '12346', funcao: 'Assistente de Logística', progress: 80, status: 'active' },
@@ -63,12 +58,13 @@ export default function App() {
     { id: 6, name: 'Juliana Alves', matricula: '12350', funcao: 'Operador de Empilhadeira', progress: 30, status: 'active' },
   ];
 
-  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
   const [selectedTrainee, setSelectedTrainee] = useState<Trainee | null>(null);
   const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
   const [userStatuses, setUserStatuses] = useState<Record<number, 'estagio' | 'efetivado'>>({});
   const [activeTab, setActiveTab] = useState<'form' | 'timeline' | 'pending'>('timeline');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoadingLogin, setIsLoadingLogin] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const [email, setEmail] = useState('');
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -258,9 +254,29 @@ export default function App() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Bem-vindo</h1>
               <p className="text-gray-500 mb-8">Faça login com seu email corporativo</p>
               
-              <form onSubmit={(e) => {
+              <form onSubmit={async (e) => {
                 e.preventDefault();
-                if (email.trim()) setIsLoggedIn(true);
+                const trimmedEmail = email.trim().toLowerCase();
+                if (!trimmedEmail) return;
+                
+                setIsLoadingLogin(true);
+                setLoginError('');
+                
+                try {
+                  const q = query(collection(db, 'administrators'), where('email', '==', trimmedEmail));
+                  const querySnapshot = await getDocs(q);
+                  
+                  if (!querySnapshot.empty) {
+                    setIsLoggedIn(true);
+                  } else {
+                    setLoginError('Email não encontrado na lista de administradores.');
+                  }
+                } catch (error) {
+                  console.error("Erro ao fazer login:", error);
+                  setLoginError('Erro ao conectar com o banco de dados. Verifique a configuração do Firebase.');
+                } finally {
+                  setIsLoadingLogin(false);
+                }
               }} className="space-y-4 w-full text-left">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5 pl-1">
@@ -274,78 +290,28 @@ export default function App() {
                     placeholder="nome@empresa.com.br"
                     className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
                     required
+                    disabled={isLoadingLogin}
                   />
+                  {loginError && (
+                    <p className="text-red-500 text-sm mt-2 pl-1 font-medium">{loginError}</p>
+                  )}
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-2xl hover:bg-blue-700 transition-colors shadow-sm active:scale-[0.98]"
+                  disabled={isLoadingLogin}
+                  className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-2xl hover:bg-blue-700 transition-colors shadow-sm active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Entrar
+                  {isLoadingLogin ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Verificando...
+                    </>
+                  ) : (
+                    'Entrar'
+                  )}
                 </button>
               </form>
             </div>
-          </motion.div>
-        ) : !selectedClass ? (
-          <motion.div 
-            key="grid"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="pt-20"
-          >
-            <main className="px-4 pb-24 max-w-3xl mx-auto">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Turmas</h1>
-                  <p className="text-gray-500">Selecione uma turma para visualizar os usuários</p>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium">
-                  {email.charAt(0).toUpperCase()}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {classes.map((cls, index) => (
-                  <motion.div
-                    key={cls.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.4, ease: "easeOut" }}
-                    whileHover={{ scale: 0.98 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSelectedClass(cls);
-                      setActiveTab('timeline');
-                    }}
-                    className="bg-white rounded-[28px] p-6 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] cursor-pointer flex flex-col items-center text-center group"
-                  >
-                      <div className={`w-16 h-16 rounded-full ${cls.color} flex items-center justify-center text-white font-bold text-2xl shadow-sm mb-4`}>
-                        {cls.name.split(' ')[1] || cls.name}
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold text-gray-900">{cls.name}</h2>
-                        <p className="text-sm text-gray-500 font-medium mt-1">
-                          {cls.students} alunos
-                        </p>
-                        
-                        {/* User Icons / Avatars */}
-                        <div className="flex -space-x-2 mt-3 mb-2 justify-center">
-                          {[1, 2, 3].map((i) => (
-                            <div
-                              key={i}
-                              className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center shadow-sm"
-                            >
-                              <User className="w-4 h-4 text-lime-500" />
-                            </div>
-                          ))}
-                          <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500 shadow-sm">
-                            +{cls.students - 3}
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-            </main>
           </motion.div>
         ) : !selectedTrainee ? (
           <motion.div 
@@ -356,21 +322,13 @@ export default function App() {
             className="pt-12"
           >
             <div className="max-w-4xl mx-auto px-4 mb-8">
-              <button 
-                onClick={() => setSelectedClass(null)}
-                className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors mb-6"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Voltar para Turmas</span>
-              </button>
-              
-              <div className="flex items-center gap-4 mb-8">
-                <div className={`w-12 h-12 rounded-full ${selectedClass.color} flex items-center justify-center text-white font-bold text-xl shadow-sm`}>
-                  {selectedClass.name.split(' ')[1] || selectedClass.name}
-                </div>
+              <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">{selectedClass.name}</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">Usuários</h1>
                   <p className="text-gray-500">Selecione um usuário em estágio</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium cursor-pointer" onClick={() => setIsLoggedIn(false)}>
+                  {email.charAt(0).toUpperCase()}
                 </div>
               </div>
 
@@ -523,7 +481,7 @@ export default function App() {
               </button>
               <div>
                 <h1 className="text-2xl font-semibold tracking-tight">{selectedTrainee.name}</h1>
-                <p className="text-sm text-gray-500 font-medium">{selectedClass.name} • Mat: {selectedTrainee.matricula} • {userStatus === 'estagio' ? 'Estágio' : 'Efetivado'}</p>
+                <p className="text-sm text-gray-500 font-medium">Mat: {selectedTrainee.matricula} • {userStatus === 'estagio' ? 'Estágio' : 'Efetivado'}</p>
               </div>
             </header>
 
