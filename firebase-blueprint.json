@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "Kaizen": {
+      "title": "Kaizen",
+      "description": "Registro de melhoria Kaizen",
+      "type": "object",
+      "properties": {
+        "matricula": {
+          "type": "string",
+          "description": "Matrícula do colaborador"
+        },
+        "title": {
+          "type": "string",
+          "description": "Título da melhoria"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "Data de submissão"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status do Kaizen"
+        },
+        "impact": {
+          "type": "string",
+          "description": "Área de impacto (Segurança, Produtividade, etc)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Data de criação do registro"
+        }
+      },
+      "required": ["matricula", "title", "date", "status", "impact", "createdAt"]
+    },
+    "Estagio": {
+      "title": "Controle de Estágio",
+      "description": "Registro de horas e status de estágio",
+      "type": "object",
+      "properties": {
+        "matricula": {
+          "type": "string",
+          "description": "Matrícula do colaborador"
+        },
+        "horasAcumuladas": {
+          "type": "number",
+          "description": "Total de horas de estágio"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["em_andamento", "efetivado"],
+          "description": "Status atual do estágio"
+        },
+        "dataInicio": {
+          "type": "string",
+          "format": "date",
+          "description": "Data de início do estágio"
+        },
+        "ultimaAtualizacao": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Data da última atualização"
+        }
+      },
+      "required": ["matricula", "horasAcumuladas", "status", "dataInicio", "ultimaAtualizacao"]
+    }
+  },
+  "firestore": {
+    "/kaizens/{kaizenId}": {
+      "schema": {
+        "$ref": "#/entities/Kaizen"
+      },
+      "description": "Coleção de registros de Kaizen"
+    },
+    "/estagios/{matricula}": {
+      "schema": {
+        "$ref": "#/entities/Estagio"
+      },
+      "description": "Controle de estágio por matrícula"
+    }
+  }
+}

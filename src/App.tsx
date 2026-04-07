@@ -26,9 +26,10 @@ import {
   isValid
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db, auth, signInAnonymously } from './firebase';
+import { collection, query, where, getDocs, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { db, auth, signInAnonymously, newDb, newAuth } from './firebase';
 import DarkModeToggle from './components/DarkModeToggle';
+import { KAIZEN_DATA } from './kaizenData';
 
 const LOCAL_OPTIONS = [
   "RECEPÇÃO", "VIRADOR", "GIROFLEX", "CLASSIFICAÇÃO", 
@@ -72,6 +73,56 @@ export default function App() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Carregar dados de estágio do novo banco de dados quando um trainee é selecionado
+  useEffect(() => {
+    if (!selectedTrainee) return;
+
+    const unsubscribe = onSnapshot(doc(newDb, 'estagios', selectedTrainee.matricula), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.tableRows) {
+          setTableRows(data.tableRows);
+        }
+        if (data.status) {
+          setUserStatus(data.status);
+          setUserStatuses(prev => ({ ...prev, [selectedTrainee.id]: data.status }));
+        }
+      } else {
+        // Se não existir, resetar para o padrão
+        setTableRows([
+          { id: 1, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
+          { id: 2, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
+          { id: 3, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
+        ]);
+        setUserStatus('estagio');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [selectedTrainee]);
+
+  const saveStageData = async () => {
+    if (!selectedTrainee) return;
+    
+    try {
+      setIsSaving(true);
+      await setDoc(doc(newDb, 'estagios', selectedTrainee.matricula), {
+        matricula: selectedTrainee.matricula,
+        nome: selectedTrainee.name,
+        horasAcumuladas: progressHours,
+        status: userStatus,
+        tableRows: tableRows,
+        dataInicio: format(new Date(), 'yyyy-MM-dd'), // Simplificado para o exemplo
+        ultimaAtualizacao: new Date().toISOString()
+      }, { merge: true });
+    } catch (error) {
+      console.error("Erro ao salvar dados de estágio:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (isDarkMode) {
@@ -95,9 +146,12 @@ export default function App() {
   ];
 
   useEffect(() => {
-    // Conecta anonimamente ao carregar o app para satisfazer a regra request.auth != null
+    // Conecta anonimamente aos dois bancos para satisfazer a regra request.auth != null
     signInAnonymously(auth).catch(error => {
-      console.error("Erro na autenticação anônima:", error);
+      console.error("Erro na autenticação anônima (Banco Antigo):", error);
+    });
+    signInAnonymously(newAuth).catch(error => {
+      console.error("Erro na autenticação anônima (Banco Novo):", error);
     });
   }, []);
 
@@ -195,13 +249,13 @@ export default function App() {
               rows: [
                 new TableRow({
                   children: [
-                    new TableCell({ children: [new Paragraph({ text: "Local", bold: true })] }),
-                    new TableCell({ children: [new Paragraph({ text: "Equipamento", bold: true })] }),
-                    new TableCell({ children: [new Paragraph({ text: "Data", bold: true })] }),
-                    new TableCell({ children: [new Paragraph({ text: "Hora", bold: true })] }),
-                    new TableCell({ children: [new Paragraph({ text: "Duração", bold: true })] }),
-                    new TableCell({ children: [new Paragraph({ text: "Instrutor", bold: true })] }),
-                    new TableCell({ children: [new Paragraph({ text: "Avaliação", bold: true })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Local", bold: true })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Equipamento", bold: true })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Data", bold: true })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Hora", bold: true })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Duração", bold: true })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Instrutor", bold: true })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Avaliação", bold: true })] })] }),
                   ]
                 }),
                 ...tableRows.map(row => new TableRow({
@@ -391,6 +445,23 @@ export default function App() {
       setUserStatus('efetivado');
       setUserStatuses(prev => ({ ...prev, [selectedTrainee.id]: 'efetivado' }));
       setShowHideTabsModal(true);
+      
+      // Salvar automaticamente a efetivação no banco de dados
+      const autoSaveEfetivacao = async () => {
+        try {
+          await setDoc(doc(newDb, 'estagios', selectedTrainee.matricula), {
+            matricula: selectedTrainee.matricula,
+            nome: selectedTrainee.name,
+            horasAcumuladas: progressHours,
+            status: 'efetivado',
+            tableRows: tableRows,
+            ultimaAtualizacao: new Date().toISOString()
+          }, { merge: true });
+        } catch (e) {
+          console.error("Erro ao salvar efetivação automática:", e);
+        }
+      };
+      autoSaveEfetivacao();
     }
   }, [progressHours, userStatus, selectedTrainee]);
 
@@ -443,17 +514,21 @@ export default function App() {
                     const turmaSnap = await getDocs(turmaQ);
                     
                     if (!turmaSnap.empty) {
-                      const doc = turmaSnap.docs[0];
-                      const t = doc.data();
+                      const traineeDoc = turmaSnap.docs[0];
+                      const t = traineeDoc.data();
                       setIsAdmin(false);
                       setIsLoggedIn(true);
+                      // Buscar progresso no novo banco de dados
+                      const stageSnap = await getDoc(doc(newDb, 'estagios', t.matricula || ''));
+                      const stageData = stageSnap.exists() ? stageSnap.data() as any : null;
+
                       const traineeObj: Trainee = {
-                        id: doc.id,
+                        id: traineeDoc.id,
                         name: t.nome || t.name || 'Usuário',
                         matricula: t.matricula || '',
                         funcao: t.funcao || '',
-                        progress: 0,
-                        status: 'active'
+                        progress: stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0,
+                        status: stageData?.status === 'efetivado' ? 'completed' : 'active'
                       };
                       setSelectedTrainee(traineeObj);
                       setFormData(prev => ({
@@ -532,6 +607,47 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Card de Controle de Estágio Global */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 0.98 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={async () => {
+                    setSelectedClass('global-estagio');
+                    setIsLoadingTrainees(true);
+                    try {
+                      // Buscar todos os estágios do novo banco de dados
+                      const snap = await getDocs(collection(newDb, 'estagios'));
+                      const traineesData = snap.docs.map(docSnapshot => {
+                        const data = docSnapshot.data() as any;
+                        return {
+                          id: docSnapshot.id,
+                          name: data.nome || 'Sem Nome',
+                          matricula: data.matricula || '',
+                          funcao: data.funcao || 'Estagiário',
+                          progress: Math.round((data.horasAcumuladas / 432) * 100),
+                          status: data.status === 'efetivado' ? 'completed' : 'active' as const
+                        };
+                      });
+                      setTrainees(traineesData);
+                    } catch (e) {
+                      console.error("Erro ao buscar controle de estágio:", e);
+                    } finally {
+                      setIsLoadingTrainees(false);
+                    }
+                  }}
+                  className="bg-surface rounded-[32px] p-8 flex flex-col items-center justify-center shadow-sm border border-blue-100 bg-blue-50/30 hover:shadow-md transition-all cursor-pointer md:col-span-2"
+                >
+                  <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white mb-4 shadow-sm">
+                    <GraduationCap className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-content tracking-wide mb-1">Controle de Estágio</h3>
+                  <p className="text-sm text-content-muted mb-2 text-center max-w-md">
+                    Visualize o progresso de todos os estagiários cadastrados no novo banco de dados.
+                  </p>
+                </motion.div>
+
                 {classesList.map((cls, index) => (
                   <motion.div
                     key={cls.id}
@@ -545,18 +661,22 @@ export default function App() {
                       setIsLoadingTrainees(true);
                       try {
                         const snap = await getDocs(collection(db, cls.id));
-                        const traineesData = snap.docs.map(doc => {
-                          const data = doc.data();
+                        const traineesData = await Promise.all(snap.docs.map(async docSnapshot => {
+                          const data = docSnapshot.data() as any;
+                          // Buscar progresso no novo banco de dados
+                          const stageSnap = await getDoc(doc(newDb, 'estagios', data.matricula || ''));
+                          const stageData = stageSnap.exists() ? stageSnap.data() as any : null;
+                          
                           return {
-                            id: doc.id,
+                            id: docSnapshot.id,
                             name: data.nome || data.name || 'Sem Nome',
                             matricula: data.matricula || '',
                             funcao: data.funcao || '',
                             email: data.email || '',
-                            progress: 0,
-                            status: 'active' as const
+                            progress: stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0,
+                            status: stageData?.status === 'efetivado' ? 'completed' : 'active' as const
                           };
-                        });
+                        }));
                         setTrainees(traineesData);
                       } catch (e) {
                         console.error("Erro ao buscar alunos:", e);
@@ -605,8 +725,12 @@ export default function App() {
                     <ArrowLeft className="w-6 h-6 text-content-muted" />
                   </button>
                   <div>
-                    <h1 className="text-2xl font-bold text-content">Alunos</h1>
-                    <p className="text-content-muted capitalize">{selectedClass}</p>
+                    <h1 className="text-2xl font-bold text-content">
+                      {selectedClass === 'global-estagio' ? 'Controle de Estágio' : 'Alunos'}
+                    </h1>
+                    <p className="text-content-muted capitalize">
+                      {selectedClass === 'global-estagio' ? 'Todos os estagiários cadastrados' : selectedClass}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -643,15 +767,17 @@ export default function App() {
                           matricula: trainee.matricula,
                           funcao: trainee.funcao
                         }));
-                        if (userStatuses[trainee.id]) {
-                          setUserStatus(userStatuses[trainee.id]);
-                          if (userStatuses[trainee.id] === 'efetivado') {
-                            setActiveTab('pending');
-                          } else {
-                            setActiveTab('timeline');
-                          }
+                        
+                        const currentStatus = trainee.status === 'completed' ? 'efetivado' : 'estagio';
+                        setUserStatus(currentStatus);
+                        setUserStatuses(prev => ({ ...prev, [trainee.id]: currentStatus }));
+                        
+                        if (currentStatus === 'efetivado') {
+                          setActiveTab('pending');
+                          setUserTabsHidden(prev => ({ ...prev, [trainee.id]: true }));
                         } else {
-                          setUserStatus(null);
+                          setActiveTab('timeline');
+                          setUserTabsHidden(prev => ({ ...prev, [trainee.id]: false }));
                         }
                       }}
                       className="bg-surface rounded-[24px] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border border-border-subtle"
@@ -665,15 +791,13 @@ export default function App() {
                             <h3 className="font-semibold text-content">{trainee.name}</h3>
                             <div className="flex items-center gap-2 mt-0.5">
                               <p className="text-xs text-content-muted">Mat: {trainee.matricula}</p>
-                              {userStatuses[trainee.id] && (
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                  userStatuses[trainee.id] === 'estagio' 
-                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' 
-                                    : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                }`}>
-                                  {userStatuses[trainee.id] === 'estagio' ? 'ESTÁGIO' : 'EFETIVADO'}
-                                </span>
-                              )}
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                trainee.status === 'active' 
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' 
+                                  : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              }`}>
+                                {trainee.status === 'active' ? 'ESTÁGIO' : 'EFETIVADO'}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -739,10 +863,25 @@ export default function App() {
                 <motion.button
                   whileHover={{ scale: 0.98 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => {
+                  onClick={async () => {
                     setUserStatus('estagio');
                     setUserStatuses(prev => ({ ...prev, [selectedTrainee.id]: 'estagio' }));
                     setActiveTab('timeline');
+                    
+                    // Salvar no banco de dados
+                    try {
+                      await setDoc(doc(newDb, 'estagios', selectedTrainee.matricula), {
+                        matricula: selectedTrainee.matricula,
+                        nome: selectedTrainee.name,
+                        horasAcumuladas: progressHours,
+                        status: 'estagio',
+                        tableRows: tableRows,
+                        dataInicio: format(new Date(), 'yyyy-MM-dd'),
+                        ultimaAtualizacao: new Date().toISOString()
+                      }, { merge: true });
+                    } catch (e) {
+                      console.error("Erro ao salvar status de estágio:", e);
+                    }
                   }}
                   className="bg-surface rounded-[28px] p-8 shadow-sm hover:shadow-md transition-all border border-border-subtle flex flex-col items-center text-center group"
                 >
@@ -756,11 +895,25 @@ export default function App() {
                 <motion.button
                   whileHover={{ scale: 0.98 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => {
+                  onClick={async () => {
                     setUserStatus('efetivado');
                     setUserStatuses(prev => ({ ...prev, [selectedTrainee.id]: 'efetivado' }));
                     setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: true }));
                     setActiveTab('pending');
+                    
+                    // Salvar no banco de dados
+                    try {
+                      await setDoc(doc(newDb, 'estagios', selectedTrainee.matricula), {
+                        matricula: selectedTrainee.matricula,
+                        nome: selectedTrainee.name,
+                        horasAcumuladas: progressHours,
+                        status: 'efetivado',
+                        tableRows: tableRows,
+                        ultimaAtualizacao: new Date().toISOString()
+                      }, { merge: true });
+                    } catch (e) {
+                      console.error("Erro ao salvar efetivação manual:", e);
+                    }
                   }}
                   className="bg-surface rounded-[28px] p-8 shadow-sm hover:shadow-md transition-all border border-border-subtle flex flex-col items-center text-center group"
                 >
@@ -804,7 +957,28 @@ export default function App() {
                   </div>
                 </div>
               </div>
-              <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
+
+              <div className="flex items-center gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={saveStageData}
+                  disabled={isSaving}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border ${
+                    isSaving 
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                      : 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700'
+                  }`}
+                >
+                  {isSaving ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  {isSaving ? 'Salvando...' : 'Salvar Progresso'}
+                </motion.button>
+                <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
+              </div>
             </header>
 
             <main className="px-4 max-w-5xl mx-auto mt-4">
@@ -1344,102 +1518,106 @@ export default function App() {
                     <div className="flex items-center justify-between mb-6">
                       <h2 className="text-lg font-semibold text-content">Central de Kaizen - {selectedTrainee.name}</h2>
                       <span className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100">
-                        Dados Simulados
+                        Dados Reais
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                      <div className="bg-background rounded-2xl p-5 border border-border-subtle flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center">
-                          <Lightbulb className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-content-muted font-medium">Total Submetidos</p>
-                          <p className="text-2xl font-bold text-content">17</p>
-                        </div>
-                      </div>
-                      <div className="bg-background rounded-2xl p-5 border border-border-subtle flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
-                          <CheckCircle2 className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-content-muted font-medium">Implementados</p>
-                          <p className="text-2xl font-bold text-content">13</p>
-                        </div>
-                      </div>
-                      <div className="bg-background rounded-2xl p-5 border border-border-subtle flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                          <Target className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-content-muted font-medium">Taxa de Sucesso</p>
-                          <p className="text-2xl font-bold text-content">76%</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      <div className="lg:col-span-2 bg-background rounded-2xl p-5 border border-border-subtle">
-                        <h3 className="text-sm font-bold text-content mb-6 flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-content-muted" />
-                          Evolução Mensal
-                        </h3>
-                        <div className="h-[250px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              data={[
-                                { month: 'Jan', submetidos: 2, implementados: 1 },
-                                { month: 'Fev', submetidos: 3, implementados: 2 },
-                                { month: 'Mar', submetidos: 1, implementados: 1 },
-                                { month: 'Abr', submetidos: 4, implementados: 3 },
-                                { month: 'Mai', submetidos: 2, implementados: 2 },
-                                { month: 'Jun', submetidos: 5, implementados: 4 },
-                              ]}
-                              margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
-                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-                              <Tooltip 
-                                cursor={{ fill: '#f3f4f6' }}
-                                contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                              />
-                              <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                              <Bar dataKey="submetidos" name="Submetidos" fill="#93c5fd" radius={[4, 4, 0, 0]} barSize={20} />
-                              <Bar dataKey="implementados" name="Implementados" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      <div className="bg-background rounded-2xl p-5 border border-border-subtle">
-                        <h3 className="text-sm font-bold text-content mb-4">Últimos Registros</h3>
-                        <div className="space-y-3">
-                          {[
-                            { title: 'Melhoria na sinalização do Virador', date: '12 Jun', status: 'Implementado', impact: 'Segurança' },
-                            { title: 'Otimização do tempo de setup', date: '05 Jun', status: 'Em Análise', impact: 'Produtividade' },
-                            { title: 'Novo padrão de limpeza da cabine', date: '28 Mai', status: 'Implementado', impact: '5S' },
-                            { title: 'Ajuste no rádio comunicador', date: '15 Mai', status: 'Implementado', impact: 'Comunicação' },
-                          ].map((item, idx) => (
-                            <div key={idx} className="p-3 rounded-xl border border-border-subtle hover:border-blue-200 transition-colors bg-surface">
-                              <div className="flex justify-between items-start mb-1.5">
-                                <h4 className="text-xs font-bold text-content line-clamp-2 leading-tight">{item.title}</h4>
-                              </div>
-                              <div className="flex items-center justify-between mt-2">
-                                <span className="text-[10px] text-content-muted flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" /> {item.date}
-                                </span>
-                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                                  item.status === 'Implementado' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                                }`}>
-                                  {item.status}
-                                </span>
-                              </div>
+                    {KAIZEN_DATA[selectedTrainee.matricula] ? (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                          <div className="bg-background rounded-2xl p-5 border border-border-subtle flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center">
+                              <Lightbulb className="w-6 h-6" />
                             </div>
-                          ))}
+                            <div>
+                              <p className="text-sm text-content-muted font-medium">Total Submetidos</p>
+                              <p className="text-2xl font-bold text-content">{KAIZEN_DATA[selectedTrainee.matricula].resumo.submetidos}</p>
+                            </div>
+                          </div>
+                          <div className="bg-background rounded-2xl p-5 border border-border-subtle flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+                              <CheckCircle2 className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-content-muted font-medium">Implementados</p>
+                              <p className="text-2xl font-bold text-content">{KAIZEN_DATA[selectedTrainee.matricula].resumo.implementados}</p>
+                            </div>
+                          </div>
+                          <div className="bg-background rounded-2xl p-5 border border-border-subtle flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                              <Target className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-content-muted font-medium">Taxa de Sucesso</p>
+                              <p className="text-2xl font-bold text-content">
+                                {Math.round((KAIZEN_DATA[selectedTrainee.matricula].resumo.implementados / KAIZEN_DATA[selectedTrainee.matricula].resumo.submetidos) * 100)}%
+                              </p>
+                            </div>
+                          </div>
                         </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                          <div className="lg:col-span-2 bg-background rounded-2xl p-5 border border-border-subtle">
+                            <h3 className="text-sm font-bold text-content mb-6 flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4 text-content-muted" />
+                              Evolução Mensal
+                            </h3>
+                            <div className="h-[250px] w-full">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                  data={KAIZEN_DATA[selectedTrainee.matricula].evolucaoMensal}
+                                  margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+                                >
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
+                                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                                  <Tooltip 
+                                    cursor={{ fill: '#f3f4f6' }}
+                                    contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                                  />
+                                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                                  <Bar dataKey="submetidos" name="Submetidos" fill="#93c5fd" radius={[4, 4, 0, 0]} barSize={20} />
+                                  <Bar dataKey="implementados" name="Implementados" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20} />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+
+                          <div className="bg-background rounded-2xl p-5 border border-border-subtle">
+                            <h3 className="text-sm font-bold text-content mb-4">Últimos Registros</h3>
+                            <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                              {KAIZEN_DATA[selectedTrainee.matricula].ultimosRegistros.map((item: any, idx: number) => (
+                                <div key={idx} className="p-3 rounded-xl border border-border-subtle hover:border-blue-200 transition-colors bg-surface">
+                                  <div className="flex justify-between items-start mb-1.5">
+                                    <h4 className="text-xs font-bold text-content line-clamp-2 leading-tight">{item.title}</h4>
+                                  </div>
+                                  <div className="flex items-center justify-between mt-2">
+                                    <span className="text-[10px] text-content-muted flex items-center gap-1">
+                                      <Calendar className="w-3 h-3" /> {format(parseISO(item.date), "dd MMM", { locale: ptBR })}
+                                    </span>
+                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                                      item.status === 'Implementado' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                                    }`}>
+                                      {item.status}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                          <Lightbulb className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-content mb-2">Nenhum Kaizen Encontrado</h3>
+                        <p className="text-content-muted max-w-md">
+                          Este colaborador ainda não possui registros de Kaizen no sistema.
+                        </p>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </motion.div>
               )}

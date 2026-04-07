@@ -1,10 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
+import newFirebaseConfig from '../firebase-applet-config.json';
 
-// As configurações do Firebase agora são lidas de variáveis de ambiente
-// para maior segurança (não ficam expostas no GitHub).
-const firebaseConfig = {
+// Configuração do banco de dados ANTIGO (apenas leitura de usuários, etc)
+const oldFirebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -13,7 +13,14 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const auth = getAuth(app);
+// Inicializa o app antigo (leitura)
+const oldApp = initializeApp(oldFirebaseConfig, 'oldApp');
+export const db = getFirestore(oldApp);
+export const auth = getAuth(oldApp);
+
+// Inicializa o app novo (escrita/leitura do novo banco de Kaizens)
+const newApp = initializeApp(newFirebaseConfig, 'newApp');
+export const newDb = getFirestore(newApp, (newFirebaseConfig as any).firestoreDatabaseId || '(default)');
+export const newAuth = getAuth(newApp);
+
 export { signInAnonymously };
