@@ -263,29 +263,28 @@ export default function App() {
                 setLoginError('');
                 
                 try {
-                  const q = query(collection(db, 'administrators'), where('email', '==', trimmedEmail));
-                  const querySnapshot = await getDocs(q);
+                  const response = await fetch('/api/verify-admin', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: trimmedEmail })
+                  });
                   
-                  if (!querySnapshot.empty) {
+                  const data = await response.json();
+                  
+                  if (!response.ok) {
+                    throw new Error(data.error || 'Erro ao conectar com o servidor.');
+                  }
+                  
+                  if (data.isAdmin) {
                     setIsLoggedIn(true);
                   } else {
                     setLoginError('Email não encontrado na lista de administradores.');
                   }
                 } catch (error: any) {
                   console.error("Erro ao fazer login:", error);
-                  let message = 'Erro ao conectar com o banco de dados.';
-                  
-                  if (error.code === 'permission-denied') {
-                    message = 'Acesso negado. Verifique as regras do Firestore.';
-                  } else if (error.code === 'failed-precondition') {
-                    message = 'O Firestore precisa de um índice. Verifique o console.';
-                  } else if (!import.meta.env.VITE_FIREBASE_API_KEY) {
-                    message = 'Configuração do Firebase ausente (Variáveis de Ambiente).';
-                  } else {
-                    message = `Erro: ${error.message || 'Verifique a configuração do Firebase.'}`;
-                  }
-                  
-                  setLoginError(message);
+                  setLoginError(error.message || 'Erro de conexão com o servidor.');
                 } finally {
                   setIsLoadingLogin(false);
                 }
