@@ -50,7 +50,7 @@ type Trainee = {
   matricula: string;
   funcao: string;
   progress: number;
-  status: 'active' | 'pending' | 'completed';
+  status: 'active' | 'pending' | 'completed' | 'none';
 };
 
 export default function App() {
@@ -88,6 +88,13 @@ export default function App() {
         if (data.status) {
           setUserStatus(data.status);
           setUserStatuses(prev => ({ ...prev, [selectedTrainee.id]: data.status }));
+          if (data.status === 'efetivado') {
+            setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: true }));
+            setActiveTab('pending');
+          } else {
+            setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: false }));
+            setActiveTab('timeline');
+          }
         }
       } else {
         // Se não existir, resetar para o padrão
@@ -96,7 +103,9 @@ export default function App() {
           { id: 2, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
           { id: 3, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
         ]);
-        setUserStatus('estagio');
+        setUserStatus(isAdmin ? 'estagio' : null);
+        setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: false }));
+        setActiveTab('timeline');
       }
     });
 
@@ -595,8 +604,8 @@ export default function App() {
             <div className="max-w-4xl mx-auto px-4 mb-8">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h1 className="text-2xl font-bold text-content">Turmas</h1>
-                  <p className="text-content-muted">Selecione uma turma para visualizar os usuários</p>
+                  <h1 className="text-2xl font-bold text-content">Colaboradores</h1>
+                  <p className="text-content-muted">Selecione uma turma para visualizar os colaboradores</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
@@ -625,11 +634,11 @@ export default function App() {
                           id: docSnapshot.id,
                           name: data.nome || 'Sem Nome',
                           matricula: data.matricula || '',
-                          funcao: data.funcao || 'Estagiário',
+                          funcao: data.funcao || 'Colaborador',
                           progress: Math.round((data.horasAcumuladas / 432) * 100),
-                          status: data.status === 'efetivado' ? 'completed' : 'active' as const
+                          status: data.status === 'efetivado' ? 'completed' : data.status === 'estagio' ? 'active' : 'none'
                         };
-                      });
+                      }).sort((a, b) => a.name.localeCompare(b.name));
                       setTrainees(traineesData);
                     } catch (e) {
                       console.error("Erro ao buscar controle de estágio:", e);
@@ -642,9 +651,9 @@ export default function App() {
                   <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white mb-4 shadow-sm">
                     <GraduationCap className="w-8 h-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-content tracking-wide mb-1">Controle de Estágio</h3>
+                  <h3 className="text-xl font-bold text-content tracking-wide mb-1">Controle de Colaboradores</h3>
                   <p className="text-sm text-content-muted mb-2 text-center max-w-md">
-                    Visualize o progresso de todos os estagiários cadastrados no novo banco de dados.
+                    Visualize o progresso de todos os colaboradores cadastrados no novo banco de dados.
                   </p>
                 </motion.div>
 
@@ -661,7 +670,7 @@ export default function App() {
                       setIsLoadingTrainees(true);
                       try {
                         const snap = await getDocs(collection(db, cls.id));
-                        const traineesData = await Promise.all(snap.docs.map(async docSnapshot => {
+                        const traineesData = (await Promise.all(snap.docs.map(async docSnapshot => {
                           const data = docSnapshot.data() as any;
                           // Buscar progresso no novo banco de dados
                           const stageSnap = await getDoc(doc(newDb, 'estagios', data.matricula || ''));
@@ -674,9 +683,9 @@ export default function App() {
                             funcao: data.funcao || '',
                             email: data.email || '',
                             progress: stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0,
-                            status: stageData?.status === 'efetivado' ? 'completed' : 'active' as const
+                            status: stageData?.status === 'efetivado' ? 'completed' : stageData?.status === 'estagio' ? 'active' : 'none'
                           };
-                        }));
+                        }))).sort((a, b) => a.name.localeCompare(b.name));
                         setTrainees(traineesData);
                       } catch (e) {
                         console.error("Erro ao buscar alunos:", e);
@@ -726,10 +735,10 @@ export default function App() {
                   </button>
                   <div>
                     <h1 className="text-2xl font-bold text-content">
-                      {selectedClass === 'global-estagio' ? 'Controle de Estágio' : 'Alunos'}
+                      {selectedClass === 'global-estagio' ? 'Controle de Colaboradores' : 'Colaboradores'}
                     </h1>
                     <p className="text-content-muted capitalize">
-                      {selectedClass === 'global-estagio' ? 'Todos os estagiários cadastrados' : selectedClass}
+                      {selectedClass === 'global-estagio' ? 'Todos os colaboradores cadastrados' : selectedClass}
                     </p>
                   </div>
                 </div>
@@ -747,7 +756,7 @@ export default function App() {
                 </div>
               ) : trainees.length === 0 ? (
                 <div className="text-center py-12 bg-surface rounded-[24px] border border-border-subtle">
-                  <p className="text-content-muted">Nenhum aluno encontrado nesta turma.</p>
+                  <p className="text-content-muted">Nenhum colaborador encontrado nesta turma.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -791,19 +800,22 @@ export default function App() {
                             <h3 className="font-semibold text-content">{trainee.name}</h3>
                             <div className="flex items-center gap-2 mt-0.5">
                               <p className="text-xs text-content-muted">Mat: {trainee.matricula}</p>
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                trainee.status === 'active' 
-                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' 
-                                  : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                              }`}>
-                                {trainee.status === 'active' ? 'ESTÁGIO' : 'EFETIVADO'}
-                              </span>
+                              {trainee.status !== 'none' && (
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm ${
+                                  trainee.status === 'active' 
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'bg-emerald-600 text-white'
+                                }`}>
+                                  {trainee.status === 'active' ? 'ESTÁGIO' : 'EFETIVADO'}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
                         <div className={`w-2 h-2 rounded-full ${
                           trainee.status === 'completed' ? 'bg-green-500' :
-                          trainee.status === 'active' ? 'bg-blue-500' : 'bg-orange-500'
+                          trainee.status === 'active' ? 'bg-blue-500' : 
+                          trainee.status === 'none' ? 'bg-gray-300 dark:bg-gray-600' : 'bg-orange-500'
                         }`} />
                       </div>
                       
@@ -831,7 +843,7 @@ export default function App() {
               )}
             </div>
           </motion.div>
-        ) : !userStatus ? (
+        ) : !userStatus && !isAdmin ? (
           <motion.div 
             key="status-selection"
             initial={{ opacity: 0, x: 20 }}
@@ -846,7 +858,7 @@ export default function App() {
                   className="flex items-center gap-2 text-content-muted hover:text-content transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
-                  <span className="font-medium">Voltar para Usuários</span>
+                  <span className="font-medium">Voltar para Colaboradores</span>
                 </button>
                 <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
               </div>
@@ -938,7 +950,13 @@ export default function App() {
             <header className="pt-14 pb-4 px-4 sticky top-0 bg-background/80 backdrop-blur-xl z-10 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button 
-                  onClick={() => setUserStatus(null)} 
+                  onClick={() => {
+                    if (isAdmin) {
+                      setSelectedTrainee(null);
+                    } else {
+                      setUserStatus(null);
+                    }
+                  }} 
                   className="p-2 rounded-full hover:bg-border-subtle/80 transition-colors bg-surface shadow-sm"
                 >
                   <ArrowLeft className="w-6 h-6" />
@@ -947,12 +965,12 @@ export default function App() {
                   <h1 className="text-2xl font-semibold tracking-tight">{selectedTrainee.name}</h1>
                   <div className="flex items-center gap-2 mt-0.5">
                     <p className="text-sm text-content-muted font-medium">Mat: {selectedTrainee.matricula}</p>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      userStatus === 'estagio' 
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' 
-                        : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    <span className={`text-[10px] font-black px-3 py-1 rounded-full shadow-md ${
+                      userStatus === 'efetivado' 
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-blue-600 text-white' 
                     }`}>
-                      {userStatus === 'estagio' ? 'ESTÁGIO' : 'EFETIVADO'}
+                      {userStatus === 'efetivado' ? 'EFETIVADO' : 'ESTÁGIO'}
                     </span>
                   </div>
                 </div>
