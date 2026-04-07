@@ -24,7 +24,7 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, auth, signInAnonymously } from './firebase';
 
 const LOCAL_OPTIONS = [
   "RECEPÇÃO", "VIRADOR", "GIROFLEX", "CLASSIFICAÇÃO", 
@@ -40,7 +40,7 @@ type ClassItem = {
 };
 
 type Trainee = {
-  id: number;
+  id: number | string;
   name: string;
   matricula: string;
   funcao: string;
@@ -49,20 +49,15 @@ type Trainee = {
 };
 
 export default function App() {
-  const trainees: Trainee[] = [
-    { id: 1, name: 'João Silva', matricula: '12345', funcao: 'Operador de Empilhadeira', progress: 45, status: 'active' },
-    { id: 2, name: 'Maria Santos', matricula: '12346', funcao: 'Assistente de Logística', progress: 80, status: 'active' },
-    { id: 3, name: 'Pedro Costa', matricula: '12347', funcao: 'Técnico de Manutenção', progress: 100, status: 'completed' },
-    { id: 4, name: 'Ana Oliveira', matricula: '12348', funcao: 'Operador de Guindaste', progress: 10, status: 'pending' },
-    { id: 5, name: 'Lucas Pereira', matricula: '12349', funcao: 'Conferente', progress: 60, status: 'active' },
-    { id: 6, name: 'Juliana Alves', matricula: '12350', funcao: 'Operador de Empilhadeira', progress: 30, status: 'active' },
-  ];
-
   const [selectedTrainee, setSelectedTrainee] = useState<Trainee | null>(null);
   const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
-  const [userStatuses, setUserStatuses] = useState<Record<number, 'estagio' | 'efetivado'>>({});
+  const [userStatuses, setUserStatuses] = useState<Record<string | number, 'estagio' | 'efetivado'>>({});
   const [activeTab, setActiveTab] = useState<'form' | 'timeline' | 'pending'>('timeline');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<string | null>(null);
+  const [trainees, setTrainees] = useState<Trainee[]>([]);
+  const [isLoadingTrainees, setIsLoadingTrainees] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -73,6 +68,21 @@ export default function App() {
   const datePickerRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const totalHours = 432;
+
+  const classesList = [
+    { id: 'turma a', name: 'Turma A', color: 'bg-blue-500' },
+    { id: 'turma b', name: 'Turma B', color: 'bg-purple-500' },
+    { id: 'turma c', name: 'Turma C', color: 'bg-orange-500' },
+    { id: 'turma c cg', name: 'Turma C CG', color: 'bg-green-500' },
+    { id: 'turma d', name: 'Turma D', color: 'bg-red-500' },
+  ];
+
+  useEffect(() => {
+    // Conecta anonimamente ao carregar o app para satisfazer a regra request.auth != null
+    signInAnonymously(auth).catch(error => {
+      console.error("Erro na autenticação anônima:", error);
+    });
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -263,28 +273,52 @@ export default function App() {
                 setLoginError('');
                 
                 try {
-                  const response = await fetch('/api/verify-admin', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email: trimmedEmail })
-                  });
+                  const emailLower = trimmedEmail;
                   
-                  const data = await response.json();
+                  // 1. Verifica se é administrador
+                  const adminQ = query(collection(db, 'administrators'), where('email', '==', emailLower));
+                  const adminSnap = await getDocs(adminQ);
                   
-                  if (!response.ok) {
-                    throw new Error(data.error || 'Erro ao conectar com o servidor.');
-                  }
-                  
-                  if (data.isAdmin) {
+                  if (!adminSnap.empty) {
+                    setIsAdmin(true);
                     setIsLoggedIn(true);
-                  } else {
-                    setLoginError('Email não encontrado na lista de administradores.');
+                    return;
                   }
+
+                  // 2. Verifica se é aluno em alguma turma
+                  const turmas = ['turma a', 'turma b', 'turma c', 'turma c cg', 'turma d'];
+                  for (const turma of turmas) {
+                    const turmaQ = query(collection(db, turma), where('email', '==', emailLower));
+                    const turmaSnap = await getDocs(turmaQ);
+                    
+                    if (!turmaSnap.empty) {
+                      const doc = turmaSnap.docs[0];
+                      const t = doc.data();
+                      setIsAdmin(false);
+                      setIsLoggedIn(true);
+                      const traineeObj: Trainee = {
+                        id: doc.id,
+                        name: t.nome || t.name || 'Usuário',
+                        matricula: t.matricula || '',
+                        funcao: t.funcao || '',
+                        progress: 0,
+                        status: 'active'
+                      };
+                      setSelectedTrainee(traineeObj);
+                      setFormData(prev => ({
+                        ...prev,
+                        nome: traineeObj.name,
+                        matricula: traineeObj.matricula,
+                        funcao: traineeObj.funcao
+                      }));
+                      return;
+                    }
+                  }
+
+                  setLoginError('Email não encontrado no sistema.');
                 } catch (error: any) {
                   console.error("Erro ao fazer login:", error);
-                  setLoginError(error.message || 'Erro de conexão com o servidor.');
+                  setLoginError(error.message || 'Erro de conexão com o banco de dados.');
                 } finally {
                   setIsLoadingLogin(false);
                 }
@@ -324,7 +358,68 @@ export default function App() {
               </form>
             </div>
           </motion.div>
-        ) : !selectedTrainee ? (
+        ) : isAdmin && !selectedClass ? (
+          <motion.div 
+            key="classes"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="pt-12"
+          >
+            <div className="max-w-4xl mx-auto px-4 mb-8">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Turmas</h1>
+                  <p className="text-gray-500">Selecione uma turma para visualizar os alunos</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium cursor-pointer" onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setSelectedClass(null); }}>
+                  {loginEmail.charAt(0).toUpperCase()}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {classesList.map((cls, index) => (
+                  <motion.div
+                    key={cls.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
+                    whileHover={{ scale: 0.98 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={async () => {
+                      setSelectedClass(cls.id);
+                      setIsLoadingTrainees(true);
+                      try {
+                        const snap = await getDocs(collection(db, cls.id));
+                        const traineesData = snap.docs.map(doc => {
+                          const data = doc.data();
+                          return {
+                            id: doc.id,
+                            name: data.nome || data.name || 'Sem Nome',
+                            matricula: data.matricula || '',
+                            funcao: data.funcao || '',
+                            email: data.email || '',
+                            progress: 0,
+                            status: 'active' as const
+                          };
+                        });
+                        setTrainees(traineesData);
+                      } catch (e) {
+                        console.error("Erro ao buscar alunos:", e);
+                      } finally {
+                        setIsLoadingTrainees(false);
+                      }
+                    }}
+                    className={`${cls.color} rounded-[24px] p-6 text-white shadow-sm hover:shadow-md transition-all cursor-pointer`}
+                  >
+                    <h3 className="text-xl font-bold mb-2">{cls.name}</h3>
+                    <p className="text-white/80 text-sm">Clique para ver os alunos</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        ) : isAdmin && selectedClass && !selectedTrainee ? (
           <motion.div 
             key="trainees"
             initial={{ opacity: 0, x: 20 }}
@@ -334,84 +429,102 @@ export default function App() {
           >
             <div className="max-w-4xl mx-auto px-4 mb-8">
               <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Usuários</h1>
-                  <p className="text-gray-500">Selecione um usuário em estágio</p>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => setSelectedClass(null)}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <ArrowLeft className="w-6 h-6 text-gray-600" />
+                  </button>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Alunos</h1>
+                    <p className="text-gray-500 capitalize">{selectedClass}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium cursor-pointer" onClick={() => setIsLoggedIn(false)}>
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium cursor-pointer" onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setSelectedClass(null); }}>
                     {loginEmail.charAt(0).toUpperCase()}
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {trainees.map((trainee, index) => (
-                  <motion.div
-                    key={trainee.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05, duration: 0.3 }}
-                    whileHover={{ scale: 0.98 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSelectedTrainee(trainee);
-                      setFormData(prev => ({
-                        ...prev,
-                        nome: trainee.name,
-                        matricula: trainee.matricula,
-                        funcao: trainee.funcao
-                      }));
-                      if (userStatuses[trainee.id]) {
-                        setUserStatus(userStatuses[trainee.id]);
-                        if (userStatuses[trainee.id] === 'efetivado') {
-                          setActiveTab('pending');
+              {isLoadingTrainees ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+                </div>
+              ) : trainees.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-[24px] border border-gray-100">
+                  <p className="text-gray-500">Nenhum aluno encontrado nesta turma.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {trainees.map((trainee, index) => (
+                    <motion.div
+                      key={trainee.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                      whileHover={{ scale: 0.98 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        setSelectedTrainee(trainee);
+                        setFormData(prev => ({
+                          ...prev,
+                          nome: trainee.name,
+                          matricula: trainee.matricula,
+                          funcao: trainee.funcao
+                        }));
+                        if (userStatuses[trainee.id]) {
+                          setUserStatus(userStatuses[trainee.id]);
+                          if (userStatuses[trainee.id] === 'efetivado') {
+                            setActiveTab('pending');
+                          } else {
+                            setActiveTab('timeline');
+                          }
                         } else {
-                          setActiveTab('timeline');
+                          setUserStatus(null);
                         }
-                      } else {
-                        setUserStatus(null);
-                      }
-                    }}
-                    className="bg-white rounded-[24px] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-100"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                          <UserIcon className="w-5 h-5" />
+                      }}
+                      className="bg-white rounded-[24px] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-100"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                            <UserIcon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{trainee.name}</h3>
+                            <p className="text-xs text-gray-500">Mat: {trainee.matricula}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{trainee.name}</h3>
-                          <p className="text-xs text-gray-500">Mat: {trainee.matricula}</p>
-                        </div>
+                        <div className={`w-2 h-2 rounded-full ${
+                          trainee.status === 'completed' ? 'bg-green-500' :
+                          trainee.status === 'active' ? 'bg-blue-500' : 'bg-orange-500'
+                        }`} />
                       </div>
-                      <div className={`w-2 h-2 rounded-full ${
-                        trainee.status === 'completed' ? 'bg-green-500' :
-                        trainee.status === 'active' ? 'bg-blue-500' : 'bg-orange-500'
-                      }`} />
-                    </div>
-                    
-                    <div className="mb-3">
-                      <p className="text-sm text-gray-600 truncate">{trainee.funcao}</p>
-                    </div>
+                      
+                      <div className="mb-3">
+                        <p className="text-sm text-gray-600 truncate">{trainee.funcao || 'Sem função'}</p>
+                      </div>
 
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-500 font-medium">Progresso</span>
-                        <span className="text-gray-900 font-bold">{trainee.progress}%</span>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-500 font-medium">Progresso</span>
+                          <span className="text-gray-900 font-bold">{trainee.progress}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full ${
+                              trainee.progress === 100 ? 'bg-green-500' : 'bg-blue-500'
+                            }`}
+                            style={{ width: `${trainee.progress}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${
-                            trainee.progress === 100 ? 'bg-green-500' : 'bg-blue-500'
-                          }`}
-                          style={{ width: `${trainee.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         ) : !userStatus ? (
