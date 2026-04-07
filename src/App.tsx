@@ -5,9 +5,12 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Plus, Trash2, ChevronDown, Calendar, ChevronLeft, ChevronRight, User as UserIcon, Clock, AlertCircle, CheckCircle2, Download, GraduationCap, Briefcase, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronDown, Calendar, ChevronLeft, ChevronRight, User as UserIcon, Clock, AlertCircle, CheckCircle2, Download, GraduationCap, Briefcase, Moon, Sun, Lightbulb, TrendingUp, Target } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
 import { 
   format, 
   addMonths, 
@@ -53,7 +56,10 @@ export default function App() {
   const [selectedTrainee, setSelectedTrainee] = useState<Trainee | null>(null);
   const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
   const [userStatuses, setUserStatuses] = useState<Record<string | number, 'estagio' | 'efetivado'>>({});
-  const [activeTab, setActiveTab] = useState<'form' | 'timeline' | 'pending'>('timeline');
+  const [userTabsHidden, setUserTabsHidden] = useState<Record<string | number, boolean>>({});
+  const [showHideTabsModal, setShowHideTabsModal] = useState(false);
+  const [pendingHideAction, setPendingHideAction] = useState(false);
+  const [activeTab, setActiveTab] = useState<'form' | 'timeline' | 'pending' | 'kaizen'>('timeline');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
@@ -65,6 +71,7 @@ export default function App() {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -77,6 +84,7 @@ export default function App() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const downloadMenuRef = useRef<HTMLDivElement>(null);
   const totalHours = 432;
 
   const classesList = [
@@ -101,10 +109,132 @@ export default function App() {
       if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
         setOpenDropdownId(null);
       }
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) {
+        setIsDownloadMenuOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleDownloadPNG = async () => {
+    if (!formRef.current) return;
+    try {
+      setIsDownloading(true);
+      const canvas = await html2canvas(formRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#f9fafb'
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = imgData;
+      a.download = 'formulario-treinamento.png';
+      a.click();
+    } catch (error) {
+      console.error('Error generating PNG:', error);
+    } finally {
+      setIsDownloading(false);
+      setIsDownloadMenuOpen(false);
+    }
+  };
+
+  const handleDownloadExcel = () => {
+    try {
+      setIsDownloading(true);
+      const wb = XLSX.utils.book_new();
+      const wsData = [
+        ['Dados do Treinamento'],
+        [],
+        ['Nome', formData.nome],
+        ['Matrícula', formData.matricula],
+        ['Supervisor', formData.supervisor],
+        ['Função', formData.funcao],
+        ['Horas Previstas', formData.horasPrevistas],
+        ['Horas Realizadas', formData.horasRealizadas],
+        ['Horas Faltantes', formData.horasFaltantes],
+        [],
+        ['Local', 'Equipamento', 'Data', 'Hora', 'Duração', 'Instrutor', 'Avaliação']
+      ];
+      
+      tableRows.forEach(row => {
+        wsData.push([row.local, row.equipamento, row.data, row.hora, row.duracao, row.instrutor, row.avaliacao]);
+      });
+      
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb, ws, 'Treinamento');
+      XLSX.writeFile(wb, 'formulario-treinamento.xlsx');
+    } catch (error) {
+      console.error('Error generating Excel:', error);
+    } finally {
+      setIsDownloading(false);
+      setIsDownloadMenuOpen(false);
+    }
+  };
+
+  const handleDownloadWord = async () => {
+    try {
+      setIsDownloading(true);
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({ children: [new TextRun({ text: "Dados do Treinamento", bold: true, size: 28 })] }),
+            new Paragraph({ text: "" }),
+            new Paragraph({ text: `Nome: ${formData.nome}` }),
+            new Paragraph({ text: `Matrícula: ${formData.matricula}` }),
+            new Paragraph({ text: `Supervisor: ${formData.supervisor}` }),
+            new Paragraph({ text: `Função: ${formData.funcao}` }),
+            new Paragraph({ text: `Horas Previstas: ${formData.horasPrevistas}` }),
+            new Paragraph({ text: `Horas Realizadas: ${formData.horasRealizadas}` }),
+            new Paragraph({ text: `Horas Faltantes: ${formData.horasFaltantes}` }),
+            new Paragraph({ text: "" }),
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph({ text: "Local", bold: true })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Equipamento", bold: true })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Data", bold: true })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Hora", bold: true })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Duração", bold: true })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Instrutor", bold: true })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Avaliação", bold: true })] }),
+                  ]
+                }),
+                ...tableRows.map(row => new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph(row.local)] }),
+                    new TableCell({ children: [new Paragraph(row.equipamento)] }),
+                    new TableCell({ children: [new Paragraph(row.data)] }),
+                    new TableCell({ children: [new Paragraph(row.hora)] }),
+                    new TableCell({ children: [new Paragraph(row.duracao)] }),
+                    new TableCell({ children: [new Paragraph(row.instrutor)] }),
+                    new TableCell({ children: [new Paragraph(row.avaliacao)] }),
+                  ]
+                }))
+              ]
+            })
+          ]
+        }]
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "formulario-treinamento.docx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating Word:', error);
+    } finally {
+      setIsDownloading(false);
+      setIsDownloadMenuOpen(false);
+    }
+  };
 
   const handleDownloadPDF = async () => {
     if (!formRef.current) return;
@@ -134,6 +264,7 @@ export default function App() {
       console.error('Error generating PDF:', error);
     } finally {
       setIsDownloading(false);
+      setIsDownloadMenuOpen(false);
     }
   };
 
@@ -255,6 +386,14 @@ export default function App() {
     return match ? total + parseFloat(match[0]) : total;
   }, 0);
 
+  useEffect(() => {
+    if (selectedTrainee && userStatus === 'estagio' && progressHours >= 432) {
+      setUserStatus('efetivado');
+      setUserStatuses(prev => ({ ...prev, [selectedTrainee.id]: 'efetivado' }));
+      setShowHideTabsModal(true);
+    }
+  }, [progressHours, userStatus, selectedTrainee]);
+
   return (
     <div className="min-h-screen bg-background text-content font-sans selection:bg-blue-200">
       <AnimatePresence mode="wait">
@@ -270,7 +409,7 @@ export default function App() {
               <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
             </div>
             <div className="bg-surface rounded-[32px] p-8 shadow-xl max-w-md w-full border border-border-subtle flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
+              <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6">
                 <Briefcase className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-3xl font-bold text-content mb-2 tracking-tight">Bem-vindo</h1>
@@ -524,7 +663,18 @@ export default function App() {
                           </div>
                           <div>
                             <h3 className="font-semibold text-content">{trainee.name}</h3>
-                            <p className="text-xs text-content-muted">Mat: {trainee.matricula}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <p className="text-xs text-content-muted">Mat: {trainee.matricula}</p>
+                              {userStatuses[trainee.id] && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  userStatuses[trainee.id] === 'estagio' 
+                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' 
+                                    : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                }`}>
+                                  {userStatuses[trainee.id] === 'estagio' ? 'ESTÁGIO' : 'EFETIVADO'}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className={`w-2 h-2 rounded-full ${
@@ -609,6 +759,7 @@ export default function App() {
                   onClick={() => {
                     setUserStatus('efetivado');
                     setUserStatuses(prev => ({ ...prev, [selectedTrainee.id]: 'efetivado' }));
+                    setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: true }));
                     setActiveTab('pending');
                   }}
                   className="bg-surface rounded-[28px] p-8 shadow-sm hover:shadow-md transition-all border border-border-subtle flex flex-col items-center text-center group"
@@ -641,7 +792,16 @@ export default function App() {
                 </button>
                 <div>
                   <h1 className="text-2xl font-semibold tracking-tight">{selectedTrainee.name}</h1>
-                  <p className="text-sm text-content-muted font-medium">Mat: {selectedTrainee.matricula} • {userStatus === 'estagio' ? 'Estágio' : 'Efetivado'}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-sm text-content-muted font-medium">Mat: {selectedTrainee.matricula}</p>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      userStatus === 'estagio' 
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' 
+                        : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    }`}>
+                      {userStatus === 'estagio' ? 'ESTÁGIO' : 'EFETIVADO'}
+                    </span>
+                  </div>
                 </div>
               </div>
               <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
@@ -649,13 +809,14 @@ export default function App() {
 
             <main className="px-4 max-w-5xl mx-auto mt-4">
               {/* Top Card Toggle */}
-              {userStatus === 'estagio' && (
-                <div className="bg-surface rounded-[28px] p-2 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] mb-6 flex relative max-w-lg mx-auto">
+              {!userTabsHidden[selectedTrainee.id] && (
+                <div className="bg-surface rounded-[28px] p-2 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] mb-6 flex relative max-w-2xl mx-auto">
                   <div 
-                    className={`absolute top-2 bottom-2 w-[calc(33.33%-8px)] bg-border-subtle rounded-[20px] transition-transform duration-300 ease-in-out ${
+                    className={`absolute top-2 bottom-2 w-[calc(25%-8px)] bg-border-subtle rounded-[20px] transition-transform duration-300 ease-in-out ${
                       activeTab === 'timeline' ? 'translate-x-0' : 
                       activeTab === 'form' ? 'translate-x-[calc(100%+8px)]' : 
-                      'translate-x-[calc(200%+16px)]'
+                      activeTab === 'pending' ? 'translate-x-[calc(200%+16px)]' :
+                      'translate-x-[calc(300%+24px)]'
                     }`}
                   />
                   <button 
@@ -676,16 +837,33 @@ export default function App() {
                   >
                     Treinamentos
                   </button>
+                  <button 
+                    onClick={() => setActiveTab('kaizen')}
+                    className={`flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 transition-colors ${activeTab === 'kaizen' ? 'text-content' : 'text-content-muted'}`}
+                  >
+                    Kaizen
+                  </button>
                 </div>
               )}
               
-              {userStatus === 'efetivado' && (
+              {userTabsHidden[selectedTrainee.id] && (
                 <div className="bg-surface rounded-[28px] p-2 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] mb-6 flex relative max-w-lg mx-auto">
-                  <div className="absolute top-2 bottom-2 left-2 right-2 bg-border-subtle rounded-[20px]" />
+                  <div 
+                    className={`absolute top-2 bottom-2 w-[calc(50%-8px)] bg-border-subtle rounded-[20px] transition-transform duration-300 ease-in-out ${
+                      activeTab === 'pending' ? 'translate-x-0' : 'translate-x-[calc(100%+8px)]'
+                    }`}
+                  />
                   <button 
-                    className="flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 text-content"
+                    onClick={() => setActiveTab('pending')}
+                    className={`flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 transition-colors ${activeTab === 'pending' ? 'text-content' : 'text-content-muted'}`}
                   >
                     Treinamentos
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('kaizen')}
+                    className={`flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 transition-colors ${activeTab === 'kaizen' ? 'text-content' : 'text-content-muted'}`}
+                  >
+                    Kaizen
                   </button>
                 </div>
               )}
@@ -883,15 +1061,52 @@ export default function App() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <div className="flex justify-end mb-4">
+                  <div className="flex justify-end mb-4 relative" ref={downloadMenuRef}>
                     <button 
-                      onClick={handleDownloadPDF}
+                      onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)}
                       disabled={isDownloading}
                       className="flex items-center gap-2 text-sm font-medium text-white bg-blue-600 px-5 py-2.5 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
                     >
                       <Download className="w-4 h-4" />
-                      {isDownloading ? 'Gerando PDF...' : 'Baixar PDF'}
+                      {isDownloading ? 'Gerando...' : 'Baixar Relatório'}
+                      <ChevronDown className="w-4 h-4 ml-1" />
                     </button>
+                    
+                    <AnimatePresence>
+                      {isDownloadMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute top-full right-0 mt-2 w-48 bg-surface border border-border-subtle rounded-xl shadow-xl overflow-hidden z-50"
+                        >
+                          <button
+                            onClick={handleDownloadPDF}
+                            className="w-full text-left px-4 py-3 text-sm text-content hover:bg-border-subtle/50 transition-colors flex items-center gap-2"
+                          >
+                            <span className="font-medium">PDF</span> (.pdf)
+                          </button>
+                          <button
+                            onClick={handleDownloadWord}
+                            className="w-full text-left px-4 py-3 text-sm text-content hover:bg-border-subtle/50 transition-colors flex items-center gap-2 border-t border-border-subtle"
+                          >
+                            <span className="font-medium">Word</span> (.docx)
+                          </button>
+                          <button
+                            onClick={handleDownloadExcel}
+                            className="w-full text-left px-4 py-3 text-sm text-content hover:bg-border-subtle/50 transition-colors flex items-center gap-2 border-t border-border-subtle"
+                          >
+                            <span className="font-medium">Excel</span> (.xlsx)
+                          </button>
+                          <button
+                            onClick={handleDownloadPNG}
+                            className="w-full text-left px-4 py-3 text-sm text-content hover:bg-border-subtle/50 transition-colors flex items-center gap-2 border-t border-border-subtle"
+                          >
+                            <span className="font-medium">Imagem</span> (.png)
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                   
                   <div ref={formRef} className="bg-background -mx-4 px-4 sm:mx-0 sm:px-0 pb-4">
@@ -1118,10 +1333,206 @@ export default function App() {
                   </div>
                 </motion.div>
               )}
+
+              {activeTab === 'kaizen' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-4"
+                >
+                  <div className="bg-surface rounded-[28px] p-6 shadow-sm border border-border-subtle">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-lg font-semibold text-content">Central de Kaizen - {selectedTrainee.name}</h2>
+                      <span className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100">
+                        Dados Simulados
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                      <div className="bg-background rounded-2xl p-5 border border-border-subtle flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center">
+                          <Lightbulb className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-content-muted font-medium">Total Submetidos</p>
+                          <p className="text-2xl font-bold text-content">17</p>
+                        </div>
+                      </div>
+                      <div className="bg-background rounded-2xl p-5 border border-border-subtle flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-content-muted font-medium">Implementados</p>
+                          <p className="text-2xl font-bold text-content">13</p>
+                        </div>
+                      </div>
+                      <div className="bg-background rounded-2xl p-5 border border-border-subtle flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                          <Target className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-content-muted font-medium">Taxa de Sucesso</p>
+                          <p className="text-2xl font-bold text-content">76%</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2 bg-background rounded-2xl p-5 border border-border-subtle">
+                        <h3 className="text-sm font-bold text-content mb-6 flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-content-muted" />
+                          Evolução Mensal
+                        </h3>
+                        <div className="h-[250px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={[
+                                { month: 'Jan', submetidos: 2, implementados: 1 },
+                                { month: 'Fev', submetidos: 3, implementados: 2 },
+                                { month: 'Mar', submetidos: 1, implementados: 1 },
+                                { month: 'Abr', submetidos: 4, implementados: 3 },
+                                { month: 'Mai', submetidos: 2, implementados: 2 },
+                                { month: 'Jun', submetidos: 5, implementados: 4 },
+                              ]}
+                              margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
+                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                              <Tooltip 
+                                cursor={{ fill: '#f3f4f6' }}
+                                contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                              />
+                              <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                              <Bar dataKey="submetidos" name="Submetidos" fill="#93c5fd" radius={[4, 4, 0, 0]} barSize={20} />
+                              <Bar dataKey="implementados" name="Implementados" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      <div className="bg-background rounded-2xl p-5 border border-border-subtle">
+                        <h3 className="text-sm font-bold text-content mb-4">Últimos Registros</h3>
+                        <div className="space-y-3">
+                          {[
+                            { title: 'Melhoria na sinalização do Virador', date: '12 Jun', status: 'Implementado', impact: 'Segurança' },
+                            { title: 'Otimização do tempo de setup', date: '05 Jun', status: 'Em Análise', impact: 'Produtividade' },
+                            { title: 'Novo padrão de limpeza da cabine', date: '28 Mai', status: 'Implementado', impact: '5S' },
+                            { title: 'Ajuste no rádio comunicador', date: '15 Mai', status: 'Implementado', impact: 'Comunicação' },
+                          ].map((item, idx) => (
+                            <div key={idx} className="p-3 rounded-xl border border-border-subtle hover:border-blue-200 transition-colors bg-surface">
+                              <div className="flex justify-between items-start mb-1.5">
+                                <h4 className="text-xs font-bold text-content line-clamp-2 leading-tight">{item.title}</h4>
+                              </div>
+                              <div className="flex items-center justify-between mt-2">
+                                <span className="text-[10px] text-content-muted flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" /> {item.date}
+                                </span>
+                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                                  item.status === 'Implementado' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                                }`}>
+                                  {item.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </main>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showHideTabsModal && selectedTrainee && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-surface p-6 rounded-2xl shadow-xl max-w-md w-full border border-border-subtle"
+            >
+              {!pendingHideAction ? (
+                <>
+                  <h2 className="text-xl font-bold mb-4">Ocultar Abas?</h2>
+                  <p className="text-content-muted mb-6">
+                    O colaborador <strong>{selectedTrainee.name}</strong> foi efetivado. Deseja ocultar as abas de Linha do Tempo e Formulário?
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      onClick={() => {
+                        setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: false }));
+                        setShowHideTabsModal(false);
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-content-muted hover:text-content transition-colors"
+                    >
+                      Manter Abas
+                    </button>
+                    <button
+                      onClick={() => setPendingHideAction(true)}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
+                    >
+                      Ocultar Abas
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-bold mb-4">Download Obrigatório</h2>
+                  <p className="text-content-muted mb-6">
+                    Para ocultar as abas, é obrigatório fazer o download do formulário atual.
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      onClick={() => setPendingHideAction(false)}
+                      className="px-4 py-2 text-sm font-medium text-content-muted hover:text-content transition-colors"
+                    >
+                      Voltar
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const doDownloadAndHide = async () => {
+                          await handleDownloadPDF();
+                          setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: true }));
+                          setActiveTab('pending');
+                          setShowHideTabsModal(false);
+                          setPendingHideAction(false);
+                        };
+
+                        if (activeTab !== 'form') {
+                          setActiveTab('form');
+                          setTimeout(doDownloadAndHide, 300);
+                        } else {
+                          await doDownloadAndHide();
+                        }
+                      }}
+                      disabled={isDownloading}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-70"
+                    >
+                      <Download className="w-4 h-4" />
+                      {isDownloading ? 'Baixando...' : 'Baixar PDF e Ocultar'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <footer className="py-8 text-center text-xs font-bold text-content-muted tracking-widest opacity-60">
+        DESENVOLVIDO POR NEAR
+      </footer>
     </div>
   );
 }
