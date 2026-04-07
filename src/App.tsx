@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Plus, Trash2, ChevronDown, Calendar, ChevronLeft, ChevronRight, User as UserIcon, Clock, AlertCircle, CheckCircle2, Download, GraduationCap, Briefcase } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronDown, Calendar, ChevronLeft, ChevronRight, User as UserIcon, Clock, AlertCircle, CheckCircle2, Download, GraduationCap, Briefcase, Moon, Sun } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { 
@@ -25,6 +25,7 @@ import {
 import { ptBR } from 'date-fns/locale';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db, auth, signInAnonymously } from './firebase';
+import DarkModeToggle from './components/DarkModeToggle';
 
 const LOCAL_OPTIONS = [
   "RECEPÇÃO", "VIRADOR", "GIROFLEX", "CLASSIFICAÇÃO", 
@@ -63,6 +64,15 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
   const [isDownloading, setIsDownloading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -70,11 +80,10 @@ export default function App() {
   const totalHours = 432;
 
   const classesList = [
-    { id: 'turma a', name: 'Turma A', color: 'bg-blue-500' },
-    { id: 'turma b', name: 'Turma B', color: 'bg-purple-500' },
-    { id: 'turma c', name: 'Turma C', color: 'bg-orange-500' },
-    { id: 'turma c cg', name: 'Turma C CG', color: 'bg-green-500' },
-    { id: 'turma d', name: 'Turma D', color: 'bg-red-500' },
+    { id: 'turma a', name: 'TURMA A', letter: 'A', color: 'bg-[#3b82f6]', students: 32 },
+    { id: 'turma b', name: 'TURMA B', letter: 'B', color: 'bg-[#10b981]', students: 28 },
+    { id: 'turma c', name: 'TURMA C', letter: 'C', color: 'bg-[#f97316]', students: 35 },
+    { id: 'turma d', name: 'TURMA D', letter: 'D', color: 'bg-[#ef4444]', students: 25 },
   ];
 
   useEffect(() => {
@@ -106,7 +115,7 @@ export default function App() {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#f9fafb' // Match the background color (bg-gray-50)
+        backgroundColor: '#f9fafb' // Match the background color (bg-background)
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -141,29 +150,29 @@ export default function App() {
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="absolute z-50 bottom-full mb-2 bg-white rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 p-4 w-[280px] left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0"
+        className="absolute z-50 bottom-full mb-2 bg-surface rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-border-subtle p-4 w-[280px] left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0"
       >
         <div className="flex items-center justify-between mb-4">
           <button 
             onClick={(e) => { e.stopPropagation(); setCurrentMonth(subMonths(currentMonth, 1)); }}
-            className="p-1.5 hover:bg-gray-50 rounded-full transition-colors"
+            className="p-1.5 hover:bg-background rounded-full transition-colors"
           >
-            <ChevronLeft className="w-4 h-4 text-gray-600" />
+            <ChevronLeft className="w-4 h-4 text-content-muted" />
           </button>
-          <span className="text-sm font-bold text-gray-800 capitalize">
+          <span className="text-sm font-bold text-content capitalize">
             {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
           </span>
           <button 
             onClick={(e) => { e.stopPropagation(); setCurrentMonth(addMonths(currentMonth, 1)); }}
-            className="p-1.5 hover:bg-gray-50 rounded-full transition-colors"
+            className="p-1.5 hover:bg-background rounded-full transition-colors"
           >
-            <ChevronRight className="w-4 h-4 text-gray-600" />
+            <ChevronRight className="w-4 h-4 text-content-muted" />
           </button>
         </div>
 
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, i) => (
-            <div key={i} className="text-[10px] font-bold text-gray-400 text-center py-1">
+            <div key={i} className="text-[10px] font-bold text-content-muted text-center py-1">
               {day}
             </div>
           ))}
@@ -186,7 +195,7 @@ export default function App() {
                   h-8 w-8 rounded-xl text-xs flex items-center justify-center transition-all
                   ${isSelected ? 'bg-blue-500 text-white font-bold shadow-md' : 
                     isToday ? 'bg-blue-50 text-blue-600 font-bold' :
-                    isCurrentMonth ? 'text-gray-700 hover:bg-gray-50' : 'text-gray-300'}
+                    isCurrentMonth ? 'text-content hover:bg-background' : 'text-content-muted'}
                 `}
               >
                 {format(day, 'd')}
@@ -247,7 +256,7 @@ export default function App() {
   }, 0);
 
   return (
-    <div className="min-h-screen bg-[#f2f2f6] text-gray-900 font-sans selection:bg-blue-200">
+    <div className="min-h-screen bg-background text-content font-sans selection:bg-blue-200">
       <AnimatePresence mode="wait">
         {!isLoggedIn ? (
           <motion.div 
@@ -255,14 +264,17 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="min-h-screen flex items-center justify-center p-4"
+            className="min-h-screen flex items-center justify-center p-4 relative"
           >
-            <div className="bg-white rounded-[32px] p-8 shadow-xl max-w-md w-full border border-gray-100 flex flex-col items-center text-center">
+            <div className="absolute top-6 right-6">
+              <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
+            </div>
+            <div className="bg-surface rounded-[32px] p-8 shadow-xl max-w-md w-full border border-border-subtle flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
                 <Briefcase className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Bem-vindo</h1>
-              <p className="text-gray-500 mb-8">Faça login com seu email corporativo</p>
+              <h1 className="text-3xl font-bold text-content mb-2 tracking-tight">Bem-vindo</h1>
+              <p className="text-content-muted mb-8">Faça login com seu email corporativo</p>
               
               <form onSubmit={async (e) => {
                 e.preventDefault();
@@ -286,7 +298,7 @@ export default function App() {
                   }
 
                   // 2. Verifica se é aluno em alguma turma
-                  const turmas = ['turma a', 'turma b', 'turma c', 'turma c cg', 'turma d'];
+                  const turmas = ['turma a', 'turma b', 'turma c', 'turma d'];
                   for (const turma of turmas) {
                     const turmaQ = query(collection(db, turma), where('email', '==', emailLower));
                     const turmaSnap = await getDocs(turmaQ);
@@ -324,7 +336,7 @@ export default function App() {
                 }
               }} className="space-y-4 w-full text-left">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5 pl-1">
+                  <label htmlFor="email" className="block text-sm font-medium text-content mb-1.5 pl-1">
                     <span className="text-yellow-600 font-bold">*Digite tudo em minúsculo</span>
                   </label>
                   <input
@@ -333,7 +345,7 @@ export default function App() {
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     placeholder="nome@empresa.com.br"
-                    className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+                    className="w-full px-4 py-3 rounded-2xl border border-border-subtle focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-background focus:bg-surface"
                     required
                     disabled={isLoadingLogin}
                   />
@@ -369,15 +381,18 @@ export default function App() {
             <div className="max-w-4xl mx-auto px-4 mb-8">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Turmas</h1>
-                  <p className="text-gray-500">Selecione uma turma para visualizar os alunos</p>
+                  <h1 className="text-2xl font-bold text-content">Turmas</h1>
+                  <p className="text-content-muted">Selecione uma turma para visualizar os usuários</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium cursor-pointer" onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setSelectedClass(null); }}>
-                  {loginEmail.charAt(0).toUpperCase()}
+                <div className="flex items-center gap-4">
+                  <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
+                  <div className="w-10 h-10 rounded-full bg-border-subtle flex items-center justify-center text-content-muted font-medium cursor-pointer" onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setSelectedClass(null); }}>
+                    {loginEmail.charAt(0).toUpperCase()}
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {classesList.map((cls, index) => (
                   <motion.div
                     key={cls.id}
@@ -410,10 +425,24 @@ export default function App() {
                         setIsLoadingTrainees(false);
                       }
                     }}
-                    className={`${cls.color} rounded-[24px] p-6 text-white shadow-sm hover:shadow-md transition-all cursor-pointer`}
+                    className="bg-surface rounded-[32px] p-8 flex flex-col items-center justify-center shadow-sm border border-border-subtle hover:shadow-md transition-all cursor-pointer"
                   >
-                    <h3 className="text-xl font-bold mb-2">{cls.name}</h3>
-                    <p className="text-white/80 text-sm">Clique para ver os alunos</p>
+                    <div className={`w-16 h-16 rounded-full ${cls.color} flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-sm`}>
+                      {cls.letter}
+                    </div>
+                    <h3 className="text-lg font-bold text-content tracking-wide mb-1">{cls.name}</h3>
+                    <p className="text-sm text-content-muted mb-6">{cls.students} alunos</p>
+                    
+                    <div className="flex items-center justify-center -space-x-2">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="w-8 h-8 rounded-full bg-background border-2 border-surface flex items-center justify-center z-10">
+                          <UserIcon className="w-4 h-4 text-green-500" />
+                        </div>
+                      ))}
+                      <div className="w-8 h-8 rounded-full bg-background border-2 border-surface flex items-center justify-center z-0 text-[10px] font-medium text-content-muted">
+                        +{cls.students - 3}
+                      </div>
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -432,17 +461,18 @@ export default function App() {
                 <div className="flex items-center gap-4">
                   <button 
                     onClick={() => setSelectedClass(null)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-2 hover:bg-border-subtle rounded-full transition-colors"
                   >
-                    <ArrowLeft className="w-6 h-6 text-gray-600" />
+                    <ArrowLeft className="w-6 h-6 text-content-muted" />
                   </button>
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Alunos</h1>
-                    <p className="text-gray-500 capitalize">{selectedClass}</p>
+                    <h1 className="text-2xl font-bold text-content">Alunos</h1>
+                    <p className="text-content-muted capitalize">{selectedClass}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium cursor-pointer" onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setSelectedClass(null); }}>
+                  <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
+                  <div className="w-10 h-10 rounded-full bg-border-subtle flex items-center justify-center text-content-muted font-medium cursor-pointer" onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setSelectedClass(null); }}>
                     {loginEmail.charAt(0).toUpperCase()}
                   </div>
                 </div>
@@ -453,8 +483,8 @@ export default function App() {
                   <div className="w-8 h-8 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
                 </div>
               ) : trainees.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-[24px] border border-gray-100">
-                  <p className="text-gray-500">Nenhum aluno encontrado nesta turma.</p>
+                <div className="text-center py-12 bg-surface rounded-[24px] border border-border-subtle">
+                  <p className="text-content-muted">Nenhum aluno encontrado nesta turma.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -485,7 +515,7 @@ export default function App() {
                           setUserStatus(null);
                         }
                       }}
-                      className="bg-white rounded-[24px] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-100"
+                      className="bg-surface rounded-[24px] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border border-border-subtle"
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -493,8 +523,8 @@ export default function App() {
                             <UserIcon className="w-5 h-5" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900">{trainee.name}</h3>
-                            <p className="text-xs text-gray-500">Mat: {trainee.matricula}</p>
+                            <h3 className="font-semibold text-content">{trainee.name}</h3>
+                            <p className="text-xs text-content-muted">Mat: {trainee.matricula}</p>
                           </div>
                         </div>
                         <div className={`w-2 h-2 rounded-full ${
@@ -504,15 +534,15 @@ export default function App() {
                       </div>
                       
                       <div className="mb-3">
-                        <p className="text-sm text-gray-600 truncate">{trainee.funcao || 'Sem função'}</p>
+                        <p className="text-sm text-content-muted truncate">{trainee.funcao || 'Sem função'}</p>
                       </div>
 
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-500 font-medium">Progresso</span>
-                          <span className="text-gray-900 font-bold">{trainee.progress}%</span>
+                          <span className="text-content-muted font-medium">Progresso</span>
+                          <span className="text-content font-bold">{trainee.progress}%</span>
                         </div>
-                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-1.5 w-full bg-border-subtle rounded-full overflow-hidden">
                           <div 
                             className={`h-full rounded-full ${
                               trainee.progress === 100 ? 'bg-green-500' : 'bg-blue-500'
@@ -536,20 +566,23 @@ export default function App() {
             className="pt-12"
           >
             <div className="max-w-3xl mx-auto px-4 mb-8">
-              <button 
-                onClick={() => setSelectedTrainee(null)}
-                className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors mb-6"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Voltar para Usuários</span>
-              </button>
+              <div className="flex items-center justify-between mb-6">
+                <button 
+                  onClick={() => setSelectedTrainee(null)}
+                  className="flex items-center gap-2 text-content-muted hover:text-content transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span className="font-medium">Voltar para Usuários</span>
+                </button>
+                <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
+              </div>
               
               <div className="text-center mb-10">
                 <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-4">
                   <UserIcon className="w-8 h-8" />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">{selectedTrainee.name}</h1>
-                <p className="text-gray-500">Selecione a situação atual do usuário</p>
+                <h1 className="text-2xl font-bold text-content">{selectedTrainee.name}</h1>
+                <p className="text-content-muted">Selecione a situação atual do usuário</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -561,13 +594,13 @@ export default function App() {
                     setUserStatuses(prev => ({ ...prev, [selectedTrainee.id]: 'estagio' }));
                     setActiveTab('timeline');
                   }}
-                  className="bg-white rounded-[28px] p-8 shadow-sm hover:shadow-md transition-all border border-gray-100 flex flex-col items-center text-center group"
+                  className="bg-surface rounded-[28px] p-8 shadow-sm hover:shadow-md transition-all border border-border-subtle flex flex-col items-center text-center group"
                 >
                   <div className="w-16 h-16 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center mb-4 group-hover:bg-orange-500 group-hover:text-white transition-colors">
                     <GraduationCap className="w-8 h-8" />
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Estágio</h2>
-                  <p className="text-sm text-gray-500">Usuário em período de estágio ou treinamento inicial.</p>
+                  <h2 className="text-xl font-semibold text-content mb-2">Estágio</h2>
+                  <p className="text-sm text-content-muted">Usuário em período de estágio ou treinamento inicial.</p>
                 </motion.button>
 
                 <motion.button
@@ -578,13 +611,13 @@ export default function App() {
                     setUserStatuses(prev => ({ ...prev, [selectedTrainee.id]: 'efetivado' }));
                     setActiveTab('pending');
                   }}
-                  className="bg-white rounded-[28px] p-8 shadow-sm hover:shadow-md transition-all border border-gray-100 flex flex-col items-center text-center group"
+                  className="bg-surface rounded-[28px] p-8 shadow-sm hover:shadow-md transition-all border border-border-subtle flex flex-col items-center text-center group"
                 >
                   <div className="w-16 h-16 rounded-full bg-green-50 text-green-500 flex items-center justify-center mb-4 group-hover:bg-green-500 group-hover:text-white transition-colors">
                     <Briefcase className="w-8 h-8" />
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Efetivado</h2>
-                  <p className="text-sm text-gray-500">Usuário já efetivado no cargo atual.</p>
+                  <h2 className="text-xl font-semibold text-content mb-2">Efetivado</h2>
+                  <p className="text-sm text-content-muted">Usuário já efetivado no cargo atual.</p>
                 </motion.button>
               </div>
             </div>
@@ -598,25 +631,28 @@ export default function App() {
             className="pb-24"
           >
             {/* Header */}
-            <header className="pt-14 pb-4 px-4 sticky top-0 bg-[#f2f2f6]/80 backdrop-blur-xl z-10 flex items-center gap-4">
-              <button 
-                onClick={() => setUserStatus(null)} 
-                className="p-2 rounded-full hover:bg-gray-200/80 transition-colors bg-white shadow-sm"
-              >
-                <ArrowLeft className="w-6 h-6" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">{selectedTrainee.name}</h1>
-                <p className="text-sm text-gray-500 font-medium">Mat: {selectedTrainee.matricula} • {userStatus === 'estagio' ? 'Estágio' : 'Efetivado'}</p>
+            <header className="pt-14 pb-4 px-4 sticky top-0 bg-background/80 backdrop-blur-xl z-10 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setUserStatus(null)} 
+                  className="p-2 rounded-full hover:bg-border-subtle/80 transition-colors bg-surface shadow-sm"
+                >
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
+                <div>
+                  <h1 className="text-2xl font-semibold tracking-tight">{selectedTrainee.name}</h1>
+                  <p className="text-sm text-content-muted font-medium">Mat: {selectedTrainee.matricula} • {userStatus === 'estagio' ? 'Estágio' : 'Efetivado'}</p>
+                </div>
               </div>
+              <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
             </header>
 
             <main className="px-4 max-w-5xl mx-auto mt-4">
               {/* Top Card Toggle */}
               {userStatus === 'estagio' && (
-                <div className="bg-white rounded-[28px] p-2 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] mb-6 flex relative max-w-lg mx-auto">
+                <div className="bg-surface rounded-[28px] p-2 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] mb-6 flex relative max-w-lg mx-auto">
                   <div 
-                    className={`absolute top-2 bottom-2 w-[calc(33.33%-8px)] bg-gray-100 rounded-[20px] transition-transform duration-300 ease-in-out ${
+                    className={`absolute top-2 bottom-2 w-[calc(33.33%-8px)] bg-border-subtle rounded-[20px] transition-transform duration-300 ease-in-out ${
                       activeTab === 'timeline' ? 'translate-x-0' : 
                       activeTab === 'form' ? 'translate-x-[calc(100%+8px)]' : 
                       'translate-x-[calc(200%+16px)]'
@@ -624,19 +660,19 @@ export default function App() {
                   />
                   <button 
                     onClick={() => setActiveTab('timeline')}
-                    className={`flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 transition-colors ${activeTab === 'timeline' ? 'text-gray-900' : 'text-gray-500'}`}
+                    className={`flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 transition-colors ${activeTab === 'timeline' ? 'text-content' : 'text-content-muted'}`}
                   >
                     Linha do Tempo
                   </button>
                   <button 
                     onClick={() => setActiveTab('form')}
-                    className={`flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 transition-colors ${activeTab === 'form' ? 'text-gray-900' : 'text-gray-500'}`}
+                    className={`flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 transition-colors ${activeTab === 'form' ? 'text-content' : 'text-content-muted'}`}
                   >
                     Formulário
                   </button>
                   <button 
                     onClick={() => setActiveTab('pending')}
-                    className={`flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 transition-colors ${activeTab === 'pending' ? 'text-gray-900' : 'text-gray-500'}`}
+                    className={`flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 transition-colors ${activeTab === 'pending' ? 'text-content' : 'text-content-muted'}`}
                   >
                     Treinamentos
                   </button>
@@ -644,10 +680,10 @@ export default function App() {
               )}
               
               {userStatus === 'efetivado' && (
-                <div className="bg-white rounded-[28px] p-2 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] mb-6 flex relative max-w-lg mx-auto">
-                  <div className="absolute top-2 bottom-2 left-2 right-2 bg-gray-100 rounded-[20px]" />
+                <div className="bg-surface rounded-[28px] p-2 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] mb-6 flex relative max-w-lg mx-auto">
+                  <div className="absolute top-2 bottom-2 left-2 right-2 bg-border-subtle rounded-[20px]" />
                   <button 
-                    className="flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 text-gray-900"
+                    className="flex-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold relative z-10 text-content"
                   >
                     Treinamentos
                   </button>
@@ -658,10 +694,10 @@ export default function App() {
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-[28px] p-6 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] max-w-7xl mx-auto"
+                  className="bg-surface rounded-[28px] p-6 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] max-w-7xl mx-auto"
                 >
                   <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-800 max-md:text-center">Progresso do Treinamento</h2>
+                    <h2 className="text-lg font-semibold text-content max-md:text-center">Progresso do Treinamento</h2>
                     <div className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-medium max-md:h-[35px] max-md:w-[105px] max-md:px-0 max-md:py-0 max-md:flex max-md:items-center max-md:justify-center max-md:text-center">
                       {progressHours}h / {totalHours}h
                     </div>
@@ -693,7 +729,7 @@ export default function App() {
                     `}</style>
 
                     {/* Background Line */}
-                    <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-1.5 bg-gray-100 rounded-full md:top-1/2 md:-translate-y-1/2 md:left-0 md:right-0 md:h-1.5 md:w-full md:translate-x-0"></div>
+                    <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-1.5 bg-border-subtle rounded-full md:top-1/2 md:-translate-y-1/2 md:left-0 md:right-0 md:h-1.5 md:w-full md:translate-x-0"></div>
                     
                     {/* Progress Line */}
                     <div 
@@ -744,11 +780,11 @@ export default function App() {
                               {/* Center: Dot */}
                               <div className="relative w-7 h-7 flex items-center justify-center shrink-0">
                                 {/* Background dot */}
-                                <div className="absolute inset-0 rounded-full border-4 border-white bg-gray-200 shadow-sm"></div>
+                                <div className="absolute inset-0 rounded-full border-4 border-surface bg-border-subtle shadow-sm"></div>
                                 
                                 {/* Animated colored dot */}
                                 <motion.div
-                                  className="absolute inset-0 rounded-full border-4 border-white shadow-sm"
+                                  className="absolute inset-0 rounded-full border-4 border-surface shadow-sm"
                                   initial={{ backgroundColor: '#e5e7eb', scale: 0.5, opacity: 0 }}
                                   animate={{
                                     backgroundColor: isReached ? milestone.color : '#e5e7eb',
@@ -778,7 +814,7 @@ export default function App() {
                               {milestone.comment && (
                                 <div className="absolute right-full top-1/2 -translate-y-1/2 pr-4 w-[calc(50vw-45px)] sm:w-[200px] md:right-auto md:left-1/2 md:-translate-x-1/2 md:translate-y-0 md:top-full md:pt-6 md:pr-0 md:w-[140px] z-20">
                                   <motion.div 
-                                    className="bg-gray-50 border border-gray-100 p-3 rounded-2xl text-center relative shadow-sm"
+                                    className="bg-background border border-border-subtle p-3 rounded-2xl text-center relative shadow-sm"
                                     initial={{ opacity: 0.5, scale: 0.9 }}
                                     animate={{
                                       opacity: isReached ? 1 : 0.4,
@@ -796,8 +832,8 @@ export default function App() {
                                     {/* Triangle pointer (Desktop: Top) */}
                                     <div className="hidden md:block absolute left-1/2 -translate-x-1/2 w-0 h-0 border-x-[6px] border-x-transparent -top-2 border-b-[8px] border-b-gray-50"></div>
                                     
-                                    <p className="text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Avaliação do Inspetor</p>
-                                    <p className={`text-xs leading-relaxed ${isReached ? 'text-gray-700' : 'text-gray-400'} mb-2`}>
+                                    <p className="text-[10px] text-content-muted font-bold mb-1 uppercase tracking-wider">Avaliação do Inspetor</p>
+                                    <p className={`text-xs leading-relaxed ${isReached ? 'text-content' : 'text-content-muted'} mb-2`}>
                                       {milestone.comment}
                                     </p>
                                     {milestone.inspector && (
@@ -814,7 +850,7 @@ export default function App() {
                               {/* Label (Right on mobile, Top on desktop) */}
                               <div className="absolute left-full top-1/2 -translate-y-1/2 pl-4 md:left-1/2 md:-translate-x-1/2 md:translate-y-0 md:bottom-full md:pb-6 md:top-auto md:pl-0 text-left md:text-center w-max z-20">
                                 <motion.div 
-                                  className="bg-white/80 backdrop-blur-sm py-1 px-2 rounded-md"
+                                  className="bg-surface/80 backdrop-blur-sm py-1 px-2 rounded-md"
                                   initial={{ opacity: 0.5 }}
                                   animate={{ opacity: isReached ? 1 : 0.5 }}
                                   transition={{
@@ -827,7 +863,7 @@ export default function App() {
                                     <p className="text-sm font-bold transition-colors duration-300 whitespace-nowrap" style={{ color: isReached ? '#111827' : '#9ca3af' }}>
                                       {milestone.label}
                                     </p>
-                                    <p className="text-xs text-gray-500 whitespace-nowrap">{milestone.hours} horas</p>
+                                    <p className="text-xs text-content-muted whitespace-nowrap">{milestone.hours} horas</p>
                                   </div>
                                 </motion.div>
                               </div>
@@ -858,44 +894,44 @@ export default function App() {
                     </button>
                   </div>
                   
-                  <div ref={formRef} className="bg-gray-50 -mx-4 px-4 sm:mx-0 sm:px-0 pb-4">
-                    <div className="bg-white rounded-[28px] p-6 shadow-sm mb-6">
-                      <h2 className="text-lg font-semibold mb-4 text-gray-800">Dados do Treinamento</h2>
+                  <div ref={formRef} className="bg-background -mx-4 px-4 sm:mx-0 sm:px-0 pb-4">
+                    <div className="bg-surface rounded-[28px] p-6 shadow-sm mb-6">
+                      <h2 className="text-lg font-semibold mb-4 text-content">Dados do Treinamento</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1 md:col-span-3">
-                        <label className="text-xs font-medium text-gray-500 ml-1">Nome</label>
-                        <input type="text" className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
+                        <label className="text-xs font-medium text-content-muted ml-1">Nome</label>
+                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
                       </div>
                       <div className="space-y-1 md:col-span-1">
-                        <label className="text-xs font-medium text-gray-500 ml-1">Matrícula</label>
-                        <input type="text" className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.matricula} onChange={e => setFormData({...formData, matricula: e.target.value})} />
+                        <label className="text-xs font-medium text-content-muted ml-1">Matrícula</label>
+                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.matricula} onChange={e => setFormData({...formData, matricula: e.target.value})} />
                       </div>
                       <div className="space-y-1 md:col-span-2">
-                        <label className="text-xs font-medium text-gray-500 ml-1">Supervisor</label>
-                        <input type="text" className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.supervisor} onChange={e => setFormData({...formData, supervisor: e.target.value})} />
+                        <label className="text-xs font-medium text-content-muted ml-1">Supervisor</label>
+                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.supervisor} onChange={e => setFormData({...formData, supervisor: e.target.value})} />
                       </div>
                       <div className="space-y-1 md:col-span-3">
-                        <label className="text-xs font-medium text-gray-500 ml-1">Função em Treinamento</label>
-                        <input type="text" className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.funcao} onChange={e => setFormData({...formData, funcao: e.target.value})} />
+                        <label className="text-xs font-medium text-content-muted ml-1">Função em Treinamento</label>
+                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.funcao} onChange={e => setFormData({...formData, funcao: e.target.value})} />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-gray-500 ml-1">Horas previstas</label>
-                        <input type="text" className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.horasPrevistas} onChange={e => setFormData({...formData, horasPrevistas: e.target.value})} />
+                        <label className="text-xs font-medium text-content-muted ml-1">Horas previstas</label>
+                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.horasPrevistas} onChange={e => setFormData({...formData, horasPrevistas: e.target.value})} />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-gray-500 ml-1">Horas realizadas</label>
-                        <input type="text" className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.horasRealizadas} onChange={e => setFormData({...formData, horasRealizadas: e.target.value})} />
+                        <label className="text-xs font-medium text-content-muted ml-1">Horas realizadas</label>
+                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.horasRealizadas} onChange={e => setFormData({...formData, horasRealizadas: e.target.value})} />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-gray-500 ml-1">Horas faltantes</label>
-                        <input type="text" className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.horasFaltantes} onChange={e => setFormData({...formData, horasFaltantes: e.target.value})} />
+                        <label className="text-xs font-medium text-content-muted ml-1">Horas faltantes</label>
+                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.horasFaltantes} onChange={e => setFormData({...formData, horasFaltantes: e.target.value})} />
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-[28px] p-6 shadow-sm">
+                  <div className="bg-surface rounded-[28px] p-6 shadow-sm">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-                      <h2 className="text-lg font-semibold text-gray-800">Registros de Atividade</h2>
+                      <h2 className="text-lg font-semibold text-content">Registros de Atividade</h2>
                       <button onClick={addRow} className="flex items-center justify-center gap-2 text-sm font-medium text-blue-600 bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-100 transition-colors max-md:w-[210px] max-md:h-[60px] max-md:text-[14px] max-md:leading-[18px] max-md:-ml-[2px]">
                         <Plus className="w-4 h-4" /> Adicionar Linha
                       </button>
@@ -904,14 +940,14 @@ export default function App() {
                     <div className="max-md:overflow-x-auto md:overflow-visible pb-4">
                       <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
-                          <tr className="border-b border-gray-100">
-                            <th className="pb-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">Local</th>
-                            <th className="pb-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-[25%]">Equipamento/Atividade</th>
-                            <th className="pb-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">Data</th>
-                            <th className="pb-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">Hora</th>
-                            <th className="pb-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">Duração</th>
-                            <th className="pb-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">Instrutor</th>
-                            <th className="pb-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">Avaliação/Obs</th>
+                          <tr className="border-b border-border-subtle">
+                            <th className="pb-3 px-2 text-xs font-medium text-content-muted uppercase tracking-wider w-[15%]">Local</th>
+                            <th className="pb-3 px-2 text-xs font-medium text-content-muted uppercase tracking-wider w-[25%]">Equipamento/Atividade</th>
+                            <th className="pb-3 px-2 text-xs font-medium text-content-muted uppercase tracking-wider w-[10%]">Data</th>
+                            <th className="pb-3 px-2 text-xs font-medium text-content-muted uppercase tracking-wider w-[10%]">Hora</th>
+                            <th className="pb-3 px-2 text-xs font-medium text-content-muted uppercase tracking-wider w-[10%]">Duração</th>
+                            <th className="pb-3 px-2 text-xs font-medium text-content-muted uppercase tracking-wider w-[15%]">Instrutor</th>
+                            <th className="pb-3 px-2 text-xs font-medium text-content-muted uppercase tracking-wider w-[15%]">Avaliação/Obs</th>
                             <th className="pb-3 px-2 w-10"></th>
                           </tr>
                         </thead>
@@ -922,12 +958,12 @@ export default function App() {
                                 <div className="relative" ref={openDropdownId === `local-${row.id}` ? dropdownRef : null}>
                                   <button
                                     onClick={() => setOpenDropdownId(openDropdownId === `local-${row.id}` ? null : `local-${row.id}`)}
-                                    className="w-full bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-500 focus:bg-white rounded-lg px-2 py-1.5 outline-none text-sm transition-colors flex items-center justify-between group/btn"
+                                    className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors flex items-center justify-between group/btn"
                                   >
-                                    <span className={row.local ? 'text-gray-900' : 'text-gray-400'}>
+                                    <span className={row.local ? 'text-content' : 'text-content-muted'}>
                                       {row.local || 'Selecione...'}
                                     </span>
-                                    <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${openDropdownId === `local-${row.id}` ? 'rotate-180' : ''}`} />
+                                    <ChevronDown className={`w-3.5 h-3.5 text-content-muted transition-transform duration-200 ${openDropdownId === `local-${row.id}` ? 'rotate-180' : ''}`} />
                                   </button>
 
                                   <AnimatePresence>
@@ -937,7 +973,7 @@ export default function App() {
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: -10, scale: 0.95 }}
                                         transition={{ duration: 0.15, ease: "easeOut" }}
-                                        className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden py-1 min-w-[160px]"
+                                        className="absolute z-50 left-0 right-0 mt-1 bg-surface border border-border-subtle rounded-xl shadow-xl overflow-hidden py-1 min-w-[160px]"
                                       >
                                         {LOCAL_OPTIONS.map((option) => (
                                           <button
@@ -946,7 +982,7 @@ export default function App() {
                                               updateRow(row.id, 'local', option);
                                               setOpenDropdownId(null);
                                             }}
-                                            className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-blue-50 hover:text-blue-600 ${row.local === option ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-600'}`}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-blue-50 hover:text-blue-600 ${row.local === option ? 'bg-blue-50 text-blue-600 font-medium' : 'text-content-muted'}`}
                                           >
                                             {option}
                                           </button>
@@ -956,7 +992,7 @@ export default function App() {
                                   </AnimatePresence>
                                 </div>
                               </td>
-                              <td className="py-2 px-1"><input type="text" className="w-full bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-500 focus:bg-white rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" value={row.equipamento} onChange={e => updateRow(row.id, 'equipamento', e.target.value)} /></td>
+                              <td className="py-2 px-1"><input type="text" className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" value={row.equipamento} onChange={e => updateRow(row.id, 'equipamento', e.target.value)} /></td>
                               <td className="py-2 px-1 relative">
                                 <div className="relative" ref={openDropdownId === `date-${row.id}` ? datePickerRef : null}>
                                   <button
@@ -964,12 +1000,12 @@ export default function App() {
                                       setOpenDropdownId(openDropdownId === `date-${row.id}` ? null : `date-${row.id}`);
                                       if (row.data) setCurrentMonth(parseISO(row.data));
                                     }}
-                                    className="w-full bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-500 focus:bg-white rounded-lg px-2 py-1.5 outline-none text-sm transition-colors flex items-center justify-between group/btn"
+                                    className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors flex items-center justify-between group/btn"
                                   >
-                                    <span className={row.data ? 'text-gray-900' : 'text-gray-400'}>
+                                    <span className={row.data ? 'text-content' : 'text-content-muted'}>
                                       {row.data ? format(parseISO(row.data), 'dd/MM/yyyy') : 'DD/MM/AAAA'}
                                     </span>
-                                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                    <Calendar className="w-3.5 h-3.5 text-content-muted" />
                                   </button>
 
                                   <AnimatePresence>
@@ -977,12 +1013,12 @@ export default function App() {
                                   </AnimatePresence>
                                 </div>
                               </td>
-                              <td className="py-2 px-1"><input type="text" placeholder="00:00" className="w-full max-md:h-[34px] max-md:w-[53px] bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-500 focus:bg-white rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" value={row.hora} onChange={e => updateRow(row.id, 'hora', e.target.value)} /></td>
-                              <td className="py-2 px-1"><input type="text" placeholder="0h" className="w-full bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-500 focus:bg-white rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" value={row.duracao} onChange={e => updateRow(row.id, 'duracao', e.target.value)} /></td>
-                              <td className="py-2 px-1"><input type="text" className="w-full bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-500 focus:bg-white rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" value={row.instrutor} onChange={e => updateRow(row.id, 'instrutor', e.target.value)} /></td>
-                              <td className="py-2 px-1"><input type="text" className="w-full bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-500 focus:bg-white rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" value={row.avaliacao} onChange={e => updateRow(row.id, 'avaliacao', e.target.value)} /></td>
+                              <td className="py-2 px-1"><input type="text" placeholder="00:00" className="w-full max-md:h-[34px] max-md:w-[53px] bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" value={row.hora} onChange={e => updateRow(row.id, 'hora', e.target.value)} /></td>
+                              <td className="py-2 px-1"><input type="text" placeholder="0h" className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" value={row.duracao} onChange={e => updateRow(row.id, 'duracao', e.target.value)} /></td>
+                              <td className="py-2 px-1"><input type="text" className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" value={row.instrutor} onChange={e => updateRow(row.id, 'instrutor', e.target.value)} /></td>
+                              <td className="py-2 px-1"><input type="text" className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" value={row.avaliacao} onChange={e => updateRow(row.id, 'avaliacao', e.target.value)} /></td>
                               <td className="py-2 px-1 text-center">
-                                <button onClick={() => removeRow(row.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all focus:opacity-100">
+                                <button onClick={() => removeRow(row.id)} className="p-1.5 text-content-muted hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all focus:opacity-100">
                                   <Trash2 className="w-4 h-4" />
                                 </button>
                               </td>
@@ -1002,8 +1038,8 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-4"
                 >
-                  <div className="bg-white rounded-[28px] p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold mb-6 text-gray-800">Treinamentos Pendentes</h2>
+                  <div className="bg-surface rounded-[28px] p-6 shadow-sm">
+                    <h2 className="text-lg font-semibold mb-6 text-content">Treinamentos Pendentes</h2>
                     
                     <div className="space-y-4">
                       {[
@@ -1012,15 +1048,15 @@ export default function App() {
                         { title: 'Manutenção de Motores Diesel', status: 'pending', date: '22 Abr 2024', priority: 'Baixa' },
                         { title: 'Primeiros Socorros Avançado', status: 'overdue', date: '01 Abr 2024', priority: 'Alta' },
                       ].map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-all group">
+                        <div key={idx} className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border-subtle hover:border-blue-200 transition-all group">
                           <div className="flex items-center gap-4">
                             <div className={`w-12 h-12 rounded-full flex items-center justify-center ${item.status === 'overdue' ? 'bg-red-50 text-red-500' : 'bg-orange-50 text-orange-500'}`}>
                               {item.status === 'overdue' ? <AlertCircle className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
                             </div>
                             <div>
-                              <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{item.title}</h3>
+                              <h3 className="font-semibold text-content group-hover:text-blue-600 transition-colors">{item.title}</h3>
                               <div className="flex items-center gap-3 mt-1">
-                                <span className="text-xs text-gray-500 flex items-center gap-1">
+                                <span className="text-xs text-content-muted flex items-center gap-1">
                                   <Calendar className="w-3 h-3" /> {item.date}
                                 </span>
                                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
@@ -1033,7 +1069,7 @@ export default function App() {
                               </div>
                             </div>
                           </div>
-                          <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-bold rounded-xl hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm">
+                          <button className="px-4 py-2 bg-surface border border-border-subtle text-content text-sm font-bold rounded-xl hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm">
                             Iniciar Treinamento
                           </button>
                         </div>
@@ -1042,39 +1078,39 @@ export default function App() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white rounded-[28px] p-6 shadow-sm border border-green-50">
+                    <div className="bg-surface rounded-[28px] p-6 shadow-sm border border-green-50">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center">
                           <CheckCircle2 className="w-5 h-5" />
                         </div>
-                        <h3 className="font-bold text-gray-800">Concluídos Recentemente</h3>
+                        <h3 className="font-bold text-content">Concluídos Recentemente</h3>
                       </div>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                          <span className="text-gray-600">Direção Defensiva</span>
+                        <div className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors">
+                          <span className="text-content-muted">Direção Defensiva</span>
                           <span className="text-green-600 font-bold">100%</span>
                         </div>
-                        <div className="flex justify-between items-center text-sm p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                          <span className="text-gray-600">Ética e Conduta</span>
+                        <div className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors">
+                          <span className="text-content-muted">Ética e Conduta</span>
                           <span className="text-green-600 font-bold">100%</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-[28px] p-6 shadow-sm border border-blue-50">
+                    <div className="bg-surface rounded-[28px] p-6 shadow-sm border border-blue-50">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
                           <Clock className="w-5 h-5" />
                         </div>
-                        <h3 className="font-bold text-gray-800">Próximos Vencimentos</h3>
+                        <h3 className="font-bold text-content">Próximos Vencimentos</h3>
                       </div>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                          <span className="text-gray-600">NR-10 Básico</span>
+                        <div className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors">
+                          <span className="text-content-muted">NR-10 Básico</span>
                           <span className="text-orange-500 font-bold">12 dias</span>
                         </div>
-                        <div className="flex justify-between items-center text-sm p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                          <span className="text-gray-600">Operação Empilhadeira</span>
+                        <div className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors">
+                          <span className="text-content-muted">Operação Empilhadeira</span>
                           <span className="text-orange-500 font-bold">24 dias</span>
                         </div>
                       </div>

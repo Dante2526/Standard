@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@theme {
+  --color-background: var(--bg-main);
+  --color-surface: var(--bg-surface);
+  --color-content: var(--text-main);
+  --color-content-muted: var(--text-muted);
+  --color-border-subtle: var(--border-main);
+}
+
+:root {
+  --bg-main: #f2f2f6;
+  --bg-surface: #ffffff;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --border-main: #f3f4f6;
+}
+
+.dark {
+  --bg-main: #1A202C;
+  --bg-surface: #2D3748;
+  --text-main: #F7FAFC;
+  --text-muted: #A0AEC0;
+  --border-main: #4A5568;
+}

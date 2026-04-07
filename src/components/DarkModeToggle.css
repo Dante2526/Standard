@@ -1,0 +1,343 @@
+/* === BB-8 TOGGLE STYLES === */
+.bb8-toggle {
+    --toggle-size: 8px; /* Ajustado para caber no header */
+    --toggle-width: 10.625em;
+    --toggle-height: 5.625em;
+    --toggle-offset: calc((var(--toggle-height) - var(--bb8-diameter)) / 2);
+    --toggle-bg: linear-gradient(#2c4770, #070e2b 35%, #628cac 50% 70%, #a6c5d4) no-repeat;
+    --bb8-diameter: 4.375em;
+    --radius: 99em;
+    --transition: 0.4s;
+    --accent: #de7d2f;
+    --bb8-bg: #fff;
+    cursor: pointer;
+    font-size: var(--toggle-size);
+    margin: 0;
+    display: inline-block;
+    position: relative;
+    overflow: visible;
+}
+
+.bb8-toggle,
+.bb8-toggle *,
+.bb8-toggle *::before,
+.bb8-toggle *::after {
+    box-sizing: border-box;
+}
+
+.bb8-toggle__checkbox {
+    appearance: none;
+    display: none;
+}
+
+.bb8-toggle__container {
+    width: var(--toggle-width);
+    height: var(--toggle-height);
+    background: var(--toggle-bg);
+    background-size: 100% 11.25em;
+    background-position-y: -5.625em;
+    border-radius: var(--radius);
+    position: relative;
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+.bb8-toggle__scenery,
+.artificial__hidden {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.bb8 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    top: -0.5em;
+    left: var(--toggle-offset);
+    transition: var(--transition);
+    z-index: 10;
+}
+
+.bb8__head-container {
+    position: relative;
+    transition: var(--transition);
+    z-index: 11;
+    transform-origin: 1.25em 3.75em;
+}
+
+.bb8__head {
+    overflow: hidden;
+    margin-bottom: -0.188em;
+    width: 2.5em;
+    height: 1.688em;
+    background: 
+        linear-gradient(transparent 0.063em, dimgray 0.063em 0.313em, transparent 0.313em 0.375em, var(--accent) 0.375em 0.5em, transparent 0.5em 1.313em, silver 1.313em 1.438em, transparent 1.438em),
+        linear-gradient(45deg, transparent 0.188em, var(--bb8-bg) 0.188em 1.25em, transparent 1.25em),
+        linear-gradient(-45deg, transparent 0.188em, var(--bb8-bg) 0.188em 1.25em, transparent 1.25em),
+        linear-gradient(var(--bb8-bg) 1.25em, transparent 1.25em);
+    border-radius: var(--radius) var(--radius) 0 0;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 0.063em 0.125em gray);
+}
+
+.bb8__head::before {
+    content: "";
+    position: absolute;
+    width: 0.563em;
+    height: 0.563em;
+    background: 
+        radial-gradient(0.125em circle at 0.25em 0.375em, red, transparent),
+        radial-gradient(0.063em circle at 0.375em 0.188em, var(--bb8-bg) 50%, transparent 100%),
+        linear-gradient(45deg, #000 0.188em, dimgray 0.313em 0.375em, #000 0.5em);
+    border-radius: var(--radius);
+    top: 0.413em;
+    left: 50%;
+    transform: translate(-50%);
+    box-shadow: 0 0 0 0.089em lightgray, 0.563em 0.281em 0 -0.148em, 0.563em 0.281em 0 -0.1em var(--bb8-bg), 0.563em 0.281em 0 -0.063em;
+    z-index: 1;
+    transition: var(--transition);
+}
+
+.bb8__head::after {
+    content: "";
+    position: absolute;
+    bottom: 0.375em;
+    left: 0;
+    width: 100%;
+    height: 0.188em;
+    background: linear-gradient(to right, var(--accent) 0.125em, transparent 0.125em 0.188em, var(--accent) 0.188em 0.313em, transparent 0.313em 0.375em, var(--accent) 0.375em 0.938em, transparent 0.938em 1em, var(--accent) 1em 1.125em, transparent 1.125em 1.875em, var(--accent) 1.875em 2em, transparent 2em 2.063em, var(--accent) 2.063em 2.25em, transparent 2.25em 2.313em, var(--accent) 2.313em 2.375em, transparent 2.375em 2.438em, var(--accent) 2.438em);
+    transition: var(--transition);
+}
+
+.bb8__antenna {
+    position: absolute;
+    transform: translateY(-90%);
+    width: 0.059em;
+    border-radius: var(--radius) var(--radius) 0 0;
+    transition: var(--transition);
+}
+
+.bb8__antenna:nth-child(1) {
+    height: 0.938em;
+    right: 0.938em;
+    background: linear-gradient(#000 0.188em, silver 0.188em);
+}
+
+.bb8__antenna:nth-child(2) {
+    height: 0.375em;
+    left: 50%;
+    transform: translate(-50%, -90%);
+    background: silver;
+}
+
+.bb8__body {
+    width: 4.375em;
+    height: 4.375em;
+    background: var(--bb8-bg);
+    border-radius: 50% !important;
+    position: relative;
+    overflow: visible;
+    transition: var(--transition);
+    z-index: 9;
+    transform: rotate(45deg);
+    background: 
+        linear-gradient(-90deg, var(--bb8-bg) 4%, var(--accent) 4% 10%, transparent 10% 90%, var(--accent) 90% 96%, var(--bb8-bg) 96%),
+        linear-gradient(var(--bb8-bg) 4%, var(--accent) 4% 10%, transparent 10% 90%, var(--accent) 90% 96%, var(--bb8-bg) 96%),
+        linear-gradient(to right, transparent 2.156em, silver 2.156em 2.219em, transparent 2.188em),
+        linear-gradient(transparent 2.156em, silver 2.156em 2.219em, transparent 2.188em);
+    background-color: var(--bb8-bg);
+}
+
+.bb8__body::before {
+    content: "";
+    width: 2.625em;
+    height: 2.625em;
+    position: absolute;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 0.313em solid var(--accent);
+    background: 
+        radial-gradient(1em circle at center, rgb(236, 236, 236) 50%, transparent 51%),
+        radial-gradient(1.25em circle at center, var(--bb8-bg) 50%, transparent 51%),
+        linear-gradient(-90deg, transparent 42%, var(--accent) 42% 58%, transparent 58%),
+        linear-gradient(var(--bb8-bg) 42%, var(--accent) 42% 58%, var(--bb8-bg) 58%);
+}
+
+.bb8__shadow {
+    width: var(--bb8-diameter);
+    height: 0.875em;
+    border-radius: 50%;
+    background: #3a271c;
+    box-shadow: 0.313em 0 3.125em #3a271c;
+    opacity: 0.25;
+    position: absolute;
+    bottom: 0.175em;
+    left: calc(var(--toggle-offset) - 0.938em);
+    transition: var(--transition);
+    transform: skew(-70deg);
+    z-index: 2;
+}
+
+/* Estados quando o checkbox está marcado (Modo Escuro) */
+.bb8-toggle__checkbox:checked + .bb8-toggle__container {
+    background-position-y: 0;
+}
+
+.bb8-toggle__checkbox:checked ~ .bb8 {
+    left: calc(100% - var(--bb8-diameter) - var(--toggle-offset));
+}
+
+.bb8-toggle__checkbox:checked ~ .bb8 .bb8__body {
+    transform: rotate(225deg);
+}
+
+.bb8-toggle__checkbox:checked ~ .artificial__hidden .bb8__shadow {
+    left: calc(100% - var(--bb8-diameter) - var(--toggle-offset) + 0.938em);
+    transform: skew(70deg);
+}
+
+/* Estrelas e Cenário */
+.bb8-toggle__star {
+    position: absolute;
+    width: 0.063em;
+    height: 0.063em;
+    background: #fff;
+    border-radius: var(--radius);
+    filter: drop-shadow(0 0 0.063em #fff);
+    top: 100%;
+    transition: var(--transition);
+}
+
+.bb8-toggle__checkbox:checked + .bb8-toggle__container .bb8-toggle__scenery .bb8-toggle__star {
+    top: 20%; 
+}
+
+.bb8-toggle__star:nth-child(1) { left: 10%; transition-delay: 0.1s; }
+.bb8-toggle__star:nth-child(2) { left: 30%; top: 120%; transition-delay: 0.2s; }
+.bb8-toggle__star:nth-child(3) { left: 50%; transition-delay: 0.3s; }
+.bb8-toggle__star:nth-child(4) { left: 70%; top: 110%; transition-delay: 0.4s; }
+.bb8-toggle__star:nth-child(5) { left: 90%; transition-delay: 0.5s; }
+.bb8-toggle__star:nth-child(6) { left: 20%; top: 115%; transition-delay: 0.15s; }
+.bb8-toggle__star:nth-child(7) { left: 80%; top: 105%; transition-delay: 0.35s; }
+
+/* Tatooine Suns (Light Mode) */
+.tatto-1 {
+    position: absolute;
+    width: 3.125em;
+    height: 3.125em;
+    border-radius: var(--radius);
+    background: #f4a851;
+    top: 1.25em;
+    left: 6.5em;
+    box-shadow: 0 0 0.625em #f4a851;
+    transition: var(--transition);
+}
+
+.tatto-2 {
+    position: absolute;
+    width: 1.875em;
+    height: 1.875em;
+    border-radius: var(--radius);
+    background: #df6831;
+    top: 2.5em;
+    left: 8.125em;
+    box-shadow: 0 0 0.625em #df6831;
+    transition: var(--transition);
+}
+
+/* Clouds (Light Mode) */
+.bb8-toggle__cloud {
+    position: absolute;
+    background: #fff;
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.bb8-toggle__cloud::before,
+.bb8-toggle__cloud::after {
+    content: "";
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+}
+
+.bb8-toggle__cloud:nth-last-child(3) {
+    width: 3.75em;
+    height: 1.25em;
+    top: 2.5em;
+    left: 6.25em;
+}
+
+.bb8-toggle__cloud:nth-last-child(3)::before {
+    width: 1.5em;
+    height: 1.5em;
+    top: -0.625em;
+    left: 0.625em;
+}
+
+.bb8-toggle__cloud:nth-last-child(3)::after {
+    width: 1em;
+    height: 1em;
+    top: -0.313em;
+    left: 2.188em;
+}
+
+/* Planets (Dark Mode) */
+.gomrassen, .hermes, .chenini {
+    position: absolute;
+    border-radius: var(--radius);
+    transition: var(--transition);
+    top: 100%; 
+}
+
+.gomrassen {
+    width: 3.125em;
+    height: 3.125em;
+    background: #b5b5b5;
+    box-shadow: inset -0.313em -0.313em 0.625em #8a8a8a;
+    left: 1.25em;
+}
+
+.hermes {
+    width: 1.875em;
+    height: 1.875em;
+    background: #8c9cb1;
+    box-shadow: inset -0.188em -0.188em 0.375em #526274;
+    left: 3.75em;
+}
+
+.chenini {
+    width: 1.25em;
+    height: 1.25em;
+    background: #b8c5d1;
+    box-shadow: inset -0.125em -0.125em 0.25em #8c9cb1;
+    left: 6.25em;
+}
+
+/* Dark Mode Transitions for Scenery */
+.bb8-toggle__checkbox:checked + .bb8-toggle__container .tatto-1,
+.bb8-toggle__checkbox:checked + .bb8-toggle__container .tatto-2,
+.bb8-toggle__checkbox:checked + .bb8-toggle__container .bb8-toggle__cloud {
+    top: 100%; 
+}
+
+.bb8-toggle__checkbox:checked + .bb8-toggle__container .gomrassen {
+    top: 1.25em;
+}
+
+.bb8-toggle__checkbox:checked + .bb8-toggle__container .hermes {
+    top: 2.5em;
+}
+
+.bb8-toggle__checkbox:checked + .bb8-toggle__container .chenini {
+    top: 1.25em;
+}
