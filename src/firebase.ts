@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 import newFirebaseConfig from '../firebase-applet-config.json';
 
 // Configuração do banco de dados ANTIGO (apenas leitura de usuários, etc)
@@ -22,5 +23,13 @@ export const auth = getAuth(oldApp);
 const newApp = initializeApp(newFirebaseConfig, 'newApp');
 export const newDb = getFirestore(newApp, (newFirebaseConfig as any).firestoreDatabaseId || '(default)');
 export const newAuth = getAuth(newApp);
+
+let storageInstance: any = null;
+try {
+  storageInstance = getStorage(newApp);
+} catch (error) {
+  console.warn("Firebase Storage is not available. Please enable it in the Firebase Console.", error);
+}
+export const newStorage = storageInstance;
 
 export { signInAnonymously };

@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Plus, Trash2, ChevronDown, Calendar, ChevronLeft, ChevronRight, User as UserIcon, Clock, AlertCircle, CheckCircle2, Download, GraduationCap, Briefcase, Moon, Sun, Lightbulb, TrendingUp, Target } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronDown, Calendar, ChevronLeft, ChevronRight, User as UserIcon, Clock, AlertCircle, CheckCircle2, Download, GraduationCap, Briefcase, Moon, Sun, Lightbulb, TrendingUp, Target, Upload, Check, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -26,8 +26,9 @@ import {
   isValid
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { collection, query, where, getDocs, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { db, auth, signInAnonymously, newDb, newAuth } from './firebase';
+import { collection, query, where, getDocs, doc, setDoc, getDoc, onSnapshot, serverTimestamp, addDoc } from 'firebase/firestore';
+import { db, auth, signInAnonymously, newDb, newAuth, newStorage } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import DarkModeToggle from './components/DarkModeToggle';
 import { KAIZEN_DATA } from './kaizenData';
 
@@ -74,6 +75,64 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  
+  // Global Upload State
+  const [showGlobalUploadModal, setShowGlobalUploadModal] = useState(false);
+  const [globalUploadType, setGlobalUploadType] = useState<'kaizen' | 'treinamento'>('kaizen');
+  const [globalFile, setGlobalFile] = useState<File | null>(null);
+  const [isUploadingGlobal, setIsUploadingGlobal] = useState(false);
+  const [globalUploadSuccess, setGlobalUploadSuccess] = useState(false);
+
+  const scrollToLetter = (letter: string) => {
+    const firstTrainee = trainees.find(t => t.name.toUpperCase().startsWith(letter));
+    if (firstTrainee) {
+      const element = document.getElementById(`trainee-card-${firstTrainee.id}`);
+      if (element) {
+        const yOffset = -100; 
+        const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
+        window.scrollTo({top: y, behavior: 'smooth'});
+      }
+    }
+  };
+
+  const handleGlobalUpload = async () => {
+    if (!globalFile) return;
+    
+    if (!newStorage) {
+      alert("O serviço de armazenamento (Firebase Storage) não está disponível ou não foi ativado no seu projeto Firebase.");
+      return;
+    }
+
+    setIsUploadingGlobal(true);
+    setGlobalUploadSuccess(false);
+    
+    try {
+      const fileRef = ref(newStorage, `global_files/${globalUploadType}/${Date.now()}_${globalFile.name}`);
+      await uploadBytes(fileRef, globalFile);
+      const url = await getDownloadURL(fileRef);
+      
+      await addDoc(collection(newDb, 'global_files'), {
+        name: globalFile.name,
+        url: url,
+        type: globalUploadType,
+        uploadedAt: serverTimestamp(),
+        uploadedBy: loginEmail
+      });
+      
+      setGlobalUploadSuccess(true);
+      setTimeout(() => {
+        setShowGlobalUploadModal(false);
+        setGlobalFile(null);
+        setGlobalUploadSuccess(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Erro ao fazer upload do arquivo global:", error);
+      alert("Erro ao fazer upload do arquivo. Tente novamente.");
+    } finally {
+      setIsUploadingGlobal(false);
+    }
+  };
 
   // Carregar dados de estágio do novo banco de dados quando um trainee é selecionado
   useEffect(() => {
@@ -607,11 +666,54 @@ export default function App() {
                   <h1 className="text-2xl font-bold text-content">Colaboradores</h1>
                   <p className="text-content-muted">Selecione uma turma para visualizar os colaboradores</p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 relative">
                   <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
-                  <div className="w-10 h-10 rounded-full bg-border-subtle flex items-center justify-center text-content-muted font-medium cursor-pointer" onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setSelectedClass(null); }}>
+                  <div 
+                    className="w-10 h-10 rounded-full bg-border-subtle flex items-center justify-center text-content-muted font-medium cursor-pointer hover:bg-border-subtle/80 transition-colors" 
+                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  >
                     {loginEmail.charAt(0).toUpperCase()}
                   </div>
+                  
+                  <AnimatePresence>
+                    {isProfileMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-12 right-0 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden z-50"
+                      >
+                        <div className="p-3 border-b border-border-subtle">
+                          <p className="text-sm font-medium text-content truncate">{loginEmail}</p>
+                          <p className="text-xs text-content-muted">Administrador</p>
+                        </div>
+                        <div className="p-2">
+                          <button
+                            onClick={() => {
+                              setShowGlobalUploadModal(true);
+                              setIsProfileMenuOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-content hover:bg-border-subtle rounded-xl transition-colors"
+                          >
+                            <Upload className="w-4 h-4 text-emerald-600" />
+                            Repositório Global
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsLoggedIn(false);
+                              setIsAdmin(false);
+                              setSelectedClass(null);
+                              setIsProfileMenuOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors mt-1"
+                          >
+                            <ArrowLeft className="w-4 h-4" />
+                            Sair
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
@@ -651,7 +753,7 @@ export default function App() {
                   <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white mb-4 shadow-sm">
                     <GraduationCap className="w-8 h-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-content tracking-wide mb-1">Controle de Colaboradores</h3>
+                  <h3 className="text-xl font-bold text-content tracking-wide mb-1 text-center">Controle de Colaboradores</h3>
                   <p className="text-sm text-content-muted mb-2 text-center max-w-md">
                     Visualize o progresso de todos os colaboradores cadastrados no novo banco de dados.
                   </p>
@@ -724,7 +826,7 @@ export default function App() {
             exit={{ opacity: 0, x: -20 }}
             className="pt-12"
           >
-            <div className="max-w-4xl mx-auto px-4 mb-8">
+            <div className="max-w-6xl mx-auto px-4 mb-8">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
                   <button 
@@ -742,11 +844,54 @@ export default function App() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 relative">
                   <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
-                  <div className="w-10 h-10 rounded-full bg-border-subtle flex items-center justify-center text-content-muted font-medium cursor-pointer" onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setSelectedClass(null); }}>
+                  <div 
+                    className="w-10 h-10 rounded-full bg-border-subtle flex items-center justify-center text-content-muted font-medium cursor-pointer hover:bg-border-subtle/80 transition-colors" 
+                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  >
                     {loginEmail.charAt(0).toUpperCase()}
                   </div>
+                  
+                  <AnimatePresence>
+                    {isProfileMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-12 right-0 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden z-50"
+                      >
+                        <div className="p-3 border-b border-border-subtle">
+                          <p className="text-sm font-medium text-content truncate">{loginEmail}</p>
+                          <p className="text-xs text-content-muted">Administrador</p>
+                        </div>
+                        <div className="p-2">
+                          <button
+                            onClick={() => {
+                              setShowGlobalUploadModal(true);
+                              setIsProfileMenuOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-content hover:bg-border-subtle rounded-xl transition-colors"
+                          >
+                            <Upload className="w-4 h-4 text-emerald-600" />
+                            Repositório Global
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsLoggedIn(false);
+                              setIsAdmin(false);
+                              setSelectedClass(null);
+                              setIsProfileMenuOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors mt-1"
+                          >
+                            <ArrowLeft className="w-4 h-4" />
+                            Sair
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
@@ -759,11 +904,35 @@ export default function App() {
                   <p className="text-content-muted">Nenhum colaborador encontrado nesta turma.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {trainees.map((trainee, index) => (
-                    <motion.div
-                      key={trainee.id}
-                      initial={{ opacity: 0, y: 20 }}
+                <div className="flex flex-col lg:flex-row gap-6 relative items-start">
+                  {/* Alphabet Bar (Mobile: Top, Desktop: Right) */}
+                  <div className="lg:order-2 lg:sticky lg:top-8 flex lg:flex-col flex-wrap justify-center gap-1 p-2 bg-surface rounded-2xl border border-border-subtle shadow-sm z-10 w-full lg:w-auto">
+                    {Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ').map(letter => {
+                      const hasTrainees = trainees.some(t => t.name.toUpperCase().startsWith(letter));
+                      return (
+                        <button
+                          key={letter}
+                          onClick={() => scrollToLetter(letter)}
+                          disabled={!hasTrainees}
+                          className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                            hasTrainees 
+                              ? 'text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/30 cursor-pointer' 
+                              : 'text-content-muted/30 cursor-not-allowed'
+                          }`}
+                        >
+                          {letter}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Trainees Grid */}
+                  <div className="lg:order-1 flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                    {trainees.map((trainee, index) => (
+                      <motion.div
+                        key={trainee.id}
+                        id={`trainee-card-${trainee.id}`}
+                        initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05, duration: 0.3 }}
                       whileHover={{ scale: 0.98 }}
@@ -839,6 +1008,7 @@ export default function App() {
                       </div>
                     </motion.div>
                   ))}
+                </div>
                 </div>
               )}
             </div>
@@ -1720,6 +1890,120 @@ export default function App() {
                     </button>
                   </div>
                 </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showGlobalUploadModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-surface p-6 rounded-2xl shadow-xl max-w-md w-full border border-border-subtle"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-content flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-emerald-600" />
+                  Repositório Global
+                </h2>
+                <button 
+                  onClick={() => {
+                    setShowGlobalUploadModal(false);
+                    setGlobalFile(null);
+                    setGlobalUploadSuccess(false);
+                  }}
+                  className="p-2 hover:bg-border-subtle rounded-full transition-colors text-content-muted"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {globalUploadSuccess ? (
+                <div className="flex flex-col items-center justify-center py-8 text-emerald-600">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                    <Check className="w-8 h-8" />
+                  </div>
+                  <p className="font-medium text-lg">Arquivo enviado com sucesso!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-content-muted mb-2">Tipo de Arquivo</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setGlobalUploadType('kaizen')}
+                        className={`py-2 px-4 rounded-xl text-sm font-medium transition-colors border ${
+                          globalUploadType === 'kaizen' 
+                            ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400' 
+                            : 'bg-transparent border-border-subtle text-content-muted hover:bg-border-subtle'
+                        }`}
+                      >
+                        Kaizen
+                      </button>
+                      <button
+                        onClick={() => setGlobalUploadType('treinamento')}
+                        className={`py-2 px-4 rounded-xl text-sm font-medium transition-colors border ${
+                          globalUploadType === 'treinamento' 
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400' 
+                            : 'bg-transparent border-border-subtle text-content-muted hover:bg-border-subtle'
+                        }`}
+                      >
+                        Treinamento
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-content-muted mb-2">Selecione o Arquivo</label>
+                    <div className="border-2 border-dashed border-border-subtle rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-border-subtle/50 transition-colors cursor-pointer relative">
+                      <input 
+                        type="file" 
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setGlobalFile(e.target.files[0]);
+                          }
+                        }}
+                      />
+                      <Upload className="w-8 h-8 text-content-muted mb-2" />
+                      {globalFile ? (
+                        <p className="text-sm font-medium text-content truncate w-full px-4">{globalFile.name}</p>
+                      ) : (
+                        <>
+                          <p className="text-sm font-medium text-content">Clique ou arraste um arquivo</p>
+                          <p className="text-xs text-content-muted mt-1">PDF, DOCX, XLSX, Imagens, etc.</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleGlobalUpload}
+                    disabled={!globalFile || isUploadingGlobal}
+                    className="w-full py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
+                  >
+                    {isUploadingGlobal ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5" />
+                        Enviar Arquivo
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
             </motion.div>
           </motion.div>
