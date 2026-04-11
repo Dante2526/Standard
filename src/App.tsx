@@ -87,21 +87,21 @@ export default function App() {
   const [isUploadingGlobal, setIsUploadingGlobal] = useState(false);
   const [globalUploadSuccess, setGlobalUploadSuccess] = useState(false);
 
-  const handleToggleProfileMenu = useCallback(() => {
+  const handleToggleProfileMenu = () => {
     setIsProfileMenuOpen(prev => !prev);
-  }, []);
+  };
 
-  const handleOpenGlobalRepo = useCallback(() => {
+  const handleOpenGlobalRepo = () => {
     setShowGlobalUploadModal(true);
     setIsProfileMenuOpen(false);
-  }, []);
+  };
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = () => {
     setIsLoggedIn(false);
     setIsAdmin(false);
     setSelectedClass(null);
     setIsProfileMenuOpen(false);
-  }, []);
+  };
 
   const scrollToLetter = (letter: string) => {
     const firstTrainee = trainees.find(t => t.name.toUpperCase().startsWith(letter));
