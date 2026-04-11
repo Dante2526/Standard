@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Plus, Trash2, ChevronDown, Calendar, ChevronLeft, ChevronRight, User as UserIcon, Clock, AlertCircle, CheckCircle2, Download, GraduationCap, Briefcase, Moon, Sun, Lightbulb, TrendingUp, Target, Upload, Check, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
@@ -75,6 +75,9 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const hasLoadedDataRef = useRef(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   
   // Global Upload State
@@ -83,6 +86,22 @@ export default function App() {
   const [globalFile, setGlobalFile] = useState<File | null>(null);
   const [isUploadingGlobal, setIsUploadingGlobal] = useState(false);
   const [globalUploadSuccess, setGlobalUploadSuccess] = useState(false);
+
+  const handleToggleProfileMenu = useCallback(() => {
+    setIsProfileMenuOpen(prev => !prev);
+  }, []);
+
+  const handleOpenGlobalRepo = useCallback(() => {
+    setShowGlobalUploadModal(true);
+    setIsProfileMenuOpen(false);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    setIsLoggedIn(false);
+    setIsAdmin(false);
+    setSelectedClass(null);
+    setIsProfileMenuOpen(false);
+  }, []);
 
   const scrollToLetter = (letter: string) => {
     const firstTrainee = trainees.find(t => t.name.toUpperCase().startsWith(letter));
@@ -137,6 +156,7 @@ export default function App() {
   // Carregar dados de estágio do novo banco de dados quando um trainee é selecionado
   useEffect(() => {
     if (!selectedTrainee) return;
+    hasLoadedDataRef.current = false;
 
     const unsubscribe = onSnapshot(doc(newDb, 'estagios', selectedTrainee.matricula), (docSnap) => {
       if (docSnap.exists()) {
@@ -166,10 +186,52 @@ export default function App() {
         setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: false }));
         setActiveTab('timeline');
       }
+      // Marca que os dados iniciais foram carregados (com delay para não disparar auto-save imediatamente)
+      setTimeout(() => { hasLoadedDataRef.current = true; }, 1000);
     });
 
     return () => unsubscribe();
   }, [selectedTrainee]);
+
+  // Auto-save com debounce de 2 segundos
+  useEffect(() => {
+    if (!selectedTrainee || !hasLoadedDataRef.current) return;
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    setAutoSaveStatus('idle');
+    autoSaveTimerRef.current = setTimeout(async () => {
+      try {
+        setAutoSaveStatus('saving');
+        setIsSaving(true);
+        await setDoc(doc(newDb, 'estagios', selectedTrainee.matricula), {
+          matricula: selectedTrainee.matricula,
+          nome: selectedTrainee.name,
+          horasAcumuladas: progressHours,
+          status: userStatus,
+          tableRows: tableRows,
+          dataInicio: format(new Date(), 'yyyy-MM-dd'),
+          ultimaAtualizacao: new Date().toISOString()
+        }, { merge: true });
+        setAutoSaveStatus('saved');
+        // Volta para 'idle' depois de 3 segundos
+        setTimeout(() => setAutoSaveStatus('idle'), 3000);
+      } catch (error) {
+        console.error("Erro no auto-save:", error);
+        setAutoSaveStatus('idle');
+      } finally {
+        setIsSaving(false);
+      }
+    }, 2000);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [tableRows, userStatus]);
 
   const saveStageData = async () => {
     if (!selectedTrainee) return;
@@ -534,7 +596,7 @@ export default function App() {
   }, [progressHours, userStatus, selectedTrainee]);
 
   return (
-    <div className="min-h-screen bg-background text-content font-sans selection:bg-blue-200">
+    <div className="min-h-screen bg-background text-content font-sans selection:bg-blue-200 overflow-x-hidden">
       <AnimatePresence mode="wait">
         {!isLoggedIn ? (
           <motion.div 
@@ -668,12 +730,12 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-4 relative">
                   <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
-                  <div 
-                    className="w-10 h-10 rounded-full bg-border-subtle flex items-center justify-center text-content-muted font-medium cursor-pointer hover:bg-border-subtle/80 transition-colors" 
-                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  <button 
+                    className="aspect-square w-10 h-10 rounded-[12px] bg-blue-50/80 dark:bg-surface border border-blue-200 dark:border-border-subtle flex items-center justify-center shadow-sm hover:shadow hover:bg-blue-100 dark:hover:bg-border-subtle/50 transition-all text-blue-600 dark:text-blue-400 font-bold text-sm" 
+                    onClick={handleToggleProfileMenu}
                   >
                     {loginEmail.charAt(0).toUpperCase()}
-                  </div>
+                  </button>
                   
                   <AnimatePresence>
                     {isProfileMenuOpen && (
@@ -681,31 +743,23 @@ export default function App() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-12 right-0 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden z-50"
+                        className="absolute top-12 right-0 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden z-50 p-2"
                       >
-                        <div className="p-3 border-b border-border-subtle">
-                          <p className="text-sm font-medium text-content truncate">{loginEmail}</p>
-                          <p className="text-xs text-content-muted">Administrador</p>
+                        <div className="px-3 pb-3 pt-1 border-b border-border-subtle mb-2">
+                          <p className="text-sm font-semibold text-content truncate">{loginEmail}</p>
+                          <p className="text-xs text-content-muted mt-0.5">Administrador</p>
                         </div>
-                        <div className="p-2">
+                        <div className="flex flex-col gap-1">
                           <button
-                            onClick={() => {
-                              setShowGlobalUploadModal(true);
-                              setIsProfileMenuOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-content hover:bg-border-subtle rounded-xl transition-colors"
+                            onClick={handleOpenGlobalRepo}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-content bg-transparent hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-800/50"
                           >
-                            <Upload className="w-4 h-4 text-emerald-600" />
+                            <Upload className="w-4 h-4 text-emerald-500" />
                             Repositório Global
                           </button>
                           <button
-                            onClick={() => {
-                              setIsLoggedIn(false);
-                              setIsAdmin(false);
-                              setSelectedClass(null);
-                              setIsProfileMenuOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors mt-1"
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/50"
                           >
                             <ArrowLeft className="w-4 h-4" />
                             Sair
@@ -846,12 +900,12 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-4 relative">
                   <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
-                  <div 
-                    className="w-10 h-10 rounded-full bg-border-subtle flex items-center justify-center text-content-muted font-medium cursor-pointer hover:bg-border-subtle/80 transition-colors" 
-                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  <button 
+                    className="aspect-square w-10 h-10 rounded-[12px] bg-blue-50/80 dark:bg-surface border border-blue-200 dark:border-border-subtle flex items-center justify-center shadow-sm hover:shadow hover:bg-blue-100 dark:hover:bg-border-subtle/50 transition-all text-blue-600 dark:text-blue-400 font-bold text-sm" 
+                    onClick={handleToggleProfileMenu}
                   >
                     {loginEmail.charAt(0).toUpperCase()}
-                  </div>
+                  </button>
                   
                   <AnimatePresence>
                     {isProfileMenuOpen && (
@@ -859,31 +913,23 @@ export default function App() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-12 right-0 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden z-50"
+                        className="absolute top-12 right-0 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden z-50 p-2"
                       >
-                        <div className="p-3 border-b border-border-subtle">
-                          <p className="text-sm font-medium text-content truncate">{loginEmail}</p>
-                          <p className="text-xs text-content-muted">Administrador</p>
+                        <div className="px-3 pb-3 pt-1 border-b border-border-subtle mb-2">
+                          <p className="text-sm font-semibold text-content truncate">{loginEmail}</p>
+                          <p className="text-xs text-content-muted mt-0.5">Administrador</p>
                         </div>
-                        <div className="p-2">
+                        <div className="flex flex-col gap-1">
                           <button
-                            onClick={() => {
-                              setShowGlobalUploadModal(true);
-                              setIsProfileMenuOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-content hover:bg-border-subtle rounded-xl transition-colors"
+                            onClick={handleOpenGlobalRepo}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-content bg-transparent hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-800/50"
                           >
-                            <Upload className="w-4 h-4 text-emerald-600" />
+                            <Upload className="w-4 h-4 text-emerald-500" />
                             Repositório Global
                           </button>
                           <button
-                            onClick={() => {
-                              setIsLoggedIn(false);
-                              setIsAdmin(false);
-                              setSelectedClass(null);
-                              setIsProfileMenuOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors mt-1"
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/50"
                           >
                             <ArrowLeft className="w-4 h-4" />
                             Sair
@@ -1117,8 +1163,8 @@ export default function App() {
             className="pb-24"
           >
             {/* Header */}
-            <header className="pt-14 pb-4 px-4 sticky top-0 bg-background/80 backdrop-blur-xl z-10 flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <header className="pt-14 pb-4 px-4 sticky top-0 bg-background/80 backdrop-blur-xl z-10 flex items-center justify-between gap-2 max-w-[100vw]">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <button 
                   onClick={() => {
                     if (isAdmin) {
@@ -1127,12 +1173,12 @@ export default function App() {
                       setUserStatus(null);
                     }
                   }} 
-                  className="p-2 rounded-full hover:bg-border-subtle/80 transition-colors bg-surface shadow-sm"
+                  className="p-2 rounded-full hover:bg-border-subtle/80 transition-colors bg-surface shadow-sm shrink-0"
                 >
-                  <ArrowLeft className="w-6 h-6" />
+                  <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div>
-                  <h1 className="text-2xl font-semibold tracking-tight">{selectedTrainee.name}</h1>
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{selectedTrainee.name}</h1>
                   <div className="flex items-center gap-2 mt-0.5">
                     <p className="text-sm text-content-muted font-medium">Mat: {selectedTrainee.matricula}</p>
                     <span className={`text-[10px] font-black px-3 py-1 rounded-full shadow-md ${
@@ -1146,25 +1192,33 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={saveStageData}
-                  disabled={isSaving}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border ${
-                    isSaving 
-                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
-                      : 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700'
-                  }`}
-                >
-                  {isSaving ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4" />
+              <div className="flex items-center gap-2 shrink-0">
+                <AnimatePresence mode="wait">
+                  {autoSaveStatus === 'saving' && (
+                    <motion.div
+                      key="saving"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-1.5 text-xs text-content-muted"
+                    >
+                      <div className="w-3.5 h-3.5 border-2 border-blue-400/30 border-t-blue-500 rounded-full animate-spin" />
+                      <span className="hidden sm:inline">Salvando...</span>
+                    </motion.div>
                   )}
-                  {isSaving ? 'Salvando...' : 'Salvar Progresso'}
-                </motion.button>
+                  {autoSaveStatus === 'saved' && (
+                    <motion.div
+                      key="saved"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-1.5 text-xs text-emerald-500"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Salvo</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
               </div>
             </header>
@@ -1234,7 +1288,7 @@ export default function App() {
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-surface rounded-[28px] p-6 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] max-w-7xl mx-auto"
+                  className="bg-surface rounded-[28px] p-6 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] max-w-7xl mx-auto overflow-hidden"
                 >
                   <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
                     <h2 className="text-lg font-semibold text-content max-md:text-center">Progresso do Treinamento</h2>
@@ -1243,7 +1297,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="relative h-[800px] md:h-[350px] mt-8 mb-16 max-w-2xl md:max-w-full mx-auto w-full">
+                  <div className="relative h-[800px] md:h-[350px] mt-8 mb-16 max-w-2xl md:max-w-full mx-auto w-full overflow-visible">
                     <div className="absolute inset-0 md:left-[70px] md:right-[70px]">
                     <style>{`
                       .progress-line-anim {
@@ -1352,7 +1406,7 @@ export default function App() {
 
                               {/* Comment Box (Left on mobile, Bottom on desktop) */}
                               {milestone.comment && (
-                                <div className="absolute right-full top-1/2 -translate-y-1/2 pr-4 w-[calc(50vw-45px)] sm:w-[200px] md:right-auto md:left-1/2 md:-translate-x-1/2 md:translate-y-0 md:top-full md:pt-6 md:pr-0 md:w-[140px] z-20">
+                                <div className="absolute right-full top-1/2 -translate-y-1/2 pr-4 w-[140px] sm:w-[180px] md:right-auto md:left-1/2 md:-translate-x-1/2 md:translate-y-0 md:top-full md:pt-6 md:pr-0 md:w-[140px] z-20">
                                   <motion.div 
                                     className="bg-background border border-border-subtle p-3 rounded-2xl text-center relative shadow-sm"
                                     initial={{ opacity: 0.5, scale: 0.9 }}
@@ -1388,7 +1442,7 @@ export default function App() {
                               )}
 
                               {/* Label (Right on mobile, Top on desktop) */}
-                              <div className="absolute left-full top-1/2 -translate-y-1/2 pl-4 md:left-1/2 md:-translate-x-1/2 md:translate-y-0 md:bottom-full md:pb-6 md:top-auto md:pl-0 text-left md:text-center w-max z-20">
+                              <div className="absolute left-full top-1/2 -translate-y-1/2 pl-4 md:left-1/2 md:-translate-x-1/2 md:translate-y-0 md:bottom-full md:pb-6 md:top-auto md:pl-0 text-left md:text-center w-[100px] sm:w-max z-20">
                                 <motion.div 
                                   className="bg-surface/80 backdrop-blur-sm py-1 px-2 rounded-md"
                                   initial={{ opacity: 0.5 }}
