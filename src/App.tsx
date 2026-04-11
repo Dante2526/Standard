@@ -1193,32 +1193,18 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <AnimatePresence mode="wait">
-                  {autoSaveStatus === 'saving' && (
-                    <motion.div
-                      key="saving"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="flex items-center gap-1.5 text-xs text-content-muted"
-                    >
-                      <div className="w-3.5 h-3.5 border-2 border-blue-400/30 border-t-blue-500 rounded-full animate-spin" />
-                      <span className="hidden sm:inline">Salvando...</span>
-                    </motion.div>
-                  )}
-                  {autoSaveStatus === 'saved' && (
-                    <motion.div
-                      key="saved"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="flex items-center gap-1.5 text-xs text-emerald-500"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Salvo</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {autoSaveStatus === 'saving' && (
+                  <div className="flex items-center gap-1.5 text-xs text-content-muted transition-all opacity-100">
+                    <div className="w-3.5 h-3.5 border-2 border-blue-400/30 border-t-blue-500 rounded-full animate-spin" />
+                    <span className="hidden sm:inline">Salvando...</span>
+                  </div>
+                )}
+                {autoSaveStatus === 'saved' && (
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-500 transition-all opacity-100">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Salvo</span>
+                  </div>
+                )}
                 <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
               </div>
             </header>
