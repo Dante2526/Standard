@@ -88,5 +88,10 @@ service cloud.firestore {
       allow create, update: if isAuthenticated() && hasRequiredFields(['matricula', 'horasAcumuladas', 'status', 'dataInicio', 'ultimaAtualizacao']);
       allow delete: if isAuthenticated();
     }
+
+    match /global_files/{fileId} {
+      allow read: if true; // anyone can download
+      allow write: if isAuthenticated(); // only authenticated can upload
+    }
   }
 }

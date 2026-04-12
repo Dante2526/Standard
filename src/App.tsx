@@ -128,7 +128,12 @@ export default function App() {
     
     try {
       const fileRef = ref(newStorage, `global_files/${globalUploadType}/${Date.now()}_${globalFile.name}`);
-      await uploadBytes(fileRef, globalFile);
+      
+      // Aplicando um Timeout de 15 segundos para evitar que a tela fique travada se o Firebase não responder
+      const uploadPromise = uploadBytes(fileRef, globalFile);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout: O servidor demorou muito para responder.")), 15000));
+      await Promise.race([uploadPromise, timeoutPromise]);
+      
       const url = await getDownloadURL(fileRef);
       
       await addDoc(collection(newDb, 'global_files'), {
