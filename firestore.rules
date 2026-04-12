@@ -90,8 +90,8 @@ service cloud.firestore {
     }
 
     match /global_files/{fileId} {
-      allow read: if true; // anyone can download
-      allow write: if isAuthenticated(); // only authenticated can upload
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
