@@ -141,6 +141,13 @@ export default function App() {
       // FILTRA linhas que possam estar completamente em branco no final do arquivo
       const filteredRows = parsedRows.filter(row => row.some(cell => cell !== ''));
 
+      // FIREBASE NÃO ACEITA ARRAYS DENTRO DE ARRAYS (Nested Arrays).
+      // Entao nós transformamos a lista em um objeto estruturado: [{ linha: 1, colunas: ["A"] }]
+      const structuredData = filteredRows.map((row, index) => ({
+        index: index,
+        colunas: row
+      }));
+
       // SALVA TUDO ESTRUTURADA NO FIRESTORE (Database)
       await addDoc(collection(newDb, 'global_files'), {
         name: globalFile.name,
@@ -148,8 +155,8 @@ export default function App() {
         uploadedAt: serverTimestamp(),
         uploadedBy: loginEmail,
         isRawData: true,
-        // Ao invez de guardar um arquivo estático, guardamos a planilha interiramente estruturada
-        parsedData: filteredRows,
+        // Guardamos os dados de forma estruturada para o Firestore ler tranquilamente
+        parsedData: structuredData,
       });
       
       setGlobalUploadSuccess(true);
