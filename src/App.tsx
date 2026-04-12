@@ -72,7 +72,10 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme === 'dark';
+  });
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -122,6 +125,11 @@ export default function App() {
     setGlobalUploadSuccess(false);
     
     try {
+      // GARANTE QUE ESTÁ AUTENTICADO NO BANCO NOVO (Evita erro de Permissão Insuficiente)
+      if (!newAuth.currentUser) {
+        await signInAnonymously(newAuth);
+      }
+
       // LÊ O CONTEÚDO DO ARQUIVO DIRETAMENTE PELO COMPLEMENTO DO NAVEGADOR
       const fileText = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -238,8 +246,10 @@ export default function App() {
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
   const [isDownloading, setIsDownloading] = useState(false);
