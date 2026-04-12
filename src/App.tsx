@@ -117,31 +117,39 @@ export default function App() {
 
   const handleGlobalUpload = async () => {
     if (!globalFile) return;
-    
-    if (!newStorage) {
-      alert("O serviço de armazenamento (Firebase Storage) não está disponível ou não foi ativado no seu projeto Firebase.");
-      return;
-    }
 
     setIsUploadingGlobal(true);
     setGlobalUploadSuccess(false);
     
     try {
-      const fileRef = ref(newStorage, `global_files/${globalUploadType}/${Date.now()}_${globalFile.name}`);
+      // LÊ O CONTEÚDO DO ARQUIVO DIRETAMENTE PELO COMPLEMENTO DO NAVEGADOR
+      const fileText = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = (e) => reject(e);
+        reader.readAsText(globalFile, 'utf-8'); 
+      });
+
+      // PARSEIA O CSV (quebra as linhas e as colunas baseadas em vírgula ou ponto-e-vírgula)
+      const rows = fileText.split(/\r?\n/);
+      const parsedRows = rows.map(row => {
+        // Suporta tanto CSV em padrão americano (vírgula) quanto brasileiro (ponto-e-vírgula)
+        const delimiter = row.includes(';') ? ';' : ',';
+        return row.split(delimiter).map(cell => cell.trim());
+      });
       
-      // Aplicando um Timeout de 15 segundos para evitar que a tela fique travada se o Firebase não responder
-      const uploadPromise = uploadBytes(fileRef, globalFile);
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout: O servidor demorou muito para responder.")), 15000));
-      await Promise.race([uploadPromise, timeoutPromise]);
-      
-      const url = await getDownloadURL(fileRef);
-      
+      // FILTRA linhas que possam estar completamente em branco no final do arquivo
+      const filteredRows = parsedRows.filter(row => row.some(cell => cell !== ''));
+
+      // SALVA TUDO ESTRUTURADA NO FIRESTORE (Database)
       await addDoc(collection(newDb, 'global_files'), {
         name: globalFile.name,
-        url: url,
         type: globalUploadType,
         uploadedAt: serverTimestamp(),
-        uploadedBy: loginEmail
+        uploadedBy: loginEmail,
+        isRawData: true,
+        // Ao invez de guardar um arquivo estático, guardamos a planilha interiramente estruturada
+        parsedData: filteredRows,
       });
       
       setGlobalUploadSuccess(true);
@@ -151,8 +159,8 @@ export default function App() {
         setGlobalUploadSuccess(false);
       }, 2000);
     } catch (error) {
-      console.error("Erro ao fazer upload do arquivo global:", error);
-      alert("Erro ao fazer upload do arquivo. Tente novamente.");
+      console.error("Erro ao fazer o processamento do arquivo global:", error);
+      alert("Erro ao ler o arquivo. Certifique-se de anexar planilhas em formato texto (.CSV, etc).");
     } finally {
       setIsUploadingGlobal(false);
     }
