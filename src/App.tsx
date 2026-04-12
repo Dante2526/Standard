@@ -26,7 +26,7 @@ import {
   isValid
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { collection, query, where, getDocs, doc, setDoc, getDoc, onSnapshot, serverTimestamp, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, getDoc, onSnapshot, serverTimestamp, addDoc, orderBy, limit } from 'firebase/firestore';
 import { db, auth, signInAnonymously, newDb, newAuth, newStorage } from './firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import DarkModeToggle from './components/DarkModeToggle';
@@ -89,6 +89,8 @@ export default function App() {
   const [globalFile, setGlobalFile] = useState<File | null>(null);
   const [isUploadingGlobal, setIsUploadingGlobal] = useState(false);
   const [globalUploadSuccess, setGlobalUploadSuccess] = useState(false);
+  const [realTrainings, setRealTrainings] = useState<any[]>([]);
+  const [isLoadingTrainings, setIsLoadingTrainings] = useState(false);
 
   const handleToggleProfileMenu = () => {
     setIsProfileMenuOpen(prev => !prev);
@@ -275,6 +277,50 @@ export default function App() {
       console.error("Erro na autenticação anônima (Banco Novo):", error);
     });
   }, []);
+
+  const fetchRealTrainings = async (trainee: Trainee) => {
+    setIsLoadingTrainings(true);
+    setRealTrainings([]);
+    try {
+      // Busca o último upload no banco
+      const q = query(collection(newDb, 'global_files'), orderBy('uploadedAt', 'desc'), limit(1));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        const fileData = snap.docs[0].data();
+        const parsedData = fileData.parsedData || [];
+        
+        // Filtra os treinamentos desse colaborador (por matrícula ou nome)
+        const matches = parsedData.filter((row: any) => {
+          const rowName = (row.colunas[0] || '').toString().toUpperCase();
+          const rowMatricula = (row.colunas[1] || '').toString();
+          const targetName = trainee.name.toUpperCase();
+          const targetMatricula = trainee.matricula.toString();
+          
+          return (rowMatricula && rowMatricula === targetMatricula) || (rowName && rowName.includes(targetName));
+        }).map((row: any) => ({
+          title: row.colunas[3] || 'Treinamento sem título',
+          status: row.colunas[4] === 'Realizado' ? 'completed' : 'pending',
+          date: row.colunas[5] || 'Sem data',
+          priority: 'Média'
+        }));
+        
+        setRealTrainings(matches);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar treinamentos reais:", error);
+    } finally {
+      setIsLoadingTrainings(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedTrainee) {
+      fetchRealTrainings(selectedTrainee);
+    } else {
+      setRealTrainings([]);
+    }
+  }, [selectedTrainee]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -1689,38 +1735,41 @@ export default function App() {
                     <h2 className="text-lg font-semibold mb-6 text-content">Treinamentos Pendentes</h2>
                     
                     <div className="space-y-4">
-                      {[
-                        { title: 'Operação de Guindaste RTG', status: 'overdue', date: '28 Mar 2024', priority: 'Alta' },
-                        { title: 'Segurança em Altura (NR-35)', status: 'pending', date: '15 Abr 2024', priority: 'Média' },
-                        { title: 'Manutenção de Motores Diesel', status: 'pending', date: '22 Abr 2024', priority: 'Baixa' },
-                        { title: 'Primeiros Socorros Avançado', status: 'overdue', date: '01 Abr 2024', priority: 'Alta' },
-                      ].map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border-subtle hover:border-blue-200 transition-all group">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${item.status === 'overdue' ? 'bg-red-50 text-red-500' : 'bg-orange-50 text-orange-500'}`}>
-                              {item.status === 'overdue' ? <AlertCircle className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-content group-hover:text-blue-600 transition-colors">{item.title}</h3>
-                              <div className="flex items-center gap-3 mt-1">
-                                <span className="text-xs text-content-muted flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" /> {item.date}
-                                </span>
-                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
-                                  item.priority === 'Alta' ? 'bg-red-100 text-red-600' : 
-                                  item.priority === 'Média' ? 'bg-orange-100 text-orange-600' : 
-                                  'bg-blue-100 text-blue-600'
-                                }`}>
-                                  Prioridade {item.priority}
-                                </span>
+                      {isLoadingTrainings ? (
+                        <div className="flex flex-col items-center justify-center py-12 gap-4">
+                          <div className="w-10 h-10 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+                          <p className="text-sm text-content-muted animate-pulse">Sincronizando com o banco de dados...</p>
+                        </div>
+                      ) : realTrainings.filter(t => t.status !== 'completed').length === 0 ? (
+                        <div className="text-center py-8 bg-background rounded-2xl border border-dashed border-border-subtle">
+                          <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2 opacity-20" />
+                          <p className="text-sm text-content-muted">Nenhum treinamento pendente encontrado.</p>
+                        </div>
+                      ) : (
+                        realTrainings.filter(t => t.status !== 'completed').map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border-subtle hover:border-blue-200 transition-all group">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-orange-50 text-orange-500">
+                                <Clock className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-content group-hover:text-blue-600 transition-colors">{item.title}</h3>
+                                <div className="flex items-center gap-3 mt-1">
+                                  <span className="text-xs text-content-muted flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" /> {item.date}
+                                  </span>
+                                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-600">
+                                    Prioridade {item.priority}
+                                  </span>
+                                </div>
                               </div>
                             </div>
+                            <button className="px-4 py-2 bg-surface border border-border-subtle text-content text-sm font-bold rounded-xl hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm">
+                              Iniciar Treinamento
+                            </button>
                           </div>
-                          <button className="px-4 py-2 bg-surface border border-border-subtle text-content text-sm font-bold rounded-xl hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm">
-                            Iniciar Treinamento
-                          </button>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </div>
 
@@ -1733,14 +1782,18 @@ export default function App() {
                         <h3 className="font-bold text-content">Concluídos Recentemente</h3>
                       </div>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors">
-                          <span className="text-content-muted">Direção Defensiva</span>
-                          <span className="text-green-600 font-bold">100%</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors">
-                          <span className="text-content-muted">Ética e Conduta</span>
-                          <span className="text-green-600 font-bold">100%</span>
-                        </div>
+                        {isLoadingTrainings ? (
+                           <p className="text-xs text-content-muted text-center py-4">Carregando históricos...</p>
+                        ) : realTrainings.filter(t => t.status === 'completed').length === 0 ? (
+                          <p className="text-xs text-content-muted text-center py-4">Nenhum treinamento concluído.</p>
+                        ) : (
+                          realTrainings.filter(t => t.status === 'completed').map((item, idx) => (
+                            <div key={idx} className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors border-b border-border-subtle/30 last:border-0">
+                              <span className="text-content-muted max-w-[70%] truncate">{item.title}</span>
+                              <span className="text-green-600 font-bold whitespace-nowrap">100% (OK)</span>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
 
