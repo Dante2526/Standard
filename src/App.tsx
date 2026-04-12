@@ -290,25 +290,43 @@ export default function App() {
         const fileData = snap.docs[0].data();
         const parsedData = fileData.parsedData || [];
         
-        // Filtra os treinamentos desse colaborador (por matrícula ou nome)
-        const matches = parsedData.filter((row: any) => {
-          const rowName = (row.colunas[0] || '').toString().toUpperCase();
-          const rowMatricula = (row.colunas[1] || '').toString();
-          const targetName = trainee.name.toUpperCase();
-          const targetMatricula = trainee.matricula.toString();
+        // Filtra os treinamentos desse colaborador priorizando a Matrícula
+        const matches = parsedData.filter((row: any, idx: number) => {
+          if (idx === 0) return false; 
+
+          const rowMatricula = (row.colunas[1] || '').toString().trim();
+          const rowName = (row.colunas[0] || '').toString().toUpperCase().trim();
           
-          return (rowMatricula && rowMatricula === targetMatricula) || (rowName && rowName.includes(targetName));
-        }).map((row: any) => ({
-          title: row.colunas[3] || 'Treinamento sem título',
-          status: row.colunas[4] === 'Realizado' ? 'completed' : 'pending',
-          date: row.colunas[5] || 'Sem data',
-          priority: 'Média'
-        }));
+          const targetMatricula = (trainee.matricula || '').toString().trim();
+          const targetName = (trainee.name || '').toString().toUpperCase().trim();
+          
+          // Lógica: Se temos matrícula em ambos os lados, usamos ela (é único)
+          // Se não, tentamos o match por nome como fallback
+          if (targetMatricula && rowMatricula) {
+            return rowMatricula === targetMatricula;
+          }
+          
+          return targetName && (rowName.includes(targetName) || targetName.includes(rowName));
+        }).map((row: any) => {
+          const statusRaw = (row.colunas[4] || '').toString().trim();
+          const daysLeftStr = (row.colunas[6] || '').toString().trim();
+          const daysLeft = parseInt(daysLeftStr);
+
+          // Se o status for "Realizado", é concluído. 
+          // Se houver "Dias restantes" e for baixo, podemos considerar próximo do vencimento.
+          return {
+            title: row.colunas[3] || 'Treinamento sem título',
+            status: statusRaw === 'Realizado' ? 'completed' : 'pending',
+            date: row.colunas[5] || 'Sem data',
+            priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 30 ? 'Alta' : (daysLeft < 90 ? 'Média' : 'Baixa')),
+            daysRemaining: isNaN(daysLeft) ? null : daysLeft
+          };
+        });
         
         setRealTrainings(matches);
       }
     } catch (error) {
-      console.error("Erro ao buscar treinamentos reais:", error);
+      console.error("Erro crítico ao buscar treinamentos reais:", error);
     } finally {
       setIsLoadingTrainings(false);
     }
@@ -1804,15 +1822,24 @@ export default function App() {
                         </div>
                         <h3 className="font-bold text-content">Próximos Vencimentos</h3>
                       </div>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors">
-                          <span className="text-content-muted">NR-10 Básico</span>
-                          <span className="text-orange-500 font-bold">12 dias</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors">
-                          <span className="text-content-muted">Operação Empilhadeira</span>
-                          <span className="text-orange-500 font-bold">24 dias</span>
-                        </div>
+                        {isLoadingTrainings ? (
+                          <p className="text-xs text-content-muted text-center py-4">Calculando prazos...</p>
+                        ) : realTrainings.filter(t => t.daysRemaining !== null && t.daysRemaining < 365).length === 0 ? (
+                          <p className="text-xs text-content-muted text-center py-4">Tudo em dia!</p>
+                        ) : (
+                          realTrainings
+                            .filter(t => t.daysRemaining !== null && t.daysRemaining < 365)
+                            .sort((a, b) => (a.daysRemaining || 0) - (b.daysRemaining || 0))
+                            .slice(0, 5)
+                            .map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors">
+                                <span className="text-content-muted max-w-[70%] truncate">{item.title}</span>
+                                <span className={`font-bold ${item.daysRemaining < 30 ? 'text-red-500' : 'text-orange-500'}`}>
+                                  {item.daysRemaining} dias
+                                </span>
+                              </div>
+                            ))
+                        )}
                       </div>
                     </div>
                   </div>
