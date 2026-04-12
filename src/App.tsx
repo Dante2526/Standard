@@ -1822,6 +1822,7 @@ export default function App() {
                         </div>
                         <h3 className="font-bold text-content">Próximos Vencimentos</h3>
                       </div>
+                      <div className="space-y-3">
                         {isLoadingTrainings ? (
                           <p className="text-xs text-content-muted text-center py-4">Calculando prazos...</p>
                         ) : realTrainings.filter(t => t.daysRemaining !== null && t.daysRemaining < 365).length === 0 ? (
