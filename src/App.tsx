@@ -193,45 +193,6 @@ export default function App() {
     return () => unsubscribe();
   }, [selectedTrainee]);
 
-  // Auto-save com debounce de 2 segundos
-  useEffect(() => {
-    if (!selectedTrainee || !hasLoadedDataRef.current) return;
-
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
-    }
-
-    setAutoSaveStatus('idle');
-    autoSaveTimerRef.current = setTimeout(async () => {
-      try {
-        setAutoSaveStatus('saving');
-        setIsSaving(true);
-        await setDoc(doc(newDb, 'estagios', selectedTrainee.matricula), {
-          matricula: selectedTrainee.matricula,
-          nome: selectedTrainee.name,
-          horasAcumuladas: progressHours,
-          status: userStatus,
-          tableRows: tableRows,
-          dataInicio: format(new Date(), 'yyyy-MM-dd'),
-          ultimaAtualizacao: new Date().toISOString()
-        }, { merge: true });
-        setAutoSaveStatus('saved');
-        // Volta para 'idle' depois de 3 segundos
-        setTimeout(() => setAutoSaveStatus('idle'), 3000);
-      } catch (error) {
-        console.error("Erro no auto-save:", error);
-        setAutoSaveStatus('idle');
-      } finally {
-        setIsSaving(false);
-      }
-    }, 2000);
-
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-      }
-    };
-  }, [tableRows, userStatus]);
 
   const saveStageData = async () => {
     if (!selectedTrainee) return;
@@ -594,6 +555,45 @@ export default function App() {
       autoSaveEfetivacao();
     }
   }, [progressHours, userStatus, selectedTrainee]);
+
+  // Auto-save com debounce de 2 segundos (Reposicionado para apoiar progressHours e tableRows)
+  useEffect(() => {
+    if (!selectedTrainee || !hasLoadedDataRef.current) return;
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    setAutoSaveStatus('idle');
+    autoSaveTimerRef.current = setTimeout(async () => {
+      try {
+        setAutoSaveStatus('saving');
+        setIsSaving(true);
+        await setDoc(doc(newDb, 'estagios', selectedTrainee.matricula), {
+          matricula: selectedTrainee.matricula,
+          nome: selectedTrainee.name,
+          horasAcumuladas: progressHours,
+          status: userStatus,
+          tableRows: tableRows,
+          dataInicio: format(new Date(), 'yyyy-MM-dd'),
+          ultimaAtualizacao: new Date().toISOString()
+        }, { merge: true });
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 3000);
+      } catch (error) {
+        console.error("Erro no auto-save:", error);
+        setAutoSaveStatus('idle');
+      } finally {
+        setIsSaving(false);
+      }
+    }, 2000);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [tableRows, userStatus, progressHours, selectedTrainee]);
 
   return (
     <div className="min-h-screen bg-background text-content font-sans selection:bg-blue-200 overflow-x-hidden">
