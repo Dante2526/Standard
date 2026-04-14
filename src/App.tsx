@@ -2215,13 +2215,16 @@ export default function App() {
                 className="w-full bg-background border border-border-subtle rounded-2xl p-4 min-h-[120px] focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm leading-relaxed mb-6"
                 placeholder="Digite aqui a avaliação técnica..."
                 value={milestoneEvaluations[editingMilestone]?.comment || ''}
-                onChange={(e) => setMilestoneEvaluations(prev => ({
-                  ...prev,
-                  [editingMilestone]: {
-                    comment: e.target.value,
-                    inspector: userName
-                  }
-                }))}
+                onChange={(e) => {
+                  const newVal = e.target.value;
+                  setMilestoneEvaluations(prev => ({
+                    ...prev,
+                    [editingMilestone]: {
+                      comment: newVal,
+                      inspector: newVal.trim() === "" ? "" : userName
+                    }
+                  }));
+                }}
               />
               
               <div className="flex gap-3">
