@@ -1175,9 +1175,6 @@ export default function App() {
                         }`} />
                       </div>
                       
-                      <div className="mb-3">
-                        <p className="text-sm text-content-muted truncate">{trainee.funcao || 'Sem função'}</p>
-                      </div>
 
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-xs">
