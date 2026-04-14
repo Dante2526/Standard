@@ -1497,7 +1497,7 @@ export default function App() {
                               </div>
 
                                      {/* Comment Box (Left on mobile, Bottom on desktop) */}
-                                     {(milestone.comment || isAdmin) && (
+                                     {(milestone.comment || (isAdmin && milestone.hours > 0)) && (
                                        <div className="absolute right-full top-1/2 -translate-y-1/2 pr-4 w-[140px] sm:w-[180px] md:right-auto md:left-1/2 md:-translate-x-1/2 md:translate-y-0 md:top-full md:pt-6 md:pr-0 md:w-[140px] z-20">
                                          <motion.div 
                                            onClick={() => isAdmin && setEditingMilestone(milestone.hours)}
