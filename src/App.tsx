@@ -209,14 +209,19 @@ export default function App() {
           setMilestoneEvaluations(data.milestoneEvaluations);
         }
         if (data.status) {
+          const statusChanged = data.status !== userStatus;
           setUserStatus(data.status);
           setUserStatuses(prev => ({ ...prev, [selectedTrainee.id]: data.status }));
-          if (data.status === 'efetivado') {
-            setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: true }));
-            setActiveTab('pending');
-          } else {
-            setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: false }));
-            setActiveTab('timeline');
+          
+          // Só muda a aba automaticamente na CARGA INICIAL ou se o status MUDAR de fato
+          if (!hasLoadedDataRef.current || statusChanged) {
+            if (data.status === 'efetivado') {
+              setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: true }));
+              setActiveTab('pending');
+            } else {
+              setUserTabsHidden(prev => ({ ...prev, [selectedTrainee.id]: false }));
+              setActiveTab('timeline');
+            }
           }
         }
       } else {
@@ -235,7 +240,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [selectedTrainee]);
+  }, [selectedTrainee, userStatus, isAdmin]);
 
 
   const saveStageData = async () => {
@@ -490,15 +495,23 @@ export default function App() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!formRef.current) return;
+    setIsDownloading(true);
     
     try {
-      setIsDownloading(true);
+      // Pequena espera adicional para estabilização do DOM
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      if (!formRef.current) {
+        alert("Ops! Não conseguimos localizar o formulário para gerar o PDF. Verifique se a aba de Treinamentos está visível e tente novamente.");
+        setIsDownloading(false);
+        return;
+      }
+
       const canvas = await html2canvas(formRef.current, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#f9fafb' // Match the background color (bg-background)
+        backgroundColor: '#f9fafb'
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -515,6 +528,7 @@ export default function App() {
       pdf.save('formulario-treinamento.pdf');
     } catch (error) {
       console.error('Error generating PDF:', error);
+      alert("Houve um erro ao gerar o PDF. Por favor, tente novamente.");
     } finally {
       setIsDownloading(false);
       setIsDownloadMenuOpen(false);
@@ -716,7 +730,7 @@ export default function App() {
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [tableRows, userStatus, progressHours, selectedTrainee]);
+  }, [tableRows, userStatus, progressHours, selectedTrainee, milestoneEvaluations]);
 
   return (
     <div className="min-h-screen bg-background text-content font-sans selection:bg-blue-200 overflow-x-hidden">
@@ -2134,7 +2148,7 @@ export default function App() {
 
                         if (activeTab !== 'form') {
                           setActiveTab('form');
-                          setTimeout(doDownloadAndHide, 300);
+                          setTimeout(doDownloadAndHide, 600);
                         } else {
                           await doDownloadAndHide();
                         }
