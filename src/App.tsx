@@ -37,6 +37,11 @@ const LOCAL_OPTIONS = [
   "RECLASSIFICAÇÃO", "OFICINA", "FORMAÇÃO", "CTR"
 ];
 
+const FUNCAO_OPTIONS = [
+  "OFICIAL DE OPERAÇÕES FERROVIÁRIAS",
+  "MAQUINISTA PÁTIO"
+];
+
 type ClassItem = {
   id: number;
   name: string;
@@ -94,6 +99,7 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [milestoneEvaluations, setMilestoneEvaluations] = useState<Record<number, { comment: string, inspector: string }>>({});
   const [editingMilestone, setEditingMilestone] = useState<number | null>(null);
+  const [isFuncaoDropdownOpen, setIsFuncaoDropdownOpen] = useState(false);
 
   const handleToggleProfileMenu = () => {
     setIsProfileMenuOpen(prev => !prev);
@@ -1642,7 +1648,42 @@ export default function App() {
                       </div>
                       <div className="space-y-1 md:col-span-3">
                         <label className="text-xs font-medium text-content-muted ml-1">Função em Treinamento</label>
-                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.funcao} onChange={e => setFormData({...formData, funcao: e.target.value})} />
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+                            value={formData.funcao} 
+                            onChange={e => setFormData({...formData, funcao: e.target.value})}
+                            onFocus={() => setIsFuncaoDropdownOpen(true)}
+                            onBlur={() => setTimeout(() => setIsFuncaoDropdownOpen(false), 200)}
+                          />
+                          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted pointer-events-none" />
+                          
+                          <AnimatePresence>
+                            {isFuncaoDropdownOpen && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="absolute left-0 right-0 top-full mt-2 bg-surface border border-border-subtle rounded-2xl shadow-xl z-[100] overflow-hidden"
+                              >
+                                {FUNCAO_OPTIONS.map(opt => (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => {
+                                      setFormData({...formData, funcao: opt});
+                                      setIsFuncaoDropdownOpen(false);
+                                    }}
+                                    className="w-full text-left px-4 py-3 text-sm text-content hover:bg-border-subtle/50 transition-colors"
+                                  >
+                                    {opt}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-content-muted ml-1">Horas previstas</label>
