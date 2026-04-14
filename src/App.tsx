@@ -91,6 +91,9 @@ export default function App() {
   const [globalUploadSuccess, setGlobalUploadSuccess] = useState(false);
   const [realTrainings, setRealTrainings] = useState<any[]>([]);
   const [isLoadingTrainings, setIsLoadingTrainings] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [milestoneEvaluations, setMilestoneEvaluations] = useState<Record<number, { comment: string, inspector: string }>>({});
+  const [editingMilestone, setEditingMilestone] = useState<number | null>(null);
 
   const handleToggleProfileMenu = () => {
     setIsProfileMenuOpen(prev => !prev);
@@ -193,6 +196,9 @@ export default function App() {
         const data = docSnap.data();
         if (data.tableRows) {
           setTableRows(data.tableRows);
+        }
+        if (data.milestoneEvaluations) {
+          setMilestoneEvaluations(data.milestoneEvaluations);
         }
         if (data.status) {
           setUserStatus(data.status);
@@ -640,6 +646,7 @@ export default function App() {
             horasAcumuladas: progressHours,
             status: 'efetivado',
             tableRows: tableRows,
+            milestoneEvaluations: milestoneEvaluations,
             ultimaAtualizacao: new Date().toISOString()
           }, { merge: true });
         } catch (e) {
@@ -669,6 +676,7 @@ export default function App() {
           horasAcumuladas: progressHours,
           status: userStatus,
           tableRows: tableRows,
+          milestoneEvaluations: milestoneEvaluations,
           dataInicio: format(new Date(), 'yyyy-MM-dd'),
           ultimaAtualizacao: new Date().toISOString()
         }, { merge: true });
@@ -726,6 +734,9 @@ export default function App() {
                   const adminSnap = await getDocs(adminQ);
                   
                   if (!adminSnap.empty) {
+                    const adminData = adminSnap.docs[0].data();
+                    const rawName = adminData.nome || adminData.name || trimmedEmail.split('.')[0] || 'Admin';
+                    setUserName(rawName.split(' ')[0].toUpperCase());
                     setIsAdmin(true);
                     setIsLoggedIn(true);
                     return;
@@ -754,6 +765,7 @@ export default function App() {
                         progress: stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0,
                         status: stageData?.status === 'efetivado' ? 'completed' : 'active'
                       };
+                      setUserName(traineeObj.name.split(' ')[0].toUpperCase());
                       setSelectedTrainee(traineeObj);
                       setFormData(prev => ({
                         ...prev,
@@ -1420,10 +1432,10 @@ export default function App() {
                     {(() => {
                       const milestones = [
                         { hours: 0, color: '#3b82f6', label: 'Início' },
-                        { hours: 100, color: '#22c55e', label: 'Marco 1', comment: 'Precisa melhorar a comunicação via rádio e atenção aos sinais sonoros.', inspector: 'Petrus' },
-                        { hours: 200, color: '#f97316', label: 'Marco 2', comment: 'Evolução notável na operação do virador. Manter o foco na segurança.', inspector: 'Marcio Flavio' },
-                        { hours: 300, color: '#a855f7', label: 'Marco 3', comment: 'Apto nas manobras básicas. Focar agora em situações de emergência.', inspector: 'Francenilde' },
-                        { hours: 432, color: '#10b981', label: 'Conclusão', comment: 'Treinamento concluído com sucesso. Apto para operação assistida.', inspector: 'Petrus' }
+                        { hours: 100, color: '#22c55e', label: 'Marco 1', comment: milestoneEvaluations[100]?.comment || '', inspector: milestoneEvaluations[100]?.inspector || '' },
+                        { hours: 200, color: '#f97316', label: 'Marco 2', comment: milestoneEvaluations[200]?.comment || '', inspector: milestoneEvaluations[200]?.inspector || '' },
+                        { hours: 300, color: '#a855f7', label: 'Marco 3', comment: milestoneEvaluations[300]?.comment || '', inspector: milestoneEvaluations[300]?.inspector || '' },
+                        { hours: 432, color: '#10b981', label: 'Conclusão', comment: milestoneEvaluations[432]?.comment || '', inspector: milestoneEvaluations[432]?.inspector || '' }
                       ];
                       const currentMilestone = milestones.slice().reverse().find(m => progressHours >= m.hours);
 
@@ -1484,32 +1496,39 @@ export default function App() {
                                 )}
                               </div>
 
-                              {/* Comment Box (Left on mobile, Bottom on desktop) */}
-                              {milestone.comment && (
-                                <div className="absolute right-full top-1/2 -translate-y-1/2 pr-4 w-[140px] sm:w-[180px] md:right-auto md:left-1/2 md:-translate-x-1/2 md:translate-y-0 md:top-full md:pt-6 md:pr-0 md:w-[140px] z-20">
-                                  <motion.div 
-                                    className="bg-background border border-border-subtle p-3 rounded-2xl text-center relative shadow-sm"
-                                    initial={{ opacity: 0.5, scale: 0.9 }}
-                                    animate={{
-                                      opacity: isReached ? 1 : 0.4,
-                                      scale: isReached ? 1 : 0.9
-                                    }}
-                                    transition={{
-                                      duration: 0.4,
-                                      delay: shouldAnimate ? reachTime : 0,
-                                      ease: "easeOut"
-                                    }}
-                                  >
-                                    {/* Triangle pointer (Mobile: Right) */}
-                                    <div className="absolute top-1/2 -translate-y-1/2 -right-2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[8px] border-l-gray-50 md:hidden"></div>
-                                    
-                                    {/* Triangle pointer (Desktop: Top) */}
-                                    <div className="hidden md:block absolute left-1/2 -translate-x-1/2 w-0 h-0 border-x-[6px] border-x-transparent -top-2 border-b-[8px] border-b-gray-50"></div>
-                                    
-                                    <p className="text-[10px] text-content-muted font-bold mb-1 uppercase tracking-wider">Avaliação do Inspetor</p>
-                                    <p className={`text-xs leading-relaxed ${isReached ? 'text-content' : 'text-content-muted'} mb-2`}>
-                                      {milestone.comment}
-                                    </p>
+                                     {/* Comment Box (Left on mobile, Bottom on desktop) */}
+                                     {(milestone.comment || isAdmin) && (
+                                       <div className="absolute right-full top-1/2 -translate-y-1/2 pr-4 w-[140px] sm:w-[180px] md:right-auto md:left-1/2 md:-translate-x-1/2 md:translate-y-0 md:top-full md:pt-6 md:pr-0 md:w-[140px] z-20">
+                                         <motion.div 
+                                           onClick={() => isAdmin && setEditingMilestone(milestone.hours)}
+                                           className={`bg-background border border-border-subtle p-3 rounded-2xl text-center relative shadow-sm ${isAdmin ? 'cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group/card' : ''}`}
+                                           initial={{ opacity: 0.5, scale: 0.9 }}
+                                           animate={{
+                                             opacity: isReached ? 1 : 0.4,
+                                             scale: isReached ? 1 : 0.9
+                                           }}
+                                           transition={{
+                                             duration: 0.4,
+                                             delay: shouldAnimate ? reachTime : 0,
+                                             ease: "easeOut"
+                                           }}
+                                         >
+                                           {isAdmin && (
+                                             <div className="absolute -top-2 -right-2 bg-blue-600 text-white p-1 rounded-full opacity-0 group-hover/card:opacity-100 transition-opacity shadow-sm">
+                                               <Plus className="w-3 h-3" />
+                                             </div>
+                                           )}
+                                           
+                                           {/* Triangle pointer (Mobile: Right) */}
+                                           <div className="absolute top-1/2 -translate-y-1/2 -right-2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[8px] border-l-gray-50 md:hidden"></div>
+                                           
+                                           {/* Triangle pointer (Desktop: Top) */}
+                                           <div className="hidden md:block absolute left-1/2 -translate-x-1/2 w-0 h-0 border-x-[6px] border-x-transparent -top-2 border-b-[8px] border-b-gray-50"></div>
+                                           
+                                           <p className="text-[10px] text-content-muted font-bold mb-1 uppercase tracking-wider">Avaliação do Inspetor</p>
+                                           <p className={`text-xs leading-relaxed ${isReached ? 'text-content' : 'text-content-muted'} mb-2`}>
+                                             {milestone.comment || (isAdmin ? "Adicionar avaliação..." : "")}
+                                           </p>
                                     {milestone.inspector && (
                                       <div className="flex justify-center">
                                         <span className="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold border border-indigo-100 uppercase tracking-tight">
@@ -2158,6 +2177,69 @@ export default function App() {
               )}
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingMilestone !== null && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingMilestone(null)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-surface w-full max-w-md rounded-[32px] p-8 shadow-2xl border border-border-subtle relative z-10"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-content">Avaliação do Inspetor</h3>
+                <button 
+                  onClick={() => setEditingMilestone(null)}
+                  className="p-2 hover:bg-border-subtle rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-content-muted" />
+                </button>
+              </div>
+              
+              <p className="text-sm text-content-muted mb-4 font-medium">
+                {editingMilestone === 432 ? 'Conclusão do Treinamento' : `Marco de ${editingMilestone} horas`}
+              </p>
+              
+              <textarea
+                autoFocus
+                className="w-full bg-background border border-border-subtle rounded-2xl p-4 min-h-[120px] focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm leading-relaxed mb-6"
+                placeholder="Digite aqui a avaliação técnica..."
+                value={milestoneEvaluations[editingMilestone]?.comment || ''}
+                onChange={(e) => setMilestoneEvaluations(prev => ({
+                  ...prev,
+                  [editingMilestone]: {
+                    comment: e.target.value,
+                    inspector: userName
+                  }
+                }))}
+              />
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setEditingMilestone(null)}
+                  className="flex-1 py-3 px-4 rounded-xl font-semibold text-content-muted hover:bg-border-subtle transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => setEditingMilestone(null)}
+                  className="flex-1 py-3 px-4 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  Salvar Avaliação
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
