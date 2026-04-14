@@ -42,6 +42,8 @@ const FUNCAO_OPTIONS = [
   "MAQUINISTA PÁTIO"
 ];
 
+const PRESET_HOURS = ["432", "240"];
+
 type ClassItem = {
   id: number;
   name: string;
@@ -619,6 +621,19 @@ export default function App() {
     { id: 2, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
     { id: 3, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
   ]);
+
+  // Sincronizar horas realizadas e faltantes automaticamente
+  useEffect(() => {
+    const prev = parseInt(formData.horasPrevistas || '0');
+    const realized = progressHours;
+    const faltantes = Math.max(0, prev - realized);
+    
+    setFormData(current => ({
+      ...current,
+      horasRealizadas: realized.toString(),
+      horasFaltantes: faltantes.toString()
+    }));
+  }, [progressHours, formData.horasPrevistas]);
 
   const addRow = () => {
     setTableRows([...tableRows, { id: Date.now(), local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' }]);
@@ -1687,15 +1702,46 @@ export default function App() {
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-content-muted ml-1">Horas previstas</label>
-                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.horasPrevistas} onChange={e => setFormData({...formData, horasPrevistas: e.target.value})} />
+                        <div className="flex flex-col gap-2">
+                          <input 
+                            type="text" 
+                            className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+                            value={formData.horasPrevistas} 
+                            onChange={e => setFormData({...formData, horasPrevistas: e.target.value})} 
+                          />
+                          <div className="flex gap-2">
+                            {PRESET_HOURS.map(h => (
+                              <button
+                                key={h}
+                                type="button"
+                                onClick={() => setFormData({...formData, horasPrevistas: h})}
+                                className={`flex-1 py-1.5 px-3 rounded-lg text-[10px] font-bold transition-all border ${
+                                  formData.horasPrevistas === h 
+                                    ? 'bg-blue-600 border-blue-600 text-white' 
+                                    : 'bg-transparent border-border-subtle text-content-muted hover:bg-border-subtle'
+                                }`}
+                              >
+                                {h} HORAS
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-content-muted ml-1">Horas realizadas</label>
-                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.horasRealizadas} onChange={e => setFormData({...formData, horasRealizadas: e.target.value})} />
+                        <div className="w-full bg-background/50 border border-dashed border-border-subtle rounded-xl px-4 py-3 text-content-muted text-sm font-medium">
+                          {formData.horasRealizadas}h
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-content-muted ml-1">Horas faltantes</label>
-                        <input type="text" className="w-full bg-background border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.horasFaltantes} onChange={e => setFormData({...formData, horasFaltantes: e.target.value})} />
+                        <div className={`w-full rounded-xl px-4 py-3 text-sm font-bold border ${
+                          parseInt(formData.horasFaltantes) === 0 
+                            ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
+                            : 'bg-orange-50 border-orange-100 text-orange-600'
+                        }`}>
+                          {formData.horasFaltantes}h
+                        </div>
                       </div>
                     </div>
                   </div>
