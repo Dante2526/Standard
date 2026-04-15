@@ -312,7 +312,7 @@ export default function App() {
               onClick={() => setActiveTab(tab as any)}
               className={`px-6 py-2.5 rounded-[18px] text-sm font-bold transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-md' : 'text-content-muted hover:bg-background'}`}
             >
-              {tab === 'timeline' ? 'Linha do Tempo' : tab === 'form' ? 'Atividades' : tab === 'pending' ? 'Pendências' : 'Kaizen'}
+              {tab === 'timeline' ? 'Linha do Tempo' : tab === 'form' ? 'Formulário' : tab === 'pending' ? 'Treinamentos' : 'Kaizen'}
             </button>
           ))}
         </div>
