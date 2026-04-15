@@ -161,25 +161,26 @@ export default function AdminClassesView({
         </div>
 
         {/* Bento Grid Layout */}
+        {/* Bento Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Main Global Card - Feature Bento Item */}
+          {/* Main Global Card - Full Width at Top */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             whileHover={{ y: -5, scale: 1.01 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onClick={handleSelectGlobalStorage}
-            className="md:col-span-8 bg-blue-600 dark:bg-blue-600 rounded-[38px] p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-blue-500/20 cursor-pointer overflow-hidden relative group"
+            className="md:col-span-12 bg-blue-600 dark:bg-blue-600 rounded-[38px] p-8 md:p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-blue-500/20 cursor-pointer overflow-hidden relative group"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-white/20 transition-colors" />
             
-            <div className="w-24 h-24 rounded-[32px] bg-white/20 backdrop-blur-md flex items-center justify-center text-white shrink-0 shadow-inner">
-              <GraduationCap className="w-12 h-12" />
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-[32px] bg-white/20 backdrop-blur-md flex items-center justify-center text-white shrink-0 shadow-inner">
+              <GraduationCap className="w-10 h-10 md:w-12 md:h-12" />
             </div>
             
             <div className="flex-1 text-center md:text-left z-10">
-              <h3 className="text-3xl font-black text-white tracking-tight mb-3">Controle de Colaboradores</h3>
-              <p className="text-blue-100 text-lg font-medium leading-relaxed max-w-lg mb-0">
+              <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">Controle de Colaboradores</h3>
+              <p className="text-blue-100 text-base md:text-lg font-medium leading-relaxed max-w-2xl mb-0">
                 Acesse o dashboard unificado para monitorar a evolução técnica e horas de treinamento de toda a companhia.
               </p>
             </div>
@@ -189,16 +190,10 @@ export default function AdminClassesView({
             </div>
           </motion.div>
 
-          {/* Individual Classes Bento Grid */}
-          <div className="md:col-span-4 grid grid-cols-2 md:grid-cols-1 gap-6">
-            {CLASSES_LIST.slice(0, 2).map((cls, idx) => (
+          {/* Combined Classes Grid - All classes normalized */}
+          <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {CLASSES_LIST.map((cls, idx) => (
               <BentoClassCard key={cls.id} cls={cls} idx={idx} onClick={() => handleSelectClass(cls.id)} />
-            ))}
-          </div>
-
-          <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-             {CLASSES_LIST.slice(2).map((cls, idx) => (
-              <BentoClassCard key={cls.id} cls={cls} idx={idx + 2} onClick={() => handleSelectClass(cls.id)} />
             ))}
           </div>
         </div>
