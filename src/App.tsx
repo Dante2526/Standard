@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Download, User as UserIcon, 
-  ChevronLeft, ChevronRight, Briefcase 
+  ChevronLeft, ChevronRight, Briefcase,
+  FileText, Table, Image as ImageIcon, File
 } from 'lucide-react';
 import { 
   format, addMonths, subMonths, startOfMonth, 
@@ -285,11 +286,23 @@ export default function App() {
             </button>
             <AnimatePresence>
               {isDownloadMenuOpen && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 mt-2 w-48 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden py-1 z-50">
-                  <button onClick={() => { ExportService.exportToPDF(formRef.current!); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-background transition-colors">PDF Profissional</button>
-                  <button onClick={() => { ExportService.exportToExcel({ nome: selectedTrainee?.name, matricula: selectedTrainee?.matricula, funcao: selectedTrainee?.funcao, horasPrevistas: totalHours, horasRealizadas: progressHours, horasFaltantes: totalHours - progressHours }, tableRows); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-background transition-colors">Planilha Excel</button>
-                  <button onClick={() => { ExportService.exportToPNG(formRef.current!); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-background transition-colors">Imagem (PNG)</button>
-                  <button onClick={() => { ExportService.exportToWord({ nome: selectedTrainee?.name, matricula: selectedTrainee?.matricula, funcao: selectedTrainee?.funcao, horasPrevistas: totalHours, horasRealizadas: progressHours, horasFaltantes: totalHours - progressHours }, tableRows); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-background transition-colors">Arquivo Word</button>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 mt-2 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden py-1.5 z-50">
+                  <button onClick={() => { ExportService.exportToPDF(formRef.current!); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                    <FileText className="w-4 h-4 text-red-500" />
+                    PDF Profissional
+                  </button>
+                  <button onClick={() => { ExportService.exportToExcel({ nome: selectedTrainee?.name, matricula: selectedTrainee?.matricula, funcao: selectedTrainee?.funcao, horasPrevistas: totalHours, horasRealizadas: progressHours, horasFaltantes: totalHours - progressHours }, tableRows); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                    <Table className="w-4 h-4 text-emerald-500" />
+                    Planilha Excel
+                  </button>
+                  <button onClick={() => { ExportService.exportToPNG(formRef.current!); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                    <ImageIcon className="w-4 h-4 text-blue-500" />
+                    Imagem (PNG)
+                  </button>
+                  <button onClick={() => { ExportService.exportToWord({ nome: selectedTrainee?.name, matricula: selectedTrainee?.matricula, funcao: selectedTrainee?.funcao, horasPrevistas: totalHours, horasRealizadas: progressHours, horasFaltantes: totalHours - progressHours }, tableRows); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                    <File className="w-4 h-4 text-blue-600" />
+                    Arquivo Word
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
