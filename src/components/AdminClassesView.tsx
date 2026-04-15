@@ -116,20 +116,14 @@ export default function AdminClassesView({
             </p>
           </div>
 
-          <div className="flex items-center gap-4 relative bg-surface/50 backdrop-blur-md p-2 rounded-[24px] border border-border-subtle shadow-sm">
+          <div className="flex items-center gap-2 relative bg-surface/50 backdrop-blur-md p-1.5 rounded-[22px] border border-border-subtle shadow-sm self-end md:self-auto">
             <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
-            <div className="h-8 w-px bg-border-subtle mx-1" />
+            <div className="h-6 w-px bg-border-subtle mx-0.5" />
             <button 
-              className="flex items-center gap-3 pl-2 pr-4 py-2 rounded-2xl hover:bg-background transition-all group"
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform shrink-0"
               onClick={handleToggleProfileMenu}
             >
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                {loginEmail.charAt(0).toUpperCase()}
-              </div>
-              <div className="text-left hidden sm:block">
-                <p className="text-sm font-bold text-content leading-none mb-1">{loginEmail.split('@')[0]}</p>
-                <p className="text-[10px] text-content-muted font-medium uppercase tracking-wider">Admin</p>
-              </div>
+              {loginEmail.charAt(0).toUpperCase()}
             </button>
             
             <AnimatePresence>
@@ -221,10 +215,10 @@ function BentoClassCard({ cls, idx, onClick }: { cls: any, idx: number, onClick:
       transition={{ delay: 0.1 + idx * 0.05, type: 'spring' }}
       whileHover={{ y: -8, scale: 1.02 }}
       onClick={onClick}
-      className="bg-surface rounded-[38px] p-8 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-border-subtle hover:border-blue-500/50 transition-all cursor-pointer group"
+      className="bg-surface rounded-[38px] p-6 sm:p-8 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-border-subtle hover:border-blue-500/50 transition-all cursor-pointer group"
     >
-      <div className="flex items-start justify-between mb-8">
-        <div className={`w-14 h-14 rounded-[22px] ${cls.color} flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-current/20`}>
+      <div className="flex items-start justify-between mb-8 gap-4">
+        <div className={`w-14 h-14 rounded-[22px] ${cls.color} flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-current/20 shrink-0`}>
           {cls.letter}
         </div>
         <div className="flex -space-x-3">
