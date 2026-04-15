@@ -49,6 +49,7 @@ export default function App() {
   const [milestoneEvaluations, setMilestoneEvaluations] = useState<MilestoneEvaluations>({});
   const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
   const [realTrainings, setRealTrainings] = useState<any[]>([]);
+  const [kaizenData, setKaizenData] = useState<any>(null);
   const [isLoadingTrainings, setIsLoadingTrainings] = useState(false);
   
   // --- Estados de UI ---
@@ -116,6 +117,7 @@ export default function App() {
     });
 
     DataService.fetchRealTrainings(selectedTrainee).then(setRealTrainings);
+    DataService.fetchKaizenData(selectedTrainee).then(setKaizenData);
 
     return () => unsubscribe();
   }, [selectedTrainee]);
@@ -333,7 +335,7 @@ export default function App() {
             />
           )}
           {activeTab === 'pending' && <PendingTrainingsView trainee={selectedTrainee!} realTrainings={realTrainings} isLoading={isLoadingTrainings} />}
-          {activeTab === 'kaizen' && <KaizenView trainee={selectedTrainee!} />}
+          {activeTab === 'kaizen' && <KaizenView trainee={selectedTrainee!} kaizenData={kaizenData} />}
         </div>
       </main>
 

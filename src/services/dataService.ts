@@ -146,3 +146,51 @@ export const uploadGlobalFile = async (file: File, type: 'kaizen' | 'treinamento
     throw error;
   }
 };
+
+/**
+ * Busca dados de Kaizen para um colaborador.
+ */
+export const fetchKaizenData = async (trainee: Trainee) => {
+  try {
+    const q = query(
+      collection(newDb, 'global_files'), 
+      where('type', '==', 'kaizen'),
+      orderBy('uploadedAt', 'desc'), 
+      limit(1)
+    );
+    const snap = await getDocs(q);
+    
+    if (snap.empty) return null;
+
+    const fileData = snap.docs[0].data();
+    const parsedData = fileData.parsedData || [];
+
+    // Encontra registros do colaborador específico
+    const userRecords = parsedData.filter((row: any, idx: number) => {
+      if (idx === 0) return false;
+      const rowMatricula = (row.colunas[1] || '').toString().trim();
+      const targetMatricula = (trainee.matricula || '').toString().trim();
+      return rowMatricula === targetMatricula;
+    });
+
+    if (userRecords.length === 0) return null;
+
+    // Constrói objeto estruturado esperado pelo KaizenView
+    return {
+      resumo: {
+        submetidos: userRecords.length,
+        implementados: userRecords.filter((r: any) => (r.colunas[4] || '').toLowerCase().includes('implementado')).length
+      },
+      evolucaoMensal: [], // Pode ser expandido futuramente se o CSV tiver datas
+      ultimosRegistros: userRecords.slice(0, 5).map((r: any) => ({
+        title: r.colunas[3] || 'Sugestão Kaizen',
+        date: r.colunas[2] || new Date().toISOString(),
+        status: (r.colunas[4] || '').toLowerCase().includes('implementado') ? 'Implementado' : 'Submetido'
+      }))
+    };
+  } catch (error) {
+    console.error("Erro ao buscar dados de Kaizen:", error);
+    return null;
+  }
+};
+
