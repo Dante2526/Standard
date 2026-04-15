@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { Upload, ArrowLeft, User as UserIcon, GraduationCap } from 'lucide-react';
-import { collection, getDocs, getDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
 import { db, newDb } from '../firebase';
 import DarkModeToggle from './DarkModeToggle';
 import { Trainee } from '../types';
@@ -42,7 +42,8 @@ export default function AdminClassesView({
     setSelectedClass('global-estagio');
     setIsLoadingTrainees(true);
     try {
-      const snap = await getDocs(collection(newDb, 'estagios'));
+      const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
+      const snap = await getDocs(q);
       const traineesData = snap.docs.map(docSnapshot => {
         const data = docSnapshot.data() as any;
         return {
@@ -50,8 +51,8 @@ export default function AdminClassesView({
           name: data.nome || 'Sem Nome',
           matricula: data.matricula || '',
           funcao: data.funcao || 'Colaborador',
-          progress: data.status === 'efetivado' ? 100 : Math.round((data.horasAcumuladas / 432) * 100),
-          status: data.status === 'efetivado' ? 'completed' : data.status === 'estagio' ? 'active' : 'none'
+          progress: Math.round((data.horasAcumuladas / 432) * 100),
+          status: 'active'
         } as Trainee;
       }).sort((a, b) => a.name.localeCompare(b.name));
       setTrainees(traineesData);
