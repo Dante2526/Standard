@@ -270,19 +270,24 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
-      <header className="fixed top-0 left-0 right-0 z-40 bg-surface/80 backdrop-blur-md border-b border-border-subtle px-6 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-4">
-          <button onClick={() => setSelectedTrainee(null)} className="p-2 hover:bg-background rounded-full transition-colors text-content-muted"><ArrowLeft className="w-5 h-5" /></button>
-          <div>
-            <h1 className="text-xl font-bold text-content tracking-tight">{selectedTrainee?.name}</h1>
-            <p className="text-xs text-content-muted font-medium uppercase tracking-wider">{selectedTrainee?.matricula}</p>
+      <header className="flex items-center justify-between mb-8 md:mb-12 gap-4 px-6 pt-6">
+          <div className="flex items-center gap-3 md:gap-6 min-w-0">
+            <button onClick={() => setSelectedTrainee(null)} className="p-2 md:p-3 hover:bg-surface rounded-2xl transition-colors shrink-0">
+              <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-content" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="text-xl md:text-3xl font-black text-content uppercase tracking-tight leading-tight truncate">{selectedTrainee.name}</h1>
+              <p className="text-[10px] md:text-xs font-bold text-content-muted tracking-widest uppercase opacity-60">{selectedTrainee.matricula}</p>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="relative" ref={downloadMenuRef}>
-            <button onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm">
-              <Download className="w-4 h-4" /> Exportar
+          <div className="relative shrink-0" ref={downloadMenuRef}>
+            <button 
+              onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)}
+              className="px-4 py-2.5 md:px-6 md:py-3 bg-blue-600 text-white rounded-2xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden xs:inline">Exportar</span>
+              <span className="xs:hidden">Exp.</span>
             </button>
             <AnimatePresence>
               {isDownloadMenuOpen && (
@@ -307,23 +312,21 @@ export default function App() {
               )}
             </AnimatePresence>
           </div>
-          <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
-        </div>
-      </header>
+        </header>
 
-      <main className="pt-24 pb-12 px-6 max-w-7xl mx-auto">
+      <main className="pt-6 pb-12 px-6 max-w-7xl mx-auto">
         <StatusSelectionView 
           currentStatus={userStatus} 
           onStatusChange={setUserStatus} 
           isAdmin={isAdmin} 
         />
 
-        <div className="flex gap-2 mb-8 bg-surface p-1.5 rounded-[22px] border border-border-subtle w-fit">
+        <div className="flex gap-2 overflow-x-auto pb-4 mb-8 custom-scrollbar no-scrollbar scroll-smooth">
           {['timeline', 'form', 'pending', 'kaizen'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={`px-6 py-2.5 rounded-[18px] text-sm font-bold transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-md' : 'text-content-muted hover:bg-background'}`}
+              className={`px-6 py-2.5 rounded-[18px] text-sm font-bold transition-all whitespace-nowrap shrink-0 ${activeTab === tab ? 'bg-blue-600 text-white shadow-md' : 'text-content-muted hover:bg-background'}`}
             >
               {tab === 'timeline' ? 'Linha do Tempo' : tab === 'form' ? 'Formulário' : tab === 'pending' ? 'Treinamentos' : 'Kaizen'}
             </button>
