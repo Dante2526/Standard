@@ -76,13 +76,13 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border-subtle">
-                <th className="py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider w-[180px]">Local</th>
-                <th className="py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider">Equipamento</th>
-                <th className="py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider w-[140px]">Data</th>
-                <th className="py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider w-[80px]">Hora</th>
-                <th className="py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider w-[80px]">Dur.</th>
-                <th className="py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider">Instrutor</th>
-                <th className="py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider">Avaliação</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[140px] md:w-[180px]">Local</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[120px]">Equipamento</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[110px] md:w-[140px]">Data</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[80px] md:w-[80px]">Hora</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[70px] md:w-[80px]">Dur.</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[120px]">Instrutor</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[120px]">Avaliação</th>
                 {isAdmin && <th className="py-2 px-1 w-10"></th>}
               </tr>
             </thead>
@@ -93,7 +93,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                     <div className="relative">
                       <button
                         onClick={() => isAdmin && setOpenDropdownId(openDropdownId === `local-${row.id}` ? null : `local-${row.id}`)}
-                        className={`w-full text-left px-2 py-1.5 text-sm rounded-lg border border-transparent transition-colors flex items-center justify-between ${isAdmin ? 'hover:border-border-subtle hover:bg-surface' : ''}`}
+                        className={`w-full text-left px-2 py-3 md:py-1.5 text-sm rounded-lg border border-transparent transition-colors flex items-center justify-between ${isAdmin ? 'hover:border-border-subtle hover:bg-surface' : ''}`}
                       >
                         <span className={row.local ? 'text-content' : 'text-content-muted truncate'}>
                           {row.local || 'Selecione...'}
@@ -129,7 +129,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                     <input 
                       type="text" 
                       readOnly={!isAdmin}
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.equipamento} 
                       onChange={e => updateRow(row.id, 'equipamento', e.target.value)} 
                     />
@@ -137,7 +137,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                   <td className="py-2 px-1 relative text-center">
                     <button
                       onClick={() => isAdmin && setOpenDropdownId(openDropdownId === `date-${row.id}` ? null : `date-${row.id}`)}
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors flex items-center justify-between"
+                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors flex items-center justify-between"
                     >
                       <span className={row.data ? 'text-content' : 'text-content-muted'}>
                         {row.data ? format(parseISO(row.data), 'dd/MM/yyyy') : 'DD/MM/AAAA'}
@@ -153,7 +153,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                       type="text" 
                       readOnly={!isAdmin}
                       placeholder="00:00" 
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.hora} 
                       onChange={e => updateRow(row.id, 'hora', e.target.value)} 
                     />
@@ -163,7 +163,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                       type="text" 
                       readOnly={!isAdmin}
                       placeholder="0h" 
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.duracao} 
                       onChange={e => updateRow(row.id, 'duracao', e.target.value)} 
                     />
@@ -172,7 +172,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                     <input 
                       type="text" 
                       readOnly={!isAdmin}
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.instrutor} 
                       onChange={e => updateRow(row.id, 'instrutor', e.target.value)} 
                     />
@@ -181,7 +181,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                     <input 
                       type="text" 
                       readOnly={!isAdmin}
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.avaliacao} 
                       onChange={e => updateRow(row.id, 'avaliacao', e.target.value)} 
                     />

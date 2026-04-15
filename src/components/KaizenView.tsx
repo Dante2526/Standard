@@ -28,9 +28,6 @@ export default function KaizenView({
       <div className="bg-surface rounded-[28px] p-6 shadow-sm border border-border-subtle">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-content uppercase tracking-tight">Central de Kaizen — {trainee.name}</h2>
-          <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100 uppercase tracking-widest">
-            Dados Reais
-          </span>
         </div>
 
         {currentData && currentData.resumo ? (

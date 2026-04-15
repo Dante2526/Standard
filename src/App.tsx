@@ -75,6 +75,7 @@ export default function App() {
 
   // --- Refs ---
   const hasLoadedDataRef = useRef(false);
+  const lastServerDataRef = useRef<string>('');
   const autoSaveTimerRef = useRef<any>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const downloadMenuRef = useRef<HTMLDivElement>(null);
@@ -106,13 +107,22 @@ export default function App() {
         if (data.tableRows) setTableRows(data.tableRows);
         if (data.milestoneEvaluations) setMilestoneEvaluations(data.milestoneEvaluations);
         if (data.status) setUserStatus(data.status);
+
+        // Armazena a versão do servidor para evitar loops de salvamento
+        lastServerDataRef.current = JSON.stringify({
+          tableRows: data.tableRows || [],
+          status: data.status || null,
+          milestoneEvaluations: data.milestoneEvaluations || {}
+        });
       } else {
-        setTableRows([
+        const initialRows = [
           { id: 1, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
           { id: 2, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
           { id: 3, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
-        ]);
+        ];
+        setTableRows(initialRows);
         setUserStatus(null);
+        lastServerDataRef.current = JSON.stringify({ tableRows: initialRows, status: null, milestoneEvaluations: {} });
       }
       setTimeout(() => { hasLoadedDataRef.current = true; }, 1000);
     });
@@ -127,6 +137,18 @@ export default function App() {
   const triggerAutoSave = useCallback(() => {
     if (!hasLoadedDataRef.current || !selectedTrainee) return;
     
+    // Compara os dados atuais com a última versão do servidor
+    const currentData = JSON.stringify({
+      tableRows,
+      status: userStatus,
+      milestoneEvaluations
+    });
+
+    if (currentData === lastServerDataRef.current) {
+      // Se os dados são iguais aos do servidor, não precisamos salvar
+      return;
+    }
+
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     setAutoSaveStatus('saving');
     
@@ -134,6 +156,10 @@ export default function App() {
       try {
         const progressHours = tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
         await DataService.saveStageData(selectedTrainee, progressHours, userStatus, tableRows, milestoneEvaluations);
+        
+        // Atualiza a referência local após um salvamento bem-sucedido
+        lastServerDataRef.current = currentData;
+        
         setAutoSaveStatus('saved');
         setTimeout(() => setAutoSaveStatus('idle'), 2000);
       } catch (e) {
