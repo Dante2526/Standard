@@ -338,38 +338,48 @@ export default function App() {
               <p className="text-[10px] md:text-xs font-bold text-content-muted tracking-widest uppercase opacity-60">{selectedTrainee.matricula}</p>
             </div>
           </div>
-          <div className="relative shrink-0" ref={downloadMenuRef}>
-            <button 
-              onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)}
-              className="px-4 py-2.5 md:px-6 md:py-3 bg-blue-600 text-white rounded-2xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden xs:inline">Exportar</span>
-              <span className="xs:hidden">Exp.</span>
-            </button>
-            <AnimatePresence>
-              {isDownloadMenuOpen && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 mt-2 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden py-1.5 z-50">
-                  <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
-                    <FileText className="w-4 h-4 text-red-500" />
-                    PDF Profissional
-                  </button>
-                  <button onClick={() => handleExport('excel')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
-                    <Table className="w-4 h-4 text-emerald-500" />
-                    Planilha Excel
-                  </button>
-                  <button onClick={() => handleExport('png')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
-                    <ImageIcon className="w-4 h-4 text-blue-500" />
-                    Imagem (PNG)
-                  </button>
-                  <button onClick={() => handleExport('word')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
-                    <File className="w-4 h-4 text-blue-600" />
-                    Arquivo Word
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <AnimatePresence>
+            {activeTab === 'form' && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="relative shrink-0" 
+                ref={downloadMenuRef}
+              >
+                <button 
+                  onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)}
+                  className="px-4 py-2.5 md:px-6 md:py-3 bg-blue-600 text-white rounded-2xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden xs:inline">Exportar</span>
+                  <span className="xs:hidden">Exp.</span>
+                </button>
+                <AnimatePresence>
+                  {isDownloadMenuOpen && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 mt-2 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden py-1.5 z-50">
+                      <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                        <FileText className="w-4 h-4 text-red-500" />
+                        PDF Profissional
+                      </button>
+                      <button onClick={() => handleExport('excel')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                        <Table className="w-4 h-4 text-emerald-500" />
+                        Planilha Excel
+                      </button>
+                      <button onClick={() => handleExport('png')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                        <ImageIcon className="w-4 h-4 text-blue-500" />
+                        Imagem (PNG)
+                      </button>
+                      <button onClick={() => handleExport('word')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                        <File className="w-4 h-4 text-blue-600" />
+                        Arquivo Word
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </header>
 
       <main className="pt-6 pb-12 px-6 max-w-7xl mx-auto">

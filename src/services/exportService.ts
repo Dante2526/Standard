@@ -8,7 +8,10 @@ import { TrainingRow } from '../types';
  * Função auxiliar para capturar um elemento com alta fidelidade (Método DSS).
  * Cria um clone invisível com largura de desktop para garantir layout perfeito no mobile.
  */
-const captureElementHighRes = async (element: HTMLElement): Promise<HTMLCanvasElement> => {
+const captureElementHighRes = async (element: HTMLElement | null): Promise<HTMLCanvasElement> => {
+  if (!element) {
+    throw new Error('Elemento para captura não encontrado. Certifique-se de que os dados do colaborador estão visíveis.');
+  }
   // 1. Clonar o elemento
   const clone = element.cloneNode(true) as HTMLElement;
   
