@@ -50,7 +50,7 @@ export default function AdminClassesView({
           name: data.nome || 'Sem Nome',
           matricula: data.matricula || '',
           funcao: data.funcao || 'Colaborador',
-          progress: Math.round((data.horasAcumuladas / 432) * 100),
+          progress: data.status === 'efetivado' ? 100 : Math.round((data.horasAcumuladas / 432) * 100),
           status: data.status === 'efetivado' ? 'completed' : data.status === 'estagio' ? 'active' : 'none'
         } as Trainee;
       }).sort((a, b) => a.name.localeCompare(b.name));
@@ -78,7 +78,7 @@ export default function AdminClassesView({
           matricula: data.matricula || '',
           funcao: data.funcao || '',
           email: data.email || '',
-          progress: stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0,
+          progress: (stageData?.status === 'efetivado') ? 100 : (stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0),
           status: stageData?.status === 'efetivado' ? 'completed' : stageData?.status === 'estagio' ? 'active' : 'none'
         } as Trainee;
       }))).sort((a, b) => a.name.localeCompare(b.name));
@@ -93,24 +93,42 @@ export default function AdminClassesView({
   return (
     <motion.div 
       key="classes"
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="pt-12"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -30 }}
+      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+      className="pt-16 pb-24"
     >
-      <div className="max-w-4xl mx-auto px-4 mb-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-content">Colaboradores</h1>
-            <p className="text-content-muted">Selecione uma turma para visualizar os colaboradores</p>
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header Section - Asymmetric Design */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+          <div className="max-w-xl">
+            <motion.h1 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="text-4xl md:text-5xl font-extrabold tracking-tight text-content mb-4"
+            >
+              Gestão de <span className="text-blue-600 dark:text-blue-500">Talentos</span>
+            </motion.h1>
+            <p className="text-lg text-content-muted leading-relaxed">
+              Monitore o desenvolvimento e progresso técnico de todas as turmas em tempo real.
+            </p>
           </div>
-          <div className="flex items-center gap-4 relative">
+
+          <div className="flex items-center gap-4 relative bg-surface/50 backdrop-blur-md p-2 rounded-[24px] border border-border-subtle shadow-sm">
             <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
+            <div className="h-8 w-px bg-border-subtle mx-1" />
             <button 
-              className="aspect-square w-10 h-10 rounded-[12px] bg-blue-50/80 dark:bg-surface border border-blue-200 dark:border-border-subtle flex items-center justify-center shadow-sm hover:shadow hover:bg-blue-100 dark:hover:bg-border-subtle/50 transition-all text-blue-600 dark:text-blue-400 font-bold text-sm" 
+              className="flex items-center gap-3 pl-2 pr-4 py-2 rounded-2xl hover:bg-background transition-all group"
               onClick={handleToggleProfileMenu}
             >
-              {loginEmail.charAt(0).toUpperCase()}
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                {loginEmail.charAt(0).toUpperCase()}
+              </div>
+              <div className="text-left hidden sm:block">
+                <p className="text-sm font-bold text-content leading-none mb-1">{loginEmail.split('@')[0]}</p>
+                <p className="text-[10px] text-content-muted font-medium uppercase tracking-wider">Admin</p>
+              </div>
             </button>
             
             <AnimatePresence>
@@ -119,26 +137,26 @@ export default function AdminClassesView({
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute top-12 right-0 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden z-50 p-2"
+                  className="absolute top-full mt-4 right-0 w-64 liquid-glass rounded-[28px] shadow-2xl overflow-hidden z-50 p-3"
                 >
-                  <div className="px-3 pb-3 pt-1 border-b border-border-subtle mb-2">
-                    <p className="text-sm font-semibold text-content truncate">{loginEmail}</p>
-                    <p className="text-xs text-content-muted mt-0.5">Administrador</p>
+                  <div className="px-4 py-4 border-b border-white/5 mb-2">
+                    <p className="text-xs font-bold text-content-muted uppercase tracking-widest mb-1">Logado como</p>
+                    <p className="text-sm font-bold text-content truncate">{loginEmail}</p>
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="space-y-1">
                     <button
                       onClick={handleOpenGlobalRepo}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-content bg-transparent hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-800/50"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-content hover:bg-white/5 rounded-2xl transition-all group"
                     >
-                      <Upload className="w-4 h-4 text-emerald-500" />
+                      <Upload className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
                       Repositório Global
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/50"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-2xl transition-all group"
                     >
-                      <ArrowLeft className="w-4 h-4" />
-                      Sair
+                      <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                      Encerrar Sessão
                     </button>
                   </div>
                 </motion.div>
@@ -147,54 +165,81 @@ export default function AdminClassesView({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Main Global Card - Feature Bento Item */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 0.98 }}
-            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ y: -5, scale: 1.01 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onClick={handleSelectGlobalStorage}
-            className="bg-surface rounded-[32px] p-8 flex flex-col items-center justify-center shadow-sm border border-blue-100 bg-blue-50/30 hover:shadow-md transition-all cursor-pointer md:col-span-2"
+            className="md:col-span-8 bg-blue-600 dark:bg-blue-600 rounded-[38px] p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-blue-500/20 cursor-pointer overflow-hidden relative group"
           >
-            <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white mb-4 shadow-sm">
-              <GraduationCap className="w-8 h-8" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-white/20 transition-colors" />
+            
+            <div className="w-24 h-24 rounded-[32px] bg-white/20 backdrop-blur-md flex items-center justify-center text-white shrink-0 shadow-inner">
+              <GraduationCap className="w-12 h-12" />
             </div>
-            <h3 className="text-xl font-bold text-content tracking-wide mb-1 text-center">Controle de Colaboradores</h3>
-            <p className="text-sm text-content-muted mb-2 text-center max-w-md">
-              Visualize o progresso de todos os colaboradores cadastrados no novo banco de dados.
-            </p>
+            
+            <div className="flex-1 text-center md:text-left z-10">
+              <h3 className="text-3xl font-black text-white tracking-tight mb-3">Controle de Colaboradores</h3>
+              <p className="text-blue-100 text-lg font-medium leading-relaxed max-w-lg mb-0">
+                Acesse o dashboard unificado para monitorar a evolução técnica e horas de treinamento de toda a companhia.
+              </p>
+            </div>
+            
+            <div className="shrink-0 flex items-center justify-center w-14 h-14 rounded-full bg-white text-blue-600 self-end md:self-center">
+              <ArrowLeft className="w-6 h-6 rotate-180" />
+            </div>
           </motion.div>
 
-          {CLASSES_LIST.map((cls, index) => (
-            <motion.div
-              key={cls.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05, duration: 0.3 }}
-              whileHover={{ scale: 0.98 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleSelectClass(cls.id)}
-              className="bg-surface rounded-[32px] p-8 flex flex-col items-center justify-center shadow-sm border border-border-subtle hover:shadow-md transition-all cursor-pointer"
-            >
-              <div className={`w-16 h-16 rounded-full ${cls.color} flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-sm`}>
-                {cls.letter}
-              </div>
-              <h3 className="text-lg font-bold text-content tracking-wide mb-1">{cls.name}</h3>
-              <p className="text-sm text-content-muted mb-6">{cls.students} alunos</p>
-              
-              <div className="flex items-center justify-center -space-x-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-background border-2 border-surface flex items-center justify-center z-10">
-                    <UserIcon className="w-4 h-4 text-green-500" />
-                  </div>
-                ))}
-                <div className="w-8 h-8 rounded-full bg-background border-2 border-surface flex items-center justify-center z-0 text-[10px] font-medium text-content-muted">
-                  +{cls.students - 3}
-                </div>
-              </div>
-            </motion.div>
+          {/* Individual Classes Bento Grid */}
+          <div className="md:col-span-4 grid grid-cols-2 md:grid-cols-1 gap-6">
+            {CLASSES_LIST.slice(0, 2).map((cls, idx) => (
+              <BentoClassCard key={cls.id} cls={cls} idx={idx} onClick={() => handleSelectClass(cls.id)} />
+            ))}
+          </div>
+
+          <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+             {CLASSES_LIST.slice(2).map((cls, idx) => (
+              <BentoClassCard key={cls.id} cls={cls} idx={idx + 2} onClick={() => handleSelectClass(cls.id)} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function BentoClassCard({ cls, idx, onClick }: { cls: any, idx: number, onClick: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.1 + idx * 0.05, type: 'spring' }}
+      whileHover={{ y: -8, scale: 1.02 }}
+      onClick={onClick}
+      className="bg-surface rounded-[38px] p-8 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-border-subtle hover:border-blue-500/50 transition-all cursor-pointer group"
+    >
+      <div className="flex items-start justify-between mb-8">
+        <div className={`w-14 h-14 rounded-[22px] ${cls.color} flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-current/20`}>
+          {cls.letter}
+        </div>
+        <div className="flex -space-x-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="w-9 h-9 rounded-full bg-background border-4 border-surface flex items-center justify-center overflow-hidden ring-1 ring-black/5">
+              <UserIcon className="w-4 h-4 text-emerald-500" />
+            </div>
           ))}
         </div>
+      </div>
+
+      <div className="mt-auto">
+        <h3 className="text-xl font-extrabold text-content tracking-tight mb-1 group-hover:text-blue-600 transition-colors uppercase">{cls.name}</h3>
+        <p className="text-sm font-bold text-content-muted leading-none">
+          {cls.students} <span className="font-medium opacity-70">colaboradores ativos</span>
+        </p>
       </div>
     </motion.div>
   );

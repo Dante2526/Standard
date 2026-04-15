@@ -81,7 +81,7 @@ export default function LoginView({
             name: t.nome || t.name || 'Usuário',
             matricula: t.matricula || '',
             funcao: t.funcao || '',
-            progress: stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0,
+            progress: stageData?.status === 'efetivado' ? 100 : (stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0),
             status: stageData?.status === 'efetivado' ? 'completed' : 'active'
           };
           

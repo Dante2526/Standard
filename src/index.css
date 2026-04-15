@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @theme {
   --color-background: var(--bg-main);
@@ -6,22 +7,28 @@
   --color-content: var(--text-main);
   --color-content-muted: var(--text-muted);
   --color-border-subtle: var(--border-main);
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
 :root {
-  --bg-main: #f2f2f6;
+  --bg-main: #f9fafb;
   --bg-surface: #ffffff;
-  --text-main: #111827;
-  --text-muted: #6b7280;
-  --border-main: #f3f4f6;
+  --text-main: #09090b;
+  --text-muted: #71717a;
+  --border-main: #e2e8f0;
 }
 
 .dark {
-  --bg-main: #1A202C;
-  --bg-surface: #2D3748;
-  --text-main: #F7FAFC;
-  --text-muted: #A0AEC0;
-  --border-main: #4A5568;
+  --bg-main: #09090b;
+  --bg-surface: #18181b;
+  --text-main: #fafafa;
+  --text-muted: #a1a1aa;
+  --border-main: #27272a;
+}
+
+* {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 html, body {
@@ -29,4 +36,18 @@ html, body {
   width: 100%;
   max-width: 100vw;
   background-color: var(--bg-main);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Taste-Skill: Liquid Glass Utility */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .liquid-glass {
+  background: rgba(24, 24, 27, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }

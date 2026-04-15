@@ -222,8 +222,10 @@ export default function App() {
     );
   };
 
-  const progressHours = tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
   const totalHours = 432;
+  const progressHours = userStatus === 'efetivado' 
+    ? totalHours 
+    : tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
 
   // --- Renderização Principal ---
   if (!isLoggedIn) {
