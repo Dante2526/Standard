@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, VerticalAlign } from 'docx';
 import { TrainingRow } from '../types';
 
 /**
@@ -140,7 +140,7 @@ export const exportToExcel = (formData: any, tableRows: TrainingRow[]) => {
 };
 
 /**
- * Exporta os dados de treinamento como arquivo Word (docx).
+ * Exporta os dados de treinamento como arquivo Word (docx) estilizado.
  */
 export const exportToWord = async (formData: any, tableRows: TrainingRow[]) => {
   try {
@@ -148,42 +148,75 @@ export const exportToWord = async (formData: any, tableRows: TrainingRow[]) => {
       sections: [{
         properties: {},
         children: [
-          new Paragraph({ children: [new TextRun({ text: "Dados do Treinamento", bold: true, size: 28 })] }),
-          new Paragraph({ text: "" }),
-          new Paragraph({ text: `Nome: ${formData.nome}` }),
-          new Paragraph({ text: `Matrícula: ${formData.matricula}` }),
-          new Paragraph({ text: `Supervisor: ${formData.supervisor}` }),
-          new Paragraph({ text: `Função: ${formData.funcao}` }),
-          new Paragraph({ text: `Horas Previstas: ${formData.horasPrevistas}` }),
-          new Paragraph({ text: `Horas Realizadas: ${formData.horasRealizadas}` }),
-          new Paragraph({ text: `Horas Faltantes: ${formData.horasFaltantes}` }),
-          new Paragraph({ text: "" }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+            children: [
+              new TextRun({
+                text: "RELATÓRIO DE PROGRESSO DE TREINAMENTO",
+                bold: true,
+                size: 32,
+                font: "Calibri",
+              }),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "DADOS DO COLABORADOR", bold: true, size: 24 }),
+            ],
+          }),
+          new Paragraph({ text: `NOME: ${formData.nome?.toUpperCase() || 'N/A'}` }),
+          new Paragraph({ text: `MATRÍCULA: ${formData.matricula || 'N/A'}` }),
+          new Paragraph({ text: `FUNÇÃO: ${formData.funcao?.toUpperCase() || 'N/A'}` }),
+          new Paragraph({ text: `HORAS PREVISTAS: ${formData.horasPrevistas || 0}` }),
+          new Paragraph({ text: `HORAS REALIZADAS: ${formData.horasRealizadas || 0}` }),
+          new Paragraph({ text: `HORAS FALTANTES: ${formData.horasFaltantes || 0}`, spacing: { after: 400 } }),
+          
+          new Paragraph({
+            children: [
+              new TextRun({ text: "DETALHAMENTO DAS ATIVIDADES", bold: true, size: 24 }),
+            ],
+            spacing: { after: 200 },
+          }),
+
           new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [
               new TableRow({
+                tableHeader: true,
                 children: [
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Local", bold: true })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Equipamento", bold: true })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Data", bold: true })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Hora", bold: true })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Duração", bold: true })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Instrutor", bold: true })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Avaliação", bold: true })] })] }),
-                ]
+                  "Local", "Equipamento", "Data", "Hora", "Duração", "Instrutor", "Avaliação"
+                ].map(text => new TableCell({
+                  shading: { fill: "F3F4F6" },
+                  verticalAlign: VerticalAlign.CENTER,
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [new TextRun({ text, bold: true, size: 20 })],
+                    }),
+                  ],
+                })),
               }),
               ...tableRows.map(row => new TableRow({
                 children: [
-                  new TableCell({ children: [new Paragraph(row.local)] }),
-                  new TableCell({ children: [new Paragraph(row.equipamento)] }),
-                  new TableCell({ children: [new Paragraph(row.data)] }),
-                  new TableCell({ children: [new Paragraph(row.hora)] }),
-                  new TableCell({ children: [new Paragraph(row.duracao)] }),
-                  new TableCell({ children: [new Paragraph(row.instrutor)] }),
-                  new TableCell({ children: [new Paragraph(row.avaliacao)] }),
-                ]
+                  row.local, row.equipamento, row.data, row.hora, row.duracao, row.instrutor, row.avaliacao
+                ].map(text => new TableCell({
+                  verticalAlign: VerticalAlign.CENTER,
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [new TextRun({ text: text || "-", size: 18 })],
+                    }),
+                  ],
+                })),
               }))
             ]
+          }),
+          new Paragraph({
+            text: `Documento gerado em ${new Date().toLocaleDateString()} às ${new Date().toLocaleTimeString()}`,
+            size: 16,
+            alignment: AlignmentType.RIGHT,
+            spacing: { before: 400 },
           })
         ]
       }]
@@ -193,7 +226,7 @@ export const exportToWord = async (formData: any, tableRows: TrainingRow[]) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "formulario-treinamento.docx";
+    a.download = `treinamento-${formData.matricula}-${new Date().getTime()}.docx`;
     a.click();
     window.URL.revokeObjectURL(url);
   } catch (error) {
