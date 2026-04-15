@@ -193,8 +193,6 @@ export default function App() {
   const removeRow = (id: number) => {
     setTableRows(prev => prev.filter(row => row.id !== id));
   };
-
-  };
   
   const handleExport = async (type: 'pdf' | 'excel' | 'png' | 'word') => {
     if (!selectedTrainee) return;
