@@ -5,20 +5,72 @@ import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, Width
 import { TrainingRow } from '../types';
 
 /**
- * Exporta o formulário de treinamento como PNG.
+ * Função auxiliar para capturar um elemento com alta fidelidade (Método DSS).
+ * Cria um clone invisível com largura de desktop para garantir layout perfeito no mobile.
+ */
+const captureElementHighRes = async (element: HTMLElement): Promise<HTMLCanvasElement> => {
+  // 1. Clonar o elemento
+  const clone = element.cloneNode(true) as HTMLElement;
+  
+  // 2. Estilizar o clone para captura perfeita
+  // - Largura fixa (desktop) para evitar o layout espremido do mobile
+  // - Remover botões de ação (lixeira, dropdowns, botões de adicionar)
+  // - Fundo branco sólido
+  Object.assign(clone.style, {
+    position: 'absolute',
+    top: '-9999px',
+    left: '0',
+    width: '1200px', // Força layout Desktop
+    padding: '40px',
+    backgroundColor: '#ffffff',
+    zIndex: '-1',
+    transform: 'none',
+    boxShadow: 'none'
+  });
+
+  // Remover elementos que não devem sair na "foto"
+  const elementsToRemove = clone.querySelectorAll('button, .no-export, .opacity-0');
+  elementsToRemove.forEach(el => (el as HTMLElement).style.display = 'none');
+
+  // Ajustar inputs para parecerem texto plano ou inputs limpos
+  const inputs = clone.querySelectorAll('input');
+  inputs.forEach(input => {
+    input.style.border = 'none';
+    input.style.backgroundColor = 'transparent';
+    input.style.padding = '4px 0';
+  });
+
+  document.body.appendChild(clone);
+
+  try {
+    const canvas = await html2canvas(clone, {
+      scale: 3, // Resolução "Retina"
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      windowWidth: 1200,
+      onclone: (clonedDoc) => {
+        // Garantir que animações do motion/react estejam no estado final
+        const clonedEl = clonedDoc.body.querySelector('[style*="-9999px"]') as HTMLElement;
+        if (clonedEl) clonedEl.style.transform = 'none';
+      }
+    });
+    return canvas;
+  } finally {
+    document.body.removeChild(clone);
+  }
+};
+
+/**
+ * Exporta o formulário de treinamento como PNG de alta resolução.
  */
 export const exportToPNG = async (element: HTMLElement) => {
   try {
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#f9fafb'
-    });
-    const imgData = canvas.toDataURL('image/png');
+    const canvas = await captureElementHighRes(element);
+    const imgData = canvas.toDataURL('image/png', 1.0);
     const a = document.createElement('a');
     a.href = imgData;
-    a.download = 'formulario-treinamento.png';
+    a.download = `formulario-treinamento-${new Date().getTime()}.png`;
     a.click();
   } catch (error) {
     console.error('Erro ao gerar PNG:', error);
@@ -32,27 +84,52 @@ export const exportToPNG = async (element: HTMLElement) => {
 export const exportToExcel = (formData: any, tableRows: TrainingRow[]) => {
   try {
     const wb = XLSX.utils.book_new();
+    
+    // Garantir que os dados existam ou tenham fallbacks (prevenção de erro mobile)
+    const dataInfo = {
+      nome: formData?.nome || 'N/A',
+      matricula: formData?.matricula || 'N/A',
+      funcao: formData?.funcao || 'N/A',
+      previstas: formData?.horasPrevistas || 0,
+      realizadas: formData?.horasRealizadas || 0,
+      faltantes: formData?.horasFaltantes || 0
+    };
+
     const wsData = [
-      ['Dados do Treinamento'],
+      ['RELATÓRIO DE PROGRESSO DE TREINAMENTO'],
       [],
-      ['Nome', formData.nome],
-      ['Matrícula', formData.matricula],
-      ['Supervisor', formData.supervisor],
-      ['Função', formData.funcao],
-      ['Horas Previstas', formData.horasPrevistas],
-      ['Horas Realizadas', formData.horasRealizadas],
-      ['Horas Faltantes', formData.horasFaltantes],
+      ['NOME DO COLABORADOR', dataInfo.nome.toUpperCase()],
+      ['MATRÍCULA', dataInfo.matricula],
+      ['FUNÇÃO', dataInfo.funcao.toUpperCase()],
+      ['HORAS PREVISTAS', dataInfo.previstas],
+      ['HORAS REALIZADAS', dataInfo.realizadas],
+      ['HORAS FALTANTES', dataInfo.faltantes],
       [],
+      ['DETALHAMENTO DAS ATIVIDADES'],
       ['Local', 'Equipamento', 'Data', 'Hora', 'Duração', 'Instrutor', 'Avaliação']
     ];
     
     tableRows.forEach(row => {
-      wsData.push([row.local, row.equipamento, row.data, row.hora, row.duracao, row.instrutor, row.avaliacao]);
+      wsData.push([
+        row.local || '', 
+        row.equipamento || '', 
+        row.data || '', 
+        row.hora || '', 
+        row.duracao || '', 
+        row.instrutor || '', 
+        row.avaliacao || ''
+      ]);
     });
     
     const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // Ajustar larguras das colunas
+    ws['!cols'] = [
+      { wch: 20 }, { wch: 25 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 20 }
+    ];
+
     XLSX.utils.book_append_sheet(wb, ws, 'Treinamento');
-    XLSX.writeFile(wb, 'formulario-treinamento.xlsx');
+    XLSX.writeFile(wb, `treinamento-${dataInfo.matricula}-${new Date().getTime()}.xlsx`);
   } catch (error) {
     console.error('Erro ao gerar Excel:', error);
     throw error;
@@ -123,18 +200,13 @@ export const exportToWord = async (formData: any, tableRows: TrainingRow[]) => {
 };
 
 /**
- * Exporta o formulário de treinamento como PDF.
+ * Exporta o formulário de treinamento como PDF de alta resolução (Método DSS).
  */
 export const exportToPDF = async (element: HTMLElement) => {
   try {
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#f9fafb'
-    });
+    const canvas = await captureElementHighRes(element);
+    const imgData = canvas.toDataURL('image/png', 1.0);
     
-    const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -144,8 +216,10 @@ export const exportToPDF = async (element: HTMLElement) => {
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
     
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save('formulario-treinamento.pdf');
+    // Se a imagem for maior que uma página A4, ela será redimensionada para caber na largura
+    // mas o ideal é que o formulário não seja excessivamente longo.
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    pdf.save(`formulario-treinamento-${new Date().getTime()}.pdf`);
   } catch (error) {
     console.error('Erro ao gerar PDF:', error);
     throw error;

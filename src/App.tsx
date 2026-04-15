@@ -194,6 +194,40 @@ export default function App() {
     setTableRows(prev => prev.filter(row => row.id !== id));
   };
 
+  };
+  
+  const handleExport = async (type: 'pdf' | 'excel' | 'png' | 'word') => {
+    if (!selectedTrainee) return;
+    setIsDownloading(true);
+    setIsDownloadMenuOpen(false);
+
+    // Pequeno delay para garantir que o menu feche antes da captura
+    await new Promise(r => setTimeout(r, 300));
+
+    try {
+      const exportData = {
+        nome: selectedTrainee.name,
+        matricula: selectedTrainee.matricula,
+        funcao: selectedTrainee.funcao,
+        horasPrevistas: totalHours,
+        horasRealizadas: progressHours,
+        horasFaltantes: totalHours - progressHours
+      };
+
+      switch (type) {
+        case 'pdf': await ExportService.exportToPDF(formRef.current!); break;
+        case 'excel': await ExportService.exportToExcel(exportData, tableRows); break;
+        case 'png': await ExportService.exportToPNG(formRef.current!); break;
+        case 'word': await ExportService.exportToWord(exportData, tableRows); break;
+      }
+    } catch (e) {
+      console.error("Export failed", e);
+      alert("Erro ao gerar arquivo. Tente novamente.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleGlobalUpload = async () => {
     if (!globalFile) return;
     setIsUploadingGlobal(true);
@@ -318,19 +352,19 @@ export default function App() {
             <AnimatePresence>
               {isDownloadMenuOpen && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 mt-2 w-56 bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden py-1.5 z-50">
-                  <button onClick={() => { ExportService.exportToPDF(formRef.current!); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                  <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
                     <FileText className="w-4 h-4 text-red-500" />
                     PDF Profissional
                   </button>
-                  <button onClick={() => { ExportService.exportToExcel({ nome: selectedTrainee?.name, matricula: selectedTrainee?.matricula, funcao: selectedTrainee?.funcao, horasPrevistas: totalHours, horasRealizadas: progressHours, horasFaltantes: totalHours - progressHours }, tableRows); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                  <button onClick={() => handleExport('excel')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
                     <Table className="w-4 h-4 text-emerald-500" />
                     Planilha Excel
                   </button>
-                  <button onClick={() => { ExportService.exportToPNG(formRef.current!); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                  <button onClick={() => handleExport('png')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
                     <ImageIcon className="w-4 h-4 text-blue-500" />
                     Imagem (PNG)
                   </button>
-                  <button onClick={() => { ExportService.exportToWord({ nome: selectedTrainee?.name, matricula: selectedTrainee?.matricula, funcao: selectedTrainee?.funcao, horasPrevistas: totalHours, horasRealizadas: progressHours, horasFaltantes: totalHours - progressHours }, tableRows); setIsDownloadMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
+                  <button onClick={() => handleExport('word')} className="w-full text-left px-4 py-3 text-sm hover:bg-background transition-colors flex items-center gap-3 font-medium">
                     <File className="w-4 h-4 text-blue-600" />
                     Arquivo Word
                   </button>
@@ -392,6 +426,28 @@ export default function App() {
         milestone={editingMilestone} onClose={() => setEditingMilestone(null)}
         evaluations={milestoneEvaluations} onUpdate={(m, c) => setMilestoneEvaluations(prev => ({ ...prev, [m]: { comment: c, inspector: userName } }))}
       />
+
+      <AnimatePresence>
+        {isDownloading && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-background/80 backdrop-blur-md flex flex-col items-center justify-center gap-6"
+          >
+            <div className="relative">
+              <div className="w-20 h-20 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Download className="w-8 h-8 text-blue-600" />
+              </div>
+            </div>
+            <div className="text-center">
+              <h2 className="text-xl font-black text-content uppercase tracking-tight mb-2">Gerando Documento</h2>
+              <p className="text-sm font-bold text-content-muted uppercase tracking-widest opacity-60">Pode levar alguns segundos...</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <footer className="py-8 text-center text-xs font-bold text-content-muted tracking-widest opacity-60">
         DESENVOLVIDO POR NEAR
