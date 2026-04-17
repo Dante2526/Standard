@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Download, User as UserIcon, 
   ChevronLeft, ChevronRight, Briefcase,
-  FileText, Table, Image as ImageIcon, File, Upload
+  FileText, Table, Image as ImageIcon, File
 } from 'lucide-react';
 import { 
   format, addMonths, subMonths, startOfMonth, 
@@ -339,16 +339,6 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isAdmin && (
-              <button 
-                onClick={() => setShowGlobalUploadModal(true)}
-                className="p-2.5 md:p-3 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-500 rounded-2xl transition-all shrink-0 flex items-center gap-2 group"
-                title="Repositório Global"
-              >
-                <Upload className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-bold uppercase tracking-wider hidden lg:inline">Atualizar Dados</span>
-              </button>
-            )}
             <AnimatePresence>
               {activeTab === 'form' && (
                 <motion.div 
