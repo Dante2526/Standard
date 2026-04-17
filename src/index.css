@@ -19,11 +19,11 @@
 }
 
 .dark {
-  --bg-main: #09090b;
-  --bg-surface: #18181b;
-  --text-main: #fafafa;
-  --text-muted: #a1a1aa;
-  --border-main: #27272a;
+  --bg-main: #1A202C;
+  --bg-surface: #2D3748;
+  --text-main: #f7fafc;
+  --text-muted: #a0aec0;
+  --border-main: #4A5568;
 }
 
 * {
@@ -48,6 +48,6 @@ html, body {
 }
 
 .dark .liquid-glass {
-  background: rgba(24, 24, 27, 0.6);
+  background: rgba(45, 55, 72, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
