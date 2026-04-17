@@ -171,14 +171,14 @@ export default function AdminClassesView({
         {/* Bento Grid Layout */}
         {/* Bento Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Main Global Card - Full Width at Top */}
+          {/* Main Global Card - Left Side */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             whileHover={{ y: -5, scale: 1.01 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onClick={handleSelectGlobalStorage}
-            className="md:col-span-12 bg-blue-600 dark:bg-blue-600 rounded-[38px] p-8 md:p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-blue-500/20 cursor-pointer overflow-hidden relative group"
+            className="md:col-span-8 bg-blue-600 dark:bg-blue-600 rounded-[38px] p-8 md:p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-blue-500/20 cursor-pointer overflow-hidden relative group"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-white/20 transition-colors" />
             
@@ -187,14 +187,37 @@ export default function AdminClassesView({
             </div>
             
             <div className="flex-1 text-center md:text-left z-10">
-              <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">Controle de Colaboradores</h3>
-              <p className="text-blue-100 text-base md:text-lg font-medium leading-relaxed max-w-2xl mb-0">
-                Acesse o dashboard unificado para monitorar a evolução técnica e horas de treinamento de toda a companhia.
+              <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">Controle Geral</h3>
+              <p className="text-blue-100 text-sm md:text-base font-medium leading-relaxed max-w-2xl mb-0">
+                Dashboard unificado de evolução técnica e horas de treinamento.
               </p>
             </div>
             
-            <div className="shrink-0 flex items-center justify-center w-14 h-14 rounded-full bg-white text-blue-600 self-end md:self-center">
-              <ArrowLeft className="w-6 h-6 rotate-180" />
+            <div className="shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-white text-blue-600 self-end md:self-center">
+              <ArrowLeft className="w-5 h-5 rotate-180" />
+            </div>
+          </motion.div>
+
+          {/* New Global Upload Card - Right Side */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ y: -5, scale: 1.01 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.1 }}
+            onClick={handleOpenGlobalRepo}
+            className="md:col-span-4 bg-emerald-600 dark:bg-emerald-600 rounded-[38px] p-8 md:p-10 flex flex-col items-center justify-center text-center gap-4 shadow-2xl shadow-emerald-500/20 cursor-pointer overflow-hidden relative group"
+          >
+            <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-2xl -mr-24 -mt-24 group-hover:bg-white/20 transition-colors" />
+            
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-[28px] bg-white/20 backdrop-blur-md flex items-center justify-center text-white shrink-0 shadow-inner z-10">
+              <Upload className="w-8 h-8 md:w-10 md:h-10" />
+            </div>
+            
+            <div className="z-10">
+              <h3 className="text-xl md:text-2xl font-black text-white tracking-tight mb-2">Atualizar Tabelas</h3>
+              <p className="text-emerald-50 text-xs md:text-sm font-medium leading-tight">
+                Carregar arquivos Excel/CSV para atualizar Kaizen e Treinamentos.
+              </p>
             </div>
           </motion.div>
 
