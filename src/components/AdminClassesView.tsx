@@ -120,6 +120,14 @@ export default function AdminClassesView({
             <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
             <div className="h-6 w-px bg-border-subtle mx-0.5" />
             <button 
+              onClick={handleOpenGlobalRepo}
+              className="flex items-center gap-2 px-3 py-2 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-500 rounded-xl transition-all group"
+            >
+              <Upload className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Atualizar Dados</span>
+            </button>
+            <div className="h-6 w-px bg-border-subtle mx-0.5" />
+            <button 
               className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform shrink-0"
               onClick={handleToggleProfileMenu}
             >
