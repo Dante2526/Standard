@@ -72,8 +72,8 @@ export default function KaizenView({
                   <TrendingUp className="w-4 h-4" />
                   Evolução Mensal
                 </h3>
-                <div className="h-[250px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-[250px] w-full focus:outline-none">
+                  <ResponsiveContainer width="100%" height="100%" className="focus:outline-none">
                     <BarChart
                       data={currentData.evolucaoMensal && currentData.evolucaoMensal.length > 0 
                         ? currentData.evolucaoMensal 
@@ -81,18 +81,19 @@ export default function KaizenView({
                       }
                       margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
                       barGap={8}
+                      style={{ outline: 'none' }}
                     >
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" opacity={0.4} />
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280', fontWeight: 600 }} dy={10} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280', fontWeight: 600 }} />
                       <Tooltip 
                         shared={false}
-                        cursor={false}
-                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '12px' }}
+                        cursor={{ fill: 'transparent' }}
+                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '12px', outline: 'none' }}
                       />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '20px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }} />
-                      <Bar dataKey="submetidos" name="Submetidos" fill="#93c5fd" radius={[6, 6, 0, 0]} maxBarSize={40} />
-                      <Bar dataKey="implementados" name="Implementados" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '20px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', outline: 'none' }} />
+                      <Bar dataKey="submetidos" name="Submetidos" fill="#93c5fd" radius={[6, 6, 0, 0]} maxBarSize={40} style={{ outline: 'none' }} />
+                      <Bar dataKey="implementados" name="Implementados" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={40} style={{ outline: 'none' }} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
