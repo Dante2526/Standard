@@ -129,50 +129,6 @@ export default function AdminClassesView({
             >
               {loginEmail.charAt(0).toUpperCase()}
             </button>
-            
-            <AnimatePresence>
-              {isProfileMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-                  onClick={handleToggleProfileMenu}
-                >
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="bg-[#2D3748] rounded-[28px] shadow-2xl w-full max-w-[380px] p-6 relative flex flex-col border border-white/10 mx-auto"
-                  >
-                    <button onClick={handleToggleProfileMenu} className="absolute top-5 right-5 text-white/40 hover:text-white transition-colors">
-                      <X className="w-6 h-6"/>
-                    </button>
-                    
-                    <h2 className="text-center text-lg font-black text-white uppercase tracking-wider mb-6 mt-1">
-                      Painel do Administrador
-                    </h2>
-
-                    <div className="flex flex-col gap-4">
-                      <button 
-                        onClick={() => { handleOpenGlobalRepo(); handleToggleProfileMenu(); }}
-                        className="w-full py-4 bg-[#14b8a6] hover:bg-teal-600 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/20 border border-white/5"
-                      >
-                        <Upload className="w-6 h-6"/> Atualizar Dados
-                      </button>
-                      
-                      <button 
-                        onClick={handleLogout} 
-                        className="w-full py-4 bg-[#ef4444] hover:bg-red-600 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-red-500/20 border border-white/5"
-                      >
-                        <LogOut className="w-6 h-6"/> Encerrar Sessão
-                      </button>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
 
@@ -215,6 +171,51 @@ export default function AdminClassesView({
           </div>
         </div>
       </div>
+
+      {/* Profile Modal - FORA do container para cobrir tela inteira */}
+      <AnimatePresence>
+        {isProfileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={handleToggleProfileMenu}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#2D3748] rounded-[28px] shadow-2xl w-full max-w-[380px] p-6 relative flex flex-col border border-white/10 mx-auto"
+            >
+              <button onClick={handleToggleProfileMenu} className="absolute top-5 right-5 text-white/40 hover:text-white transition-colors">
+                <X className="w-6 h-6"/>
+              </button>
+              
+              <h2 className="text-center text-lg font-black text-white uppercase tracking-wider mb-6 mt-1">
+                Painel do Administrador
+              </h2>
+
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={() => { handleOpenGlobalRepo(); handleToggleProfileMenu(); }}
+                  className="w-full py-4 bg-[#14b8a6] hover:bg-teal-600 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/20 border border-white/5"
+                >
+                  <Upload className="w-6 h-6"/> Atualizar Dados
+                </button>
+                
+                <button 
+                  onClick={handleLogout} 
+                  className="w-full py-4 bg-[#ef4444] hover:bg-red-600 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-red-500/20 border border-white/5"
+                >
+                  <LogOut className="w-6 h-6"/> Encerrar Sessão
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
