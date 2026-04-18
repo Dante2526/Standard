@@ -8,9 +8,7 @@ import {
   getDoc, 
   onSnapshot, 
   serverTimestamp, 
-  addDoc, 
-  orderBy, 
-  limit 
+  addDoc 
 } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
 import { db, auth, newDb, newAuth } from '../firebase';
@@ -216,9 +214,7 @@ export const fetchKaizenData = async (trainee: Trainee) => {
     
     const q = query(
       collection(newDb, 'global_files'), 
-      where('type', '==', 'kaizen'),
-      orderBy('uploadedAt', 'desc'), 
-      limit(1)
+      where('type', '==', 'kaizen')
     );
     const snap = await getDocs(q);
     
@@ -227,7 +223,16 @@ export const fetchKaizenData = async (trainee: Trainee) => {
       return { _debug: debugLog };
     }
 
-    const fileData = snap.docs[0].data();
+    log(`📦 ${snap.docs.length} arquivo(s) kaizen no Firestore`);
+    
+    // Pega o mais recente ordenando em JS (evita necessidade de índice composto)
+    const sortedDocs = snap.docs.sort((a, b) => {
+      const tA = a.data().uploadedAt?.toMillis?.() || 0;
+      const tB = b.data().uploadedAt?.toMillis?.() || 0;
+      return tB - tA;
+    });
+    
+    const fileData = sortedDocs[0].data();
     const parsedData = fileData.parsedData || [];
     log(`📄 Arquivo: "${fileData.name}" | ${parsedData.length} linhas`);
 
