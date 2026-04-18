@@ -92,7 +92,7 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
                     <div className="border-2 border-dashed border-blue-300 dark:border-blue-700/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors cursor-pointer relative h-40">
                       <input 
                         type="file" 
-                        accept=".xlsx,.csv,.xls"
+                        accept=".csv"
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
                           if (e.target.files && e.target.files[0]) {
@@ -106,7 +106,7 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
                       ) : (
                         <>
                           <p className="text-sm font-bold text-blue-600 dark:text-blue-400">Clique ou arraste um arquivo</p>
-                          <p className="text-xs text-blue-500/70 mt-1">.XLSX ou .CSV</p>
+                          <p className="text-xs text-blue-500/70 mt-1">.CSV apenas</p>
                         </>
                       )}
                     </div>
@@ -149,7 +149,7 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
                     <div className="border-2 border-dashed border-emerald-300 dark:border-emerald-700/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:bg-emerald-100/50 dark:hover:bg-emerald-800/30 transition-colors cursor-pointer relative h-40 bg-white/50 dark:bg-black/10">
                       <input 
                         type="file" 
-                        accept=".xlsx,.csv,.xls"
+                        accept=".csv"
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
                           if (e.target.files && e.target.files[0]) {
@@ -163,7 +163,7 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
                       ) : (
                         <>
                           <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Escolha o arquivo Kaizen</p>
-                          <p className="text-xs text-emerald-500/70 mt-1">.XLSX ou .CSV</p>
+                          <p className="text-xs text-emerald-500/70 mt-1">.CSV apenas</p>
                         </>
                       )}
                     </div>
