@@ -132,10 +132,14 @@ export const fetchRealTrainings = async (trainee: Trainee) => {
       const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
       const date = idxDate >= 0 ? (row.colunas[idxDate] || 'Sem data') : (row.colunas[5] || 'Sem data');
 
+      // Normaliza a string de status para evitar problemas com acentuação ou espaços extras
+      const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
+
       return {
-        title,
-        status: statusRaw.toLowerCase().includes('realizado') || statusRaw.toLowerCase().includes('conclu') ? 'completed' : 'pending',
-        date,
+        title: title.toString().trim(),
+        status: isCompleted ? 'completed' : 'pending',
+        date: date.toString().trim(),
         priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 30 ? 'Alta' : (daysLeft < 90 ? 'Média' : 'Baixa')),
         daysRemaining: isNaN(daysLeft) ? null : daysLeft
       };
