@@ -56,7 +56,8 @@ export default function AdminClassesView({
           matricula: data.matricula || '',
           funcao: data.funcao || 'Colaborador',
           progress: Math.round((data.horasAcumuladas / 432) * 100),
-          status: 'active'
+          status: 'active',
+          turma: data.turma || ''
         } as Trainee;
       }).sort((a, b) => a.name.localeCompare(b.name));
       setTrainees(traineesData);
@@ -84,7 +85,8 @@ export default function AdminClassesView({
           funcao: data.funcao || '',
           email: data.email || '',
           progress: (stageData?.status === 'efetivado') ? 100 : (stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0),
-          status: stageData?.status === 'efetivado' ? 'completed' : stageData?.status === 'estagio' ? 'active' : 'none'
+          status: stageData?.status === 'efetivado' ? 'completed' : stageData?.status === 'estagio' ? 'active' : 'none',
+          turma: clsId.split(' ').pop()?.toUpperCase() || ''
         } as Trainee;
       }))).sort((a, b) => a.name.localeCompare(b.name));
       setTrainees(traineesData);

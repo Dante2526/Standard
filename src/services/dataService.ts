@@ -47,6 +47,7 @@ export const saveStageData = async (
       nome: trainee.name,
       horasAcumuladas: progressHours,
       status: userStatus,
+      turma: trainee.turma || '',
       tableRows: tableRows,
       milestoneEvaluations: milestoneEvaluations,
       dataInicio: format(new Date(), 'yyyy-MM-dd'),

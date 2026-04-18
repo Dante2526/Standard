@@ -6,6 +6,7 @@ export interface Trainee {
   progress: number;
   status: 'active' | 'pending' | 'completed' | 'none';
   email?: string;
+  turma?: string;
 }
 
 export interface ClassItem {

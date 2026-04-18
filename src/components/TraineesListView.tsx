@@ -110,15 +110,22 @@ export default function TraineesListView({
                         <h3 className="font-semibold text-content">{trainee.name}</h3>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-xs text-content-muted">Mat: {trainee.matricula}</p>
-                          {trainee.status !== 'none' && (
-                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm ${
-                              trainee.status === 'active' 
-                                ? 'bg-blue-600 text-white' 
-                                : 'bg-emerald-600 text-white'
-                            }`}>
-                              {trainee.status === 'active' ? 'ESTÁGIO' : 'EFETIVADO'}
-                            </span>
-                          )}
+                          <div className="flex gap-1.5 flex-wrap">
+                            {trainee.status !== 'none' && (
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm ${
+                                trainee.status === 'active' 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'bg-emerald-600 text-white'
+                              }`}>
+                                {trainee.status === 'active' ? 'ESTÁGIO' : 'EFETIVADO'}
+                              </span>
+                            )}
+                            {selectedClass === 'global-estagio' && trainee.turma && (
+                              <span className="text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm bg-surface-muted text-content-muted border border-border-subtle">
+                                TURMA {trainee.turma}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
