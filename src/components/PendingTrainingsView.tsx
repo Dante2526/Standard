@@ -24,7 +24,9 @@ export default function PendingTrainingsView({
 }: PendingTrainingsViewProps) {
   
   const filteredTrainings = realTrainings.filter(t => {
-    const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const titleStr = t.title ? String(t.title).toLowerCase() : '';
+    const qStr = searchQuery ? String(searchQuery).toLowerCase() : '';
+    const matchesSearch = titleStr.includes(qStr);
     if (viewMode === 'all') return matchesSearch;
     if (viewMode === 'pending') return matchesSearch && !t.completed;
     if (viewMode === 'completed') return matchesSearch && t.completed;
