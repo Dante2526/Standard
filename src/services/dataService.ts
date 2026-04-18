@@ -328,12 +328,74 @@ export const fetchKaizenData = async (trainee: Trainee) => {
       return false; 
     };
 
+    // Processar evolução mensal
+    const monthsMap: Record<string, { submetidos: number, implementados: number }> = {};
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    userRecords.forEach((row: any) => {
+      let monthStr = 'Atual';
+      
+      if (dateIdx >= 0) {
+        const dateVal = row.colunas[dateIdx];
+        if (dateVal) {
+           const dateStr = String(dateVal).trim();
+           if (dateStr.includes('/')) {
+             const parts = dateStr.split('/');
+             if (parts.length >= 2) {
+               const m = parseInt(parts[1], 10);
+               if (m >= 1 && m <= 12) {
+                 monthStr = monthNames[m - 1];
+               }
+             }
+           } else if (dateStr.includes('-')) {
+             const parts = dateStr.split('-');
+             if (parts.length >= 2) {
+               const m = parseInt(parts[1], 10);
+               if (m >= 1 && m <= 12) {
+                 monthStr = monthNames[m - 1];
+               }
+             }
+           } else if (!isNaN(Number(dateStr))) {
+             // Tentar converter data serial do Excel se for número
+             const serial = Number(dateStr);
+             if (serial > 20000) {
+                const date = new Date((serial - 25569) * 86400 * 1000);
+                const m = date.getUTCMonth();
+                monthStr = monthNames[m];
+             }
+           }
+        }
+      }
+
+      if (!monthsMap[monthStr]) {
+        monthsMap[monthStr] = { submetidos: 0, implementados: 0 };
+      }
+      
+      monthsMap[monthStr].submetidos++;
+      if (isImplemented(row)) {
+        monthsMap[monthStr].implementados++;
+      }
+    });
+
+    const evolucaoMensal = Object.entries(monthsMap)
+        .map(([month, data]) => ({
+          month,
+          submetidos: data.submetidos,
+          implementados: data.implementados
+        }))
+        // Ordena os meses com base no array monthNames - O 'Atual' ficará por último se não tiver mês válido
+        .sort((a, b) => {
+          const idxA = monthNames.indexOf(a.month);
+          const idxB = monthNames.indexOf(b.month);
+          return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+        });
+
     const result = {
       resumo: {
         submetidos: userRecords.length,
         implementados: userRecords.filter((r: any) => isImplemented(r)).length
       },
-      evolucaoMensal: [], 
+      evolucaoMensal, 
       ultimosRegistros: userRecords.slice(0, 5).map((r: any) => ({
         title: titleIdx >= 0 ? (r.colunas[titleIdx] || 'Sugestão Kaizen') : 'Sugestão Kaizen',
         date: dateIdx >= 0 ? (r.colunas[dateIdx] || new Date().toISOString()) : new Date().toISOString(),
