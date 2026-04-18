@@ -163,7 +163,7 @@ export default function TimelineView({
                         <p className={`text-xs leading-relaxed ${isReached ? 'text-content' : 'text-content-muted'} mb-2`}>
                           {milestone.comment || (isAdmin ? "Adicionar avaliação..." : "")}
                         </p>
-                        {milestone.inspector && (
+                        {milestone.comment && milestone.inspector && (
                           <div className="flex justify-center">
                             <span className="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold border border-indigo-100 uppercase tracking-tight">
                               {milestone.inspector}
@@ -187,7 +187,7 @@ export default function TimelineView({
                       }}
                     >
                       <div className="flex flex-col items-start md:items-center">
-                        <p className="text-sm font-bold transition-colors duration-300 whitespace-nowrap" style={{ color: isReached ? '#111827' : '#9ca3af' }}>
+                        <p className="text-sm font-bold transition-colors duration-300 whitespace-nowrap" style={{ color: isReached ? '#ffffff' : '#9ca3af' }}>
                           {milestone.label}
                         </p>
                         <p className="text-xs text-content-muted whitespace-nowrap">{milestone.hours} horas</p>

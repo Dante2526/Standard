@@ -453,7 +453,7 @@ export default function App() {
 
       <MilestoneEvaluationModal 
         milestone={editingMilestone} onClose={() => setEditingMilestone(null)}
-        evaluations={milestoneEvaluations} onUpdate={(m, c) => setMilestoneEvaluations(prev => ({ ...prev, [m]: { comment: c, inspector: userName } }))}
+        evaluations={milestoneEvaluations} onUpdate={(m, c) => setMilestoneEvaluations(prev => ({ ...prev, [m]: { comment: c, inspector: c.trim() ? userName : '' } }))}
       />
 
       <AnimatePresence>
