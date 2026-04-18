@@ -50,13 +50,18 @@ export default function AdminClassesView({
       const snap = await getDocs(q);
       const traineesData = snap.docs.map(docSnapshot => {
         const data = docSnapshot.data() as any;
+        const progressHours = (data.tableRows || []).reduce((acc: number, row: any) => acc + (parseFloat(row.duracao) || 0), 0);
+        const calcProgress = data.status === 'efetivado' 
+          ? 100 
+          : Math.round((progressHours / 432) * 100);
+
         return {
           id: docSnapshot.id,
           name: data.nome || 'Sem Nome',
           matricula: data.matricula || '',
           funcao: data.funcao || 'Colaborador',
-          progress: Math.round((data.horasAcumuladas / 432) * 100),
-          status: 'active',
+          progress: calcProgress,
+          status: data.status === 'efetivado' ? 'completed' : 'active',
           turma: data.turma || ''
         } as Trainee;
       }).sort((a, b) => a.name.localeCompare(b.name));
@@ -78,13 +83,20 @@ export default function AdminClassesView({
         const stageSnap = await getDoc(doc(newDb, 'estagios', data.matricula || ''));
         const stageData = stageSnap.exists() ? stageSnap.data() as any : null;
         
+        const progressHours = (stageData?.tableRows || []).reduce((acc: number, row: any) => acc + (parseFloat(row.duracao) || 0), 0);
+        const calcProgress = stageData?.status === 'efetivado'
+          ? 100
+          : stageData
+            ? Math.round((progressHours / 432) * 100)
+            : 0;
+
         return {
           id: docSnapshot.id,
           name: data.nome || data.name || 'Sem Nome',
           matricula: data.matricula || '',
           funcao: data.funcao || '',
           email: data.email || '',
-          progress: (stageData?.status === 'efetivado') ? 100 : (stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0),
+          progress: calcProgress,
           status: stageData?.status === 'efetivado' ? 'completed' : stageData?.status === 'estagio' ? 'active' : 'none',
           turma: clsId.split(' ').pop()?.toUpperCase() || ''
         } as Trainee;
