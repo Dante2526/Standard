@@ -65,7 +65,7 @@ const MilestoneEvaluationModal: React.FC<MilestoneEvaluationModalProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="flex-1 py-3 px-4 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+              className="flex-1 py-3 px-4 rounded-xl font-black uppercase text-xs tracking-wider bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] text-white transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-blue-500/20 border border-white/10"
             >
               Salvar Avaliação
             </button>

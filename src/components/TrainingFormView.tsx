@@ -64,7 +64,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
           {isAdmin && (
             <button
               onClick={addRow}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all"
+              className="flex items-center gap-2 bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] text-white px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-wide transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-blue-500/20 border border-white/10"
             >
               <Plus className="w-4 h-4" />
               Nova Linha

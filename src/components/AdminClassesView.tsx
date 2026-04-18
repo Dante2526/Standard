@@ -200,14 +200,14 @@ export default function AdminClassesView({
               <div className="flex flex-col gap-4">
                 <button 
                   onClick={() => { handleOpenGlobalRepo(); handleToggleProfileMenu(); }}
-                  className="w-full py-4 bg-[#14b8a6] hover:bg-teal-600 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/20 border border-white/5"
+                  className="w-full py-4 bg-gradient-to-br from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#0f766e] rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/30 border border-white/10"
                 >
                   <Upload className="w-6 h-6"/> Atualizar Dados
                 </button>
                 
                 <button 
                   onClick={handleLogout} 
-                  className="w-full py-4 bg-[#ef4444] hover:bg-red-600 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-red-500/20 border border-white/5"
+                  className="w-full py-4 bg-gradient-to-br from-[#ef4444] to-[#dc2626] hover:from-[#dc2626] hover:to-[#991b1b] rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-red-500/30 border border-white/10"
                 >
                   <LogOut className="w-6 h-6"/> Encerrar Sessão
                 </button>

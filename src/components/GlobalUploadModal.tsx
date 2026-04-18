@@ -114,7 +114,7 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
                     <button
                       onClick={() => handleUpload('treinamento')}
                       disabled={!trainingFile || uploadingTraining}
-                      className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+                      className="w-full py-4 bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] text-white rounded-2xl font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-blue-500/30 border border-white/10"
                     >
                       {uploadingTraining ? (
                         <>
@@ -171,7 +171,7 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
                     <button
                       onClick={() => handleUpload('kaizen')}
                       disabled={!kaizenFile || uploadingKaizen}
-                      className="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+                      className="w-full py-4 bg-gradient-to-br from-[#10b981] to-[#059669] hover:from-[#059669] hover:to-[#047857] text-white rounded-2xl font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/30 border border-white/10"
                     >
                       {uploadingKaizen ? (
                         <>
