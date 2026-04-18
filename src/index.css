@@ -51,3 +51,14 @@ html, body {
   background: rgba(45, 55, 72, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+/* Remove contorno preto dos gráficos Recharts */
+.recharts-wrapper,
+.recharts-wrapper svg,
+.recharts-surface,
+.recharts-wrapper *:focus,
+.recharts-wrapper *:active {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
