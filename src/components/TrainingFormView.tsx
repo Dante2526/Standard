@@ -93,7 +93,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                     <div className="relative">
                       <button
                         onClick={() => isAdmin && setOpenDropdownId(openDropdownId === `local-${row.id}` ? null : `local-${row.id}`)}
-                        className={`w-full text-left px-2 py-3 md:py-1.5 text-sm rounded-lg border border-transparent transition-colors flex items-center justify-between ${isAdmin ? 'hover:border-border-subtle hover:bg-surface' : ''}`}
+                        className={`w-full text-left px-2 py-3 md:py-1.5 text-sm rounded-lg border border-border-subtle/50 transition-colors flex items-center justify-between ${isAdmin ? 'hover:border-blue-300 hover:bg-surface' : ''}`}
                       >
                         <span className={row.local ? 'text-content' : 'text-content-muted truncate'}>
                           {row.local || 'Selecione...'}
@@ -129,7 +129,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                     <input 
                       type="text" 
                       readOnly={!isAdmin}
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.equipamento} 
                       onChange={e => updateRow(row.id, 'equipamento', e.target.value)} 
                     />
@@ -137,7 +137,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                   <td className="py-2 px-1 relative text-center">
                     <button
                       onClick={() => isAdmin && setOpenDropdownId(openDropdownId === `date-${row.id}` ? null : `date-${row.id}`)}
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors flex items-center justify-between"
+                      className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors flex items-center justify-between"
                     >
                       <span className={row.data ? 'text-content' : 'text-content-muted'}>
                         {row.data ? format(parseISO(row.data), 'dd/MM/yyyy') : 'DD/MM/AAAA'}
@@ -153,7 +153,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                       type="text" 
                       readOnly={!isAdmin}
                       placeholder="00:00" 
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.hora} 
                       onChange={e => updateRow(row.id, 'hora', e.target.value)} 
                     />
@@ -163,7 +163,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                       type="text" 
                       readOnly={!isAdmin}
                       placeholder="0h" 
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.duracao} 
                       onChange={e => updateRow(row.id, 'duracao', e.target.value)} 
                     />
@@ -172,7 +172,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                     <input 
                       type="text" 
                       readOnly={!isAdmin}
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.instrutor} 
                       onChange={e => updateRow(row.id, 'instrutor', e.target.value)} 
                     />
@@ -181,7 +181,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
                     <input 
                       type="text" 
                       readOnly={!isAdmin}
-                      className="w-full bg-transparent border border-transparent hover:border-border-subtle focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.avaliacao} 
                       onChange={e => updateRow(row.id, 'avaliacao', e.target.value)} 
                     />

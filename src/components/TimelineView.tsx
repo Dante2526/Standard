@@ -74,9 +74,16 @@ export default function TimelineView({
 
           {/* Glowing Tip */}
           <div
-            className="progress-tip-anim absolute w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_12px_4px_rgba(59,130,246,0.6)] z-20 transition-all duration-[2000ms] ease-in-out"
+            className="progress-tip-anim absolute w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_12px_4px_rgba(59,130,246,0.6)] z-20 transition-all duration-[2000ms] ease-in-out flex items-center justify-center"
             style={{ opacity: progressHours > 0 && progressHours < totalHours ? 1 : 0 }}
-          />
+          >
+            {/* Percentage Label */}
+            <div className="absolute top-1/2 left-full -translate-y-1/2 ml-3 md:left-1/2 md:-translate-x-1/2 md:top-full md:mt-3 md:ml-0 whitespace-nowrap">
+              <div className="bg-blue-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xl border border-white/20">
+                {Math.round((progressHours / totalHours) * 100)}%
+              </div>
+            </div>
+          </div>
 
           {/* Milestones */}
           {milestones.map((milestone, index) => {
