@@ -112,7 +112,8 @@ export default function App() {
         lastServerDataRef.current = JSON.stringify({
           tableRows: data.tableRows || [],
           status: data.status || null,
-          milestoneEvaluations: data.milestoneEvaluations || {}
+          milestoneEvaluations: data.milestoneEvaluations || {},
+          horasAcumuladas: data.horasAcumuladas || 0
         });
       } else {
         const initialRows = [
@@ -122,7 +123,7 @@ export default function App() {
         ];
         setTableRows(initialRows);
         setUserStatus(null);
-        lastServerDataRef.current = JSON.stringify({ tableRows: initialRows, status: null, milestoneEvaluations: {} });
+        lastServerDataRef.current = JSON.stringify({ tableRows: initialRows, status: null, milestoneEvaluations: {}, horasAcumuladas: 0 });
       }
       setTimeout(() => { 
         hasLoadedDataRef.current = true; 
@@ -150,11 +151,15 @@ export default function App() {
   const triggerAutoSave = useCallback(() => {
     if (!hasLoadedDataRef.current || !selectedTrainee) return;
     
+    // Calcula as horas baseado no formulário para comparação
+    const currentProgressHours = tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
+
     // Compara os dados atuais com a última versão do servidor
     const currentData = JSON.stringify({
       tableRows,
       status: userStatus,
-      milestoneEvaluations
+      milestoneEvaluations,
+      horasAcumuladas: currentProgressHours
     });
 
     if (currentData === lastServerDataRef.current) {
@@ -167,7 +172,7 @@ export default function App() {
     
     autoSaveTimerRef.current = setTimeout(async () => {
       try {
-        const progressHours = tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
+        const progressHours = userStatus === 'efetivado' ? 432 : currentProgressHours;
         await DataService.saveStageData(selectedTrainee, progressHours, userStatus, tableRows, milestoneEvaluations);
         
         // Atualiza a referência local após um salvamento bem-sucedido
