@@ -1,5 +1,9 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Upload, ArrowLeft, User as UserIcon, GraduationCap } from 'lucide-react';
+import { 
+  Upload, ArrowLeft, User as UserIcon, GraduationCap,
+  X, Eraser, FileText, UserPlus, ListOrdered, Hourglass, 
+  Clock, PauseCircle, HelpCircle, LogOut 
+} from 'lucide-react';
 import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
 import { db, newDb } from '../firebase';
 import DarkModeToggle from './DarkModeToggle';
@@ -129,38 +133,49 @@ export default function AdminClassesView({
             <AnimatePresence>
               {isProfileMenuOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute top-full mt-4 right-0 w-64 liquid-glass rounded-[28px] shadow-2xl overflow-hidden z-50 p-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+                  onClick={handleToggleProfileMenu}
                 >
-                  <div className="px-4 py-4 border-b border-white/5 mb-2">
-                    <p className="text-xs font-bold text-content-muted uppercase tracking-widest mb-1">Logado como</p>
-                    <p className="text-sm font-bold text-content truncate">{loginEmail}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <button
-                      onClick={handleOpenGlobalRepo}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-content hover:bg-white/5 rounded-2xl transition-all group"
-                    >
-                      <Upload className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
-                      Atualizar Dados
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-[#2D3748] rounded-[28px] shadow-2xl w-full max-w-[380px] p-6 relative flex flex-col border border-white/10 mx-auto"
+                  >
+                    <button onClick={handleToggleProfileMenu} className="absolute top-5 right-5 text-white/40 hover:text-white transition-colors">
+                      <X className="w-6 h-6"/>
                     </button>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-2xl transition-all group"
-                    >
-                      <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                      Encerrar Sessão
-                    </button>
-                  </div>
+                    
+                    <h2 className="text-center text-lg font-black text-white uppercase tracking-wider mb-6 mt-1">
+                      Painel do Administrador
+                    </h2>
+
+                    <div className="flex flex-col gap-4">
+                      <button 
+                        onClick={() => { handleOpenGlobalRepo(); handleToggleProfileMenu(); }}
+                        className="w-full py-4 bg-[#14b8a6] hover:bg-teal-600 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/20 border border-white/5"
+                      >
+                        <Upload className="w-6 h-6"/> Atualizar Dados
+                      </button>
+                      
+                      <button 
+                        onClick={handleLogout} 
+                        className="w-full py-4 bg-[#ef4444] hover:bg-red-600 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-red-500/20 border border-white/5"
+                      >
+                        <LogOut className="w-6 h-6"/> Encerrar Sessão
+                      </button>
+                    </div>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
 
-        {/* Bento Grid Layout */}
         {/* Bento Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Main Global Card */}

@@ -68,10 +68,6 @@ export default function App() {
 
   // --- Modais ---
   const [showGlobalUploadModal, setShowGlobalUploadModal] = useState(false);
-  const [globalUploadType, setGlobalUploadType] = useState<'kaizen' | 'treinamento'>('kaizen');
-  const [globalFile, setGlobalFile] = useState<File | null>(null);
-  const [isUploadingGlobal, setIsUploadingGlobal] = useState(false);
-  const [globalUploadSuccess, setGlobalUploadSuccess] = useState(false);
 
   // --- Refs ---
   const hasLoadedDataRef = useRef(false);
@@ -226,23 +222,6 @@ export default function App() {
     }
   };
 
-  const handleGlobalUpload = async () => {
-    if (!globalFile) return;
-    setIsUploadingGlobal(true);
-    try {
-      await DataService.uploadGlobalFile(globalFile, globalUploadType, loginEmail);
-      setGlobalUploadSuccess(true);
-      setTimeout(() => {
-        setShowGlobalUploadModal(false);
-        setGlobalFile(null);
-        setGlobalUploadSuccess(false);
-      }, 2000);
-    } catch (e) {
-      alert("Erro no upload do arquivo.");
-    } finally {
-      setIsUploadingGlobal(false);
-    }
-  };
 
   // --- Renderizadores Auxiliares ---
   const renderCalendar = (rowId: number, currentDate: string) => {
@@ -427,9 +406,7 @@ export default function App() {
 
       <GlobalUploadModal 
         show={showGlobalUploadModal} onClose={() => setShowGlobalUploadModal(false)}
-        uploadType={globalUploadType} setUploadType={setGlobalUploadType}
-        file={globalFile} setFile={setGlobalFile} isUploading={isUploadingGlobal}
-        success={globalUploadSuccess} onUpload={handleGlobalUpload}
+        loginEmail={loginEmail}
       />
 
       <MilestoneEvaluationModal 
