@@ -50,7 +50,7 @@ const StatusSelectionView: React.FC<StatusSelectionViewProps> = ({
         >
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white flex items-center justify-center mb-6 shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white flex items-center justify-center mb-6 shadow-xl shadow-black/40 group-hover:scale-110 transition-transform">
             <GraduationCap className="w-8 h-8" />
           </div>
           <div className="relative z-10">
@@ -66,7 +66,7 @@ const StatusSelectionView: React.FC<StatusSelectionViewProps> = ({
         >
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#10b981] to-[#059669] text-white flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#10b981] to-[#059669] text-white flex items-center justify-center mb-6 shadow-xl shadow-black/40 group-hover:scale-110 transition-transform">
             <Briefcase className="w-8 h-8" />
           </div>
           <div className="relative z-10">

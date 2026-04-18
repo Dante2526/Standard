@@ -223,8 +223,20 @@ export const fetchKaizenData = async (trainee: Trainee) => {
 
     if (parsedData.length < 2) return null;
 
-    // Buscar os índices das colunas de forma dinâmica a partir da linha de cabeçalho
-    const headers = parsedData[0].colunas.map((h: string) => (h || '').toLowerCase().trim());
+    // Procurar a linha de cabeçalho correta iterando sobre os dados analisados,
+    // pois a primeira linha do Excel (ou CSV) muitas vezes contém metadados de filtros
+    let headerIdx = 0;
+    while (headerIdx < parsedData.length) {
+      const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
+      if (hRow.some(h => h.includes('elaborador') || h.includes('kaizen') || h.includes('data'))) {
+        break; 
+      }
+      headerIdx++;
+    }
+
+    if (headerIdx >= parsedData.length) return null;
+
+    const headers = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
     const elaboradoresIdx = headers.findIndex((h: string) => h.includes('elaborador'));
     const titleIdx = headers.findIndex((h: string) => h.includes('título da melhoria') || h.includes('titulo') || h.includes('nome do kaizen'));
     const dateIdx = headers.findIndex((h: string) => h.includes('data'));
@@ -232,23 +244,34 @@ export const fetchKaizenData = async (trainee: Trainee) => {
 
     // Encontra registros do colaborador específico
     const userRecords = parsedData.filter((row: any, idx: number) => {
-      if (idx === 0) return false;
+      if (idx <= headerIdx) return false;
       
       const targetMatricula = (trainee.matricula || '').toString().trim();
       const targetName = (trainee.name || '').toString().toUpperCase().trim();
+      const firstName = targetName.split(' ')[0] || '';
+      
+      const checkMatch = (cellValue: string) => {
+        const c = (cellValue || '').toString().toUpperCase();
+        if (!c) return false;
+        
+        // 1. Match exato por matrícula (mais confiável)
+        if (targetMatricula && c.includes(targetMatricula)) return true;
+        
+        // 2. Match exato pelo nome completo
+        if (targetName && c.includes(targetName)) return true;
+        
+        // 3. Fallback: Se tiver apenas o primeiro nome E bater com uma parte da matrícula 
+        // (Isso resolve casos onde o sobrenome muda, ex: Naylan Moreira vs Naylan Cunha)
+        if (firstName && targetMatricula && c.includes(firstName) && c.includes(targetMatricula)) return true;
+        
+        return false;
+      };
       
       // Procura na coluna de elaboradores, ou se não achar, procura em todas as colunas
       if (elaboradoresIdx >= 0) {
-        const elaboradores = (row.colunas[elaboradoresIdx] || '').toString();
-        return (targetMatricula && elaboradores.includes(targetMatricula)) || 
-               (targetName && elaboradores.toUpperCase().includes(targetName));
+        return checkMatch(row.colunas[elaboradoresIdx]);
       } else {
-        // Fallback: procura em qualquer lugar da linha
-        return row.colunas.some((cell: string) => {
-          const c = (cell || '').toString();
-          return (targetMatricula && c.includes(targetMatricula)) || 
-                 (targetName && c.toUpperCase().includes(targetName));
-        });
+        return row.colunas.some(checkMatch);
       }
     });
 
