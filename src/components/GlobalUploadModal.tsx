@@ -33,8 +33,8 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
         if (type === 'kaizen') { setSuccessKaizen(false); setKaizenFile(null); }
         else { setSuccessTraining(false); setTrainingFile(null); }
       }, 3000);
-    } catch (e) {
-      alert(`Erro no upload (${type})`);
+    } catch (e: any) {
+      alert(`Ocorreu um erro no upload (${type}).\n\nIsso geralmente acontece se o arquivo estiver salvo com Rótulos de Confidencialidade ou Criptografado.\nPor favor, abra o arquivo, clique em 'Salvar Como' e tente enviá-lo novamente, ou salve no formato .CSV.\n\nDetalhe técnico: ${e.message}`);
     } finally {
       if (type === 'kaizen') setUploadingKaizen(false);
       else setUploadingTraining(false);

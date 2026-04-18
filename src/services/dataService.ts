@@ -63,37 +63,79 @@ export const saveStageData = async (
  */
 export const fetchRealTrainings = async (trainee: Trainee) => {
   try {
-    const q = query(collection(newDb, 'global_files'), orderBy('uploadedAt', 'desc'), limit(1));
+    const q = query(
+      collection(newDb, 'global_files'), 
+      where('type', '==', 'treinamento')
+    );
     const snap = await getDocs(q);
     
     if (snap.empty) return [];
 
-    const fileData = snap.docs[0].data();
+    // Pega o mais recente ordenando em JS
+    const sortedDocs = snap.docs.sort((a, b) => {
+      const tA = a.data().uploadedAt?.toMillis?.() || 0;
+      const tB = b.data().uploadedAt?.toMillis?.() || 0;
+      return tB - tA;
+    });
+
+    const fileData = sortedDocs[0].data();
     const parsedData = fileData.parsedData || [];
     
-    const matches = parsedData.filter((row: any, idx: number) => {
-      if (idx === 0) return false; 
+    // Procura o cabeçalho correto
+    let headerIdx = 0;
+    while (headerIdx < parsedData.length) {
+      const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
+      if (hRow.some((h: string) => h.includes('matrícula') || h.includes('empregado') || h.includes('treinamento'))) {
+        break; 
+      }
+      headerIdx++;
+    }
 
-      const rowMatricula = (row.colunas[1] || '').toString().trim();
-      const rowName = (row.colunas[0] || '').toString().toUpperCase().trim();
+    if (headerIdx >= parsedData.length) return []; // Header não encontrado
+
+    const headers = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
+    
+    const idxNome = headers.findIndex((h: string) => h.includes('nome') || h.includes('empregado') || h.includes('colaborador'));
+    const idxMatricula = headers.findIndex((h: string) => h.includes('matrícula') || h.includes('matricula') || h.includes('id'));
+    const idxTitulo = headers.findIndex((h: string) => h.includes('treinamento') || h.includes('curso') || h.includes('título'));
+    const idxStatus = headers.findIndex((h: string) => h.includes('status') || h.includes('situação'));
+    const idxDate = headers.findIndex((h: string) => h.includes('data') || h.includes('vencimento') || h.includes('realização'));
+    const idxDaysLeft = headers.findIndex((h: string) => h.includes('dias') || h.includes('prazo'));
+
+    const matches = parsedData.filter((row: any, idx: number) => {
+      if (idx <= headerIdx) return false; 
+
+      const rowMatricula = idxMatricula >= 0 ? (row.colunas[idxMatricula] || '').toString().trim() : (row.colunas[1] || '').toString().trim();
+      const rowName = idxNome >= 0 ? (row.colunas[idxNome] || '').toString().toUpperCase().trim() : (row.colunas[0] || '').toString().toUpperCase().trim();
       
       const targetMatricula = (trainee.matricula || '').toString().trim();
       const targetName = (trainee.name || '').toString().toUpperCase().trim();
+      const firstName = targetName.split(' ')[0] || '';
       
-      if (targetMatricula && rowMatricula) {
-        return rowMatricula === targetMatricula;
+      if (targetMatricula && rowMatricula && rowMatricula.includes(targetMatricula)) {
+        return true;
+      }
+      if (targetName && rowName && rowName.includes(targetName)) {
+        return true;
+      }
+      // Fallback para primeiro nome + matricula
+      if (firstName && targetMatricula && rowName.includes(firstName) && rowMatricula.includes(targetMatricula)) {
+        return true;
       }
       
-      return targetName && (rowName.includes(targetName) || targetName.includes(rowName));
+      return false;
     }).map((row: any) => {
-      const statusRaw = (row.colunas[4] || '').toString().trim();
-      const daysLeftStr = (row.colunas[6] || '').toString().trim();
+      const statusRaw = idxStatus >= 0 ? (row.colunas[idxStatus] || '').toString().trim() : (row.colunas[4] || '').toString().trim();
+      const daysLeftStr = idxDaysLeft >= 0 ? (row.colunas[idxDaysLeft] || '').toString().trim() : (row.colunas[6] || '').toString().trim();
       const daysLeft = parseInt(daysLeftStr);
+      
+      const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
+      const date = idxDate >= 0 ? (row.colunas[idxDate] || 'Sem data') : (row.colunas[5] || 'Sem data');
 
       return {
-        title: row.colunas[3] || 'Treinamento sem título',
-        status: statusRaw === 'Realizado' ? 'completed' : 'pending',
-        date: row.colunas[5] || 'Sem data',
+        title,
+        status: statusRaw.toLowerCase().includes('realizado') || statusRaw.toLowerCase().includes('conclu') ? 'completed' : 'pending',
+        date,
         priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 30 ? 'Alta' : (daysLeft < 90 ? 'Média' : 'Baixa')),
         daysRemaining: isNaN(daysLeft) ? null : daysLeft
       };
