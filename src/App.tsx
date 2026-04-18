@@ -51,6 +51,8 @@ export default function App() {
   const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
   const [realTrainings, setRealTrainings] = useState<any[]>([]);
   const [kaizenData, setKaizenData] = useState<any>(null);
+  const [kaizenDebugLog, setKaizenDebugLog] = useState<string[]>([]);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isLoadingTrainings, setIsLoadingTrainings] = useState(false);
   
   // --- Estados de UI ---
@@ -129,7 +131,17 @@ export default function App() {
     });
 
     DataService.fetchRealTrainings(selectedTrainee).then(setRealTrainings);
-    DataService.fetchKaizenData(selectedTrainee).then(setKaizenData);
+    DataService.fetchKaizenData(selectedTrainee).then((result: any) => {
+      if (result?._debug) {
+        setKaizenDebugLog(result._debug);
+        setShowDebugPanel(true);
+      }
+      if (result?.resumo) {
+        setKaizenData(result);
+      } else {
+        setKaizenData(null);
+      }
+    });
 
     return () => unsubscribe();
   }, [selectedTrainee]);
@@ -469,6 +481,47 @@ export default function App() {
       <footer className="py-8 text-center text-xs font-bold text-content-muted tracking-widest opacity-60">
         DESENVOLVIDO POR NEAR
       </footer>
+
+      {/* === PAINEL ESPIÃO DEBUG KAIZEN === */}
+      {showDebugPanel && kaizenDebugLog.length > 0 && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 99999,
+          background: '#1a1a2e', color: '#0f0', fontFamily: 'monospace', fontSize: '11px',
+          maxHeight: '50vh', overflow: 'auto', borderTop: '3px solid #00ff41',
+          padding: '12px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ color: '#00ff41', fontWeight: 'bold', fontSize: '13px' }}>🕵️ ESPIÃO KAIZEN - Relatório de Debug</span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(kaizenDebugLog.join('\n'));
+                  alert('Logs copiados!');
+                }}
+                style={{ background: '#00ff41', color: '#000', border: 'none', padding: '4px 12px', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold', fontSize: '11px' }}
+              >
+                📋 COPIAR TUDO
+              </button>
+              <button 
+                onClick={() => setShowDebugPanel(false)}
+                style={{ background: '#ff4444', color: '#fff', border: 'none', padding: '4px 12px', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold', fontSize: '11px' }}
+              >
+                ✕ FECHAR
+              </button>
+            </div>
+          </div>
+          <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+            {kaizenDebugLog.map((line, i) => (
+              <div key={i} style={{ 
+                color: line.includes('❌') ? '#ff4444' : line.includes('✅') ? '#00ff41' : line.includes('⚠️') ? '#ffaa00' : line.includes('💥') ? '#ff0066' : '#0f0',
+                padding: '1px 0'
+              }}>
+                {line}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

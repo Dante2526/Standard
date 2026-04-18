@@ -205,9 +205,15 @@ export const uploadGlobalFile = async (file: File, type: 'kaizen' | 'treinamento
 
 /**
  * Busca dados de Kaizen para um colaborador.
+ * Retorna dados + relatório de debug para o painel espião.
  */
 export const fetchKaizenData = async (trainee: Trainee) => {
+  const debugLog: string[] = [];
+  const log = (msg: string) => { debugLog.push(msg); console.log('[KAIZEN]', msg); };
+
   try {
+    log(`🔍 Trainee: nome="${trainee.name}" matricula="${trainee.matricula}"`);
+    
     const q = query(
       collection(newDb, 'global_files'), 
       where('type', '==', 'kaizen'),
@@ -216,58 +222,80 @@ export const fetchKaizenData = async (trainee: Trainee) => {
     );
     const snap = await getDocs(q);
     
-    if (snap.empty) return null;
+    if (snap.empty) {
+      log('❌ Nenhum arquivo kaizen encontrado no Firestore.');
+      return { _debug: debugLog };
+    }
 
     const fileData = snap.docs[0].data();
     const parsedData = fileData.parsedData || [];
+    log(`📄 Arquivo: "${fileData.name}" | ${parsedData.length} linhas`);
 
-    if (parsedData.length < 2) return null;
+    if (parsedData.length < 2) {
+      log('❌ Menos de 2 linhas no arquivo.');
+      return { _debug: debugLog };
+    }
 
-    // Procurar a linha de cabeçalho correta iterando sobre os dados analisados,
-    // pois a primeira linha do Excel (ou CSV) muitas vezes contém metadados de filtros
+    // Mostra primeiras linhas para debug
+    for (let i = 0; i < Math.min(3, parsedData.length); i++) {
+      const preview = (parsedData[i].colunas || []).slice(0, 4).map((c: string) => String(c).substring(0, 40));
+      log(`📋 Linha[${i}]: ${JSON.stringify(preview)}`);
+    }
+
+    // Procurar a linha de cabeçalho correta
     let headerIdx = 0;
     while (headerIdx < parsedData.length) {
       const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
-      if (hRow.some(h => h.includes('elaborador') || h.includes('kaizen') || h.includes('data'))) {
+      if (hRow.some((h: string) => h.includes('elaborador') || h.includes('kaizen') || h.includes('data'))) {
         break; 
       }
       headerIdx++;
     }
 
-    if (headerIdx >= parsedData.length) return null;
+    if (headerIdx >= parsedData.length) {
+      log('❌ Cabeçalho NÃO encontrado em nenhuma linha!');
+      return { _debug: debugLog };
+    }
+    
+    log(`✅ Header na linha ${headerIdx}`);
 
     const headers = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
     const elaboradoresIdx = headers.findIndex((h: string) => h.includes('elaborador'));
     const titleIdx = headers.findIndex((h: string) => h.includes('título da melhoria') || h.includes('titulo') || h.includes('nome do kaizen'));
     const dateIdx = headers.findIndex((h: string) => h.includes('data'));
     const implDateIdx = headers.findIndex((h: string) => h.includes('quando foi implantada') || h.includes('implantada'));
+    
+    log(`📊 Índices → elaboradores=${elaboradoresIdx}, título=${titleIdx}, data=${dateIdx}, implantada=${implDateIdx}`);
+    
+    if (elaboradoresIdx < 0) {
+      log('⚠️ Coluna "Elaboradores" NÃO encontrada! Headers: ' + JSON.stringify(headers.filter((h: string) => h !== '')));
+    }
 
-    // Encontra registros do colaborador específico
+    // Primeira linha de dados
+    if (parsedData.length > headerIdx + 1) {
+      const sample = String(parsedData[headerIdx + 1].colunas?.[elaboradoresIdx] || '').substring(0, 80);
+      log(`👤 Exemplo elaboradores[${headerIdx+1}]: "${sample}"`);
+    }
+
+    // Busca
+    const targetMatricula = (trainee.matricula || '').toString().trim();
+    const targetName = (trainee.name || '').toString().toUpperCase().trim();
+    const firstName = targetName.split(' ')[0] || '';
+    
+    log(`🎯 Buscando: matricula="${targetMatricula}" nome="${targetName}" primeiro="${firstName}"`);
+    
     const userRecords = parsedData.filter((row: any, idx: number) => {
       if (idx <= headerIdx) return false;
-      
-      const targetMatricula = (trainee.matricula || '').toString().trim();
-      const targetName = (trainee.name || '').toString().toUpperCase().trim();
-      const firstName = targetName.split(' ')[0] || '';
       
       const checkMatch = (cellValue: string) => {
         const c = (cellValue || '').toString().toUpperCase();
         if (!c) return false;
-        
-        // 1. Match exato por matrícula (mais confiável)
         if (targetMatricula && c.includes(targetMatricula)) return true;
-        
-        // 2. Match exato pelo nome completo
         if (targetName && c.includes(targetName)) return true;
-        
-        // 3. Fallback: Se tiver apenas o primeiro nome E bater com uma parte da matrícula 
-        // (Isso resolve casos onde o sobrenome muda, ex: Naylan Moreira vs Naylan Cunha)
         if (firstName && targetMatricula && c.includes(firstName) && c.includes(targetMatricula)) return true;
-        
         return false;
       };
       
-      // Procura na coluna de elaboradores, ou se não achar, procura em todas as colunas
       if (elaboradoresIdx >= 0) {
         return checkMatch(row.colunas[elaboradoresIdx]);
       } else {
@@ -275,9 +303,18 @@ export const fetchKaizenData = async (trainee: Trainee) => {
       }
     });
 
-    if (userRecords.length === 0) return null;
+    log(`📈 Registros encontrados: ${userRecords.length}`);
+    
+    if (userRecords.length === 0) {
+      const examples = parsedData.slice(headerIdx + 1, headerIdx + 4).map((r: any) => 
+        String(r.colunas?.[elaboradoresIdx] || '').substring(0, 80)
+      );
+      log('❌ Nenhum match! Exemplos de elaboradores:');
+      examples.forEach((ex: string, i: number) => log(`   [${i}]: "${ex}"`));
+      return { _debug: debugLog };
+    }
 
-    // Função auxiliar para determinar se foi implementado (se tem data de implantação)
+    // Função auxiliar para determinar se foi implementado
     const isImplemented = (row: any) => {
       if (implDateIdx >= 0) {
         const val = (row.colunas[implDateIdx] || '').toString().trim();
@@ -286,8 +323,7 @@ export const fetchKaizenData = async (trainee: Trainee) => {
       return false; 
     };
 
-    // Constrói objeto estruturado esperado pelo KaizenView
-    return {
+    const result = {
       resumo: {
         submetidos: userRecords.length,
         implementados: userRecords.filter((r: any) => isImplemented(r)).length
@@ -297,11 +333,15 @@ export const fetchKaizenData = async (trainee: Trainee) => {
         title: titleIdx >= 0 ? (r.colunas[titleIdx] || 'Sugestão Kaizen') : 'Sugestão Kaizen',
         date: dateIdx >= 0 ? (r.colunas[dateIdx] || new Date().toISOString()) : new Date().toISOString(),
         status: isImplemented(r) ? 'Implementado' : 'Submetido'
-      }))
+      })),
+      _debug: debugLog
     };
-  } catch (error) {
-    console.error("Erro ao buscar dados de Kaizen:", error);
-    return null;
+
+    log(`✅ SUCESSO! ${result.resumo.submetidos} submetidos, ${result.resumo.implementados} implementados`);
+    return result;
+  } catch (error: any) {
+    log(`💥 ERRO: ${error.message || error}`);
+    return { _debug: debugLog };
   }
 };
 
