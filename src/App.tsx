@@ -284,14 +284,20 @@ export default function App() {
 
   if (isAdmin && !selectedClass) {
     return (
-      <AdminClassesView 
-        isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode}
-        loginEmail={loginEmail} isProfileMenuOpen={isProfileMenuOpen}
-        handleToggleProfileMenu={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-        handleOpenGlobalRepo={() => setShowGlobalUploadModal(true)}
-        handleLogout={handleLogout} setSelectedClass={setSelectedClass}
-        setIsLoadingTrainees={setIsLoadingTrainees} setTrainees={setTrainees}
-      />
+      <>
+        <AdminClassesView 
+          isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode}
+          loginEmail={loginEmail} isProfileMenuOpen={isProfileMenuOpen}
+          handleToggleProfileMenu={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+          handleOpenGlobalRepo={() => setShowGlobalUploadModal(true)}
+          handleLogout={handleLogout} setSelectedClass={setSelectedClass}
+          setIsLoadingTrainees={setIsLoadingTrainees} setTrainees={setTrainees}
+        />
+        <GlobalUploadModal 
+          show={showGlobalUploadModal} onClose={() => setShowGlobalUploadModal(false)}
+          loginEmail={loginEmail}
+        />
+      </>
     );
   }
 
