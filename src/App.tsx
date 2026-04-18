@@ -64,6 +64,7 @@ export default function App() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [editingMilestone, setEditingMilestone] = useState<number | null>(null);
   const [isLoadingTrainees, setIsLoadingTrainees] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [trainees, setTrainees] = useState<Trainee[]>([]);
 
   // --- Modais ---
@@ -96,6 +97,7 @@ export default function App() {
   useEffect(() => {
     if (!selectedTrainee) return;
     hasLoadedDataRef.current = false;
+    setIsLoadingProfile(true);
 
     const unsubscribe = onSnapshot(doc(newDb, 'estagios', selectedTrainee.matricula), (docSnap) => {
       if (docSnap.exists()) {
@@ -120,7 +122,10 @@ export default function App() {
         setUserStatus(null);
         lastServerDataRef.current = JSON.stringify({ tableRows: initialRows, status: null, milestoneEvaluations: {} });
       }
-      setTimeout(() => { hasLoadedDataRef.current = true; }, 1000);
+      setTimeout(() => { 
+        hasLoadedDataRef.current = true; 
+        setIsLoadingProfile(false);
+      }, 1000);
     });
 
     DataService.fetchRealTrainings(selectedTrainee).then(setRealTrainings);
@@ -311,6 +316,30 @@ export default function App() {
     );
   }
 
+  if (isLoadingProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+          <p className="text-content-muted text-sm font-bold uppercase tracking-widest animate-pulse">Carregando Perfil...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAdmin && selectedTrainee && userStatus === null) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <StatusSelectionView 
+          currentStatus={userStatus} 
+          onStatusChange={setUserStatus} 
+          isAdmin={isAdmin}
+          onBack={() => setSelectedTrainee(null)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
       <header className="flex items-center justify-between mb-8 md:mb-12 gap-4 px-6 pt-6">
@@ -370,11 +399,6 @@ export default function App() {
         </header>
 
       <main className="pt-6 pb-12 px-6 max-w-7xl mx-auto">
-        <StatusSelectionView 
-          currentStatus={userStatus} 
-          onStatusChange={setUserStatus} 
-          isAdmin={isAdmin} 
-        />
 
         <div className="flex gap-2 overflow-x-auto pb-4 mb-8 custom-scrollbar no-scrollbar scroll-smooth">
           {['timeline', 'form', 'pending', 'kaizen'].map((tab) => (

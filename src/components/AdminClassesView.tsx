@@ -143,7 +143,7 @@ export default function AdminClassesView({
             onClick={handleSelectGlobalStorage}
             className="md:col-span-12 bg-blue-600 dark:bg-blue-600 rounded-[38px] p-8 md:p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-blue-500/20 cursor-pointer overflow-hidden relative group"
           >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-white/20 transition-colors" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 dark:bg-black/20 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-white/20 transition-colors" />
             
             <div className="w-20 h-20 md:w-24 md:h-24 rounded-[32px] bg-white/20 backdrop-blur-md flex items-center justify-center text-white shrink-0 shadow-inner">
               <GraduationCap className="w-10 h-10 md:w-12 md:h-12" />
@@ -187,13 +187,13 @@ export default function AdminClassesView({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#2D3748] rounded-[28px] shadow-2xl w-full max-w-[380px] p-6 relative flex flex-col border border-white/10 mx-auto"
+              className="bg-surface rounded-[32px] shadow-2xl w-full max-w-[380px] p-8 relative flex flex-col border border-border-subtle mx-auto"
             >
-              <button onClick={handleToggleProfileMenu} className="absolute top-5 right-5 text-white/40 hover:text-white transition-colors">
+              <button onClick={handleToggleProfileMenu} className="absolute top-6 right-6 text-content/20 hover:text-content transition-colors">
                 <X className="w-6 h-6"/>
               </button>
               
-              <h2 className="text-center text-lg font-black text-white uppercase tracking-wider mb-6 mt-1">
+              <h2 className="text-center text-lg font-black text-content uppercase tracking-wider mb-8 mt-2">
                 Painel do Administrador
               </h2>
 
@@ -231,7 +231,7 @@ function BentoClassCard({ cls, idx, onClick }: { cls: any, idx: number, onClick:
       className="bg-surface rounded-[38px] p-6 sm:p-8 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-border-subtle hover:border-blue-500/50 transition-all cursor-pointer group"
     >
       <div className="flex items-start justify-between mb-8 gap-4">
-        <div className={`w-14 h-14 rounded-[22px] ${cls.color} flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-current/20 shrink-0`}>
+        <div className={`w-14 h-14 rounded-[22px] ${cls.color} flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-black/20 shrink-0`}>
           {cls.letter}
         </div>
         <div className="flex -space-x-3">
