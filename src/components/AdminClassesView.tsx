@@ -116,7 +116,7 @@ export default function AdminClassesView({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 relative bg-surface/50 backdrop-blur-md p-1.5 rounded-[22px] border border-border-subtle shadow-sm self-end md:self-auto">
+          <div className="flex items-center gap-2 relative z-50 bg-surface/50 backdrop-blur-md p-1.5 rounded-[22px] border border-border-subtle shadow-sm self-end md:self-auto">
             <DarkModeToggle isDarkMode={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
             <div className="h-6 w-px bg-border-subtle mx-0.5" />
             <button 
