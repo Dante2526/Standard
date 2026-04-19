@@ -46,6 +46,18 @@ export default function AdminClassesView({
     setSelectedClass('global-estagio');
     setIsLoadingTrainees(true);
     try {
+      // Carrega as turmas em paralelo para montar o mapa matrícula -> turma
+      const turmaIds = ['turma a', 'turma b', 'turma c', 'turma d'];
+      const turmaSnaps = await Promise.all(turmaIds.map(id => getDocs(collection(db, id))));
+      const turmaMap: Record<string, string> = {};
+      turmaSnaps.forEach((snap, idx) => {
+        const letra = turmaIds[idx].split(' ').pop()!.toUpperCase();
+        snap.docs.forEach(d => {
+          const mat = d.data().matricula;
+          if (mat) turmaMap[mat] = letra;
+        });
+      });
+
       const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
       const snap = await getDocs(q);
       const traineesData = snap.docs.map(docSnapshot => {
@@ -62,7 +74,7 @@ export default function AdminClassesView({
           funcao: data.funcao || 'Colaborador',
           progress: calcProgress,
           status: data.status === 'efetivado' ? 'completed' : 'active',
-          turma: data.turma || ''
+          turma: data.turma || turmaMap[data.matricula] || ''
         } as Trainee;
       }).sort((a, b) => a.name.localeCompare(b.name));
       setTrainees(traineesData);
