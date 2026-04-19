@@ -106,7 +106,10 @@ export default function App() {
         const data = docSnap.data();
         if (data.tableRows) setTableRows(data.tableRows);
         if (data.milestoneEvaluations) setMilestoneEvaluations(data.milestoneEvaluations);
-        if (data.status) setUserStatus(data.status);
+        if (data.status) {
+          setUserStatus(data.status);
+          if (data.status === 'efetivado') setActiveTab('pending');
+        }
 
         // Armazena a versão do servidor para evitar loops de salvamento
         lastServerDataRef.current = JSON.stringify({
@@ -122,8 +125,11 @@ export default function App() {
           { id: 3, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
         ];
         setTableRows(initialRows);
-        setUserStatus(null);
-        lastServerDataRef.current = JSON.stringify({ tableRows: initialRows, status: null, milestoneEvaluations: {}, horasAcumuladas: 0 });
+        // Preserva o status se o trainee já veio marcado como efetivado pela listagem
+        const inheritedStatus = selectedTrainee.status === 'completed' ? 'efetivado' : null;
+        setUserStatus(inheritedStatus);
+        if (inheritedStatus === 'efetivado') setActiveTab('pending');
+        lastServerDataRef.current = JSON.stringify({ tableRows: initialRows, status: inheritedStatus, milestoneEvaluations: {}, horasAcumuladas: 0 });
       }
       setTimeout(() => { 
         hasLoadedDataRef.current = true; 
@@ -418,7 +424,10 @@ export default function App() {
       <main className="pt-6 pb-12 px-6 max-w-7xl mx-auto">
 
         <div className="flex gap-2 overflow-x-auto pb-4 mb-8 custom-scrollbar no-scrollbar scroll-smooth">
-          {['timeline', 'form', 'pending', 'kaizen'].map((tab) => (
+          {(userStatus === 'efetivado' 
+            ? ['pending', 'kaizen'] 
+            : ['timeline', 'form', 'pending', 'kaizen']
+          ).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
