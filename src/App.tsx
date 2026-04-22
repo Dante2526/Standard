@@ -34,16 +34,25 @@ import * as ExportService from './services/exportService';
 
 export default function App() {
   // --- Estados de Autenticação e Navegação ---
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [userName, setUserName] = useState('');
-  const [loginEmail, setLoginEmail] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true');
+  const [userName, setUserName] = useState(() => localStorage.getItem('userName') || '');
+  const [loginEmail, setLoginEmail] = useState(() => localStorage.getItem('loginEmail') || '');
   const [loginError, setLoginError] = useState('');
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   
-  const [selectedClass, setSelectedClass] = useState<string | null>(null);
-  const [selectedTrainee, setSelectedTrainee] = useState<Trainee | null>(null);
-  const [activeTab, setActiveTab] = useState<'form' | 'timeline' | 'pending' | 'kaizen'>('timeline');
+  const [selectedClass, setSelectedClass] = useState<string | null>(() => localStorage.getItem('selectedClass'));
+  const [selectedTrainee, setSelectedTrainee] = useState<Trainee | null>(() => {
+    const saved = localStorage.getItem('selectedTrainee');
+    try {
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [activeTab, setActiveTab] = useState<'form' | 'timeline' | 'pending' | 'kaizen'>(() => 
+    (localStorage.getItem('activeTab') as any) || 'timeline'
+  );
 
   // --- Estados de Dados do Colaborador ---
   const [tableRows, setTableRows] = useState<TrainingRow[]>([]);
@@ -95,6 +104,21 @@ export default function App() {
     }
   }, [isDarkMode]);
 
+  // --- Persistência de Sessão e Navegação ---
+  useEffect(() => {
+    localStorage.setItem('isLoggedIn', isLoggedIn.toString());
+    localStorage.setItem('isAdmin', isAdmin.toString());
+    localStorage.setItem('userName', userName);
+    localStorage.setItem('loginEmail', loginEmail);
+    localStorage.setItem('activeTab', activeTab);
+    
+    if (selectedClass) localStorage.setItem('selectedClass', selectedClass);
+    else localStorage.removeItem('selectedClass');
+    
+    if (selectedTrainee) localStorage.setItem('selectedTrainee', JSON.stringify(selectedTrainee));
+    else localStorage.removeItem('selectedTrainee');
+  }, [isLoggedIn, isAdmin, userName, loginEmail, selectedClass, selectedTrainee, activeTab]);
+
   // --- Sincronização em Tempo Real ---
   useEffect(() => {
     if (!selectedTrainee) return;
@@ -108,7 +132,9 @@ export default function App() {
         if (data.milestoneEvaluations) setMilestoneEvaluations(data.milestoneEvaluations);
         if (data.status) {
           setUserStatus(data.status);
-          if (data.status === 'efetivado') setActiveTab('pending');
+          if (data.status === 'efetivado') {
+            setActiveTab(prev => (prev === 'kaizen' || prev === 'pending' ? prev : 'pending'));
+          }
         }
 
         // Armazena a versão do servidor para evitar loops de salvamento
@@ -128,7 +154,9 @@ export default function App() {
         // Preserva o status se o trainee já veio marcado como efetivado pela listagem
         const inheritedStatus = selectedTrainee.status === 'completed' ? 'efetivado' : null;
         setUserStatus(inheritedStatus);
-        if (inheritedStatus === 'efetivado') setActiveTab('pending');
+        if (inheritedStatus === 'efetivado') {
+          setActiveTab(prev => (prev === 'kaizen' || prev === 'pending' ? prev : 'pending'));
+        }
         lastServerDataRef.current = JSON.stringify({ tableRows: initialRows, status: inheritedStatus, milestoneEvaluations: {}, horasAcumuladas: 0 });
       }
       setTimeout(() => { 
@@ -203,6 +231,15 @@ export default function App() {
     setSelectedTrainee(null);
     setTrainees([]);
     setLoginEmail('');
+    
+    // Limpa persistência
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('isAdmin');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('loginEmail');
+    localStorage.removeItem('selectedClass');
+    localStorage.removeItem('selectedTrainee');
+    localStorage.removeItem('activeTab');
   };
 
   const updateRow = (id: number, field: keyof TrainingRow, value: string) => {

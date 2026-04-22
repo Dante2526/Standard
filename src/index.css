@@ -62,3 +62,23 @@ html, body {
   border: none !important;
   box-shadow: none !important;
 }
+
+/* Ocultar barras de rolagem no mobile mantendo funcionalidade */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Classe utilitária para uso específico em qualquer dispositivo */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

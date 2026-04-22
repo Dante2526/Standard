@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Upload, ArrowLeft, User as UserIcon, GraduationCap,
@@ -41,6 +42,31 @@ export default function AdminClassesView({
   setIsLoadingTrainees,
   setTrainees
 }: AdminClassesViewProps) {
+  const [counts, setCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
+        const snap = await getDocs(q);
+        const newCounts: Record<string, number> = { 'A': 0, 'B': 0, 'C': 0, 'D': 0 };
+        
+        snap.docs.forEach(d => {
+          const data = d.data();
+          const turma = (data.turma || '').toUpperCase().trim();
+          // Tenta extrair a letra se for algo como "TURMA A" ou apenas "A"
+          const letter = turma.includes('TURMA') ? turma.split(' ').pop() : turma;
+          if (letter && newCounts[letter] !== undefined) {
+            newCounts[letter]++;
+          }
+        });
+        setCounts(newCounts);
+      } catch (e) {
+        console.error("Erro ao buscar contagens:", e);
+      }
+    };
+    fetchCounts();
+  }, []);
 
   const handleSelectGlobalStorage = async () => {
     setSelectedClass('global-estagio');
@@ -192,7 +218,12 @@ export default function AdminClassesView({
           {/* Combined Classes Grid - All classes normalized */}
           <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 gap-6">
             {CLASSES_LIST.map((cls, idx) => (
-              <BentoClassCard key={cls.id} cls={cls} idx={idx} onClick={() => handleSelectClass(cls.id)} />
+              <BentoClassCard 
+                key={cls.id} 
+                cls={{ ...cls, students: counts[cls.letter] || 0 }} 
+                idx={idx} 
+                onClick={() => handleSelectClass(cls.id)} 
+              />
             ))}
           </div>
         </div>
