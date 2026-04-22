@@ -383,11 +383,28 @@ export const subscribeToKaizenData = (trainee: Trainee, onUpdate: (data: any) =>
 };
 
 /**
- * Assina atualizações da lista de colaboradores.
+ * Assina atualizações da lista de colaboradores de forma eficiente e em tempo real.
  */
 export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Trainee[]) => void) => {
+  let baseTrainees: any[] = [];
+  let stageDataMap: Record<string, any> = {};
+
+  const updateFinalList = () => {
+    const finalTrainees = baseTrainees.map(trainee => {
+      const stageData = stageDataMap[trainee.matricula];
+      const progressHours = (stageData?.tableRows || []).reduce((acc: number, row: any) => acc + (parseFloat(row.duracao) || 0), 0);
+      
+      return {
+        ...trainee,
+        progress: stageData?.status === 'efetivado' ? 100 : stageData ? Math.round((progressHours / 432) * 100) : 0,
+        status: stageData?.status === 'efetivado' ? 'completed' : stageData?.status === 'estagio' ? 'active' : 'none',
+      } as Trainee;
+    });
+    onUpdate(finalTrainees.sort((a, b) => a.name.localeCompare(b.name)));
+  };
+
   if (clsId === 'global-estagio') {
-    // Lista Global (apenas estagiários ativos no novo banco)
+    // Lista Global: Apenas quem está no novo banco com status 'estagio'
     const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
     return onSnapshot(q, (snap) => {
       const trainees = snap.docs.map(docSnapshot => {
@@ -406,27 +423,33 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
       onUpdate(trainees);
     });
   } else {
-    // Lista por Turma (do banco antigo, cruzando com o novo para progresso)
-    const q = collection(db, clsId);
-    return onSnapshot(q, async (snap) => {
-      const trainees = await Promise.all(snap.docs.map(async docSnapshot => {
-        const data = docSnapshot.data() as any;
-        const stageSnap = await getDoc(doc(newDb, 'estagios', data.matricula || ''));
-        const stageData = stageSnap.exists() ? stageSnap.data() as any : null;
-        const progressHours = (stageData?.tableRows || []).reduce((acc: number, row: any) => acc + (parseFloat(row.duracao) || 0), 0);
+    // Lista por Turma: Combina base (banco antigo) + progresso (novo banco) em tempo real
+    const unsubBase = onSnapshot(collection(db, clsId), (snap) => {
+      baseTrainees = snap.docs.map(d => {
+        const data = d.data();
         return {
-          id: docSnapshot.id,
+          id: d.id,
           name: data.nome || data.name || 'Sem Nome',
           matricula: data.matricula || '',
           funcao: data.funcao || '',
           email: data.email || '',
-          progress: stageData?.status === 'efetivado' ? 100 : stageData ? Math.round((progressHours / 432) * 100) : 0,
-          status: stageData?.status === 'efetivado' ? 'completed' : stageData?.status === 'estagio' ? 'active' : 'none',
           turma: clsId.split(' ').pop()?.toUpperCase() || ''
-        } as Trainee;
-      }));
-      onUpdate(trainees.sort((a, b) => a.name.localeCompare(b.name)));
+        };
+      });
+      updateFinalList();
     });
+
+    const unsubStage = onSnapshot(collection(newDb, 'estagios'), (snap) => {
+      snap.docs.forEach(d => {
+        stageDataMap[d.id] = d.data();
+      });
+      updateFinalList();
+    });
+
+    return () => {
+      unsubBase();
+      unsubStage();
+    };
   }
 };
 
