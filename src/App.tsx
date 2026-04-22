@@ -159,7 +159,7 @@ export default function App() {
           { id: 3, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
         ];
         setTableRows(initialRows);
-        setUserStatus('estagio');
+        setUserStatus(null);
       }
       setIsLoadingProfile(false);
       hasLoadedDataRef.current = true;
@@ -400,7 +400,7 @@ export default function App() {
     );
   }
 
-  if (isAdmin && selectedTrainee && userStatus === null) {
+  if (selectedTrainee && userStatus === null) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <StatusSelectionView 
