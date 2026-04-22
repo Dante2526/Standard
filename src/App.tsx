@@ -58,6 +58,8 @@ export default function App() {
   const [tableRows, setTableRows] = useState<TrainingRow[]>([]);
   const [milestoneEvaluations, setMilestoneEvaluations] = useState<MilestoneEvaluations>({});
   const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
+  const currentStatusRef = useRef(userStatus);
+  useEffect(() => { currentStatusRef.current = userStatus; }, [userStatus]);
   const [realTrainings, setRealTrainings] = useState<any[]>([]);
   const [kaizenData, setKaizenData] = useState<any>(null);
   const [kaizenDebugLog, setKaizenDebugLog] = useState<string[]>([]);
@@ -138,7 +140,11 @@ export default function App() {
         const data = docSnap.data();
         setTableRows(data.tableRows || []);
         setMilestoneEvaluations(data.milestoneEvaluations || {});
-        setUserStatus(data.status || null);
+        const newStatus = data.status || null;
+        // Só atualiza se o novo status não for nulo, ou se o status local ainda for nulo
+        if (newStatus !== null || currentStatusRef.current === null) {
+          setUserStatus(newStatus);
+        }
         
         // Armazena a versão do servidor para evitar loops de salvamento
         lastServerDataRef.current = JSON.stringify({
@@ -159,7 +165,9 @@ export default function App() {
           { id: 3, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
         ];
         setTableRows(initialRows);
-        setUserStatus(null);
+        if (currentStatusRef.current === null) {
+          setUserStatus(null);
+        }
       }
       setIsLoadingProfile(false);
       hasLoadedDataRef.current = true;
