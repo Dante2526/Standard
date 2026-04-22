@@ -60,97 +60,88 @@ export const saveStageData = async (
 };
 
 /**
- * Busca os treinamentos reais de um colaborador a partir do arquivo global mais recente.
+ * Processa o snapshot de arquivos globais para extrair treinamentos reais.
+ */
+export const processRealTrainingsFromSnap = (snap: any, trainee: Trainee) => {
+  if (snap.empty) return [];
+
+  const sortedDocs = snap.docs.sort((a: any, b: any) => {
+    const tA = a.data().uploadedAt?.toMillis?.() || 0;
+    const tB = b.data().uploadedAt?.toMillis?.() || 0;
+    return tB - tA;
+  });
+
+  const fileData = sortedDocs[0].data();
+  const parsedData = fileData.parsedData || [];
+  
+  let headerIdx = 0;
+  while (headerIdx < parsedData.length) {
+    const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
+    if (hRow.some((h: string) => h.includes('matrícula') || h.includes('empregado') || h.includes('treinamento'))) {
+      break; 
+    }
+    headerIdx++;
+  }
+
+  if (headerIdx >= parsedData.length) return [];
+
+  const headers = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
+  
+  const idxNome = headers.findIndex((h: string) => h.includes('nome') || h.includes('empregado') || h.includes('colaborador'));
+  const idxMatricula = headers.findIndex((h: string) => h.includes('matrícula') || h.includes('matricula') || h.includes('id'));
+  const idxTitulo = headers.findIndex((h: string) => h.includes('treinamento') || h.includes('curso') || h.includes('título'));
+  const idxStatus = headers.findIndex((h: string) => h.includes('status') || h.includes('situação'));
+  const idxDate = headers.findIndex((h: string) => h.includes('data') || h.includes('vencimento') || h.includes('realização'));
+  const idxDaysLeft = headers.findIndex((h: string) => h.includes('dias') || h.includes('prazo'));
+
+  return parsedData.filter((row: any, idx: number) => {
+    if (idx <= headerIdx) return false; 
+    const rowMatricula = idxMatricula >= 0 ? (row.colunas[idxMatricula] || '').toString().trim() : (row.colunas[1] || '').toString().trim();
+    const rowName = idxNome >= 0 ? (row.colunas[idxNome] || '').toString().toUpperCase().trim() : (row.colunas[0] || '').toString().toUpperCase().trim();
+    const targetMatricula = (trainee.matricula || '').toString().trim();
+    const targetName = (trainee.name || '').toString().toUpperCase().trim();
+    const firstName = targetName.split(' ')[0] || '';
+    
+    if (targetMatricula && rowMatricula && rowMatricula.includes(targetMatricula)) return true;
+    if (targetName && rowName && rowName.includes(targetName)) return true;
+    if (firstName && targetMatricula && rowName.includes(firstName) && rowMatricula.includes(targetMatricula)) return true;
+    return false;
+  }).map((row: any) => {
+    const statusRaw = idxStatus >= 0 ? (row.colunas[idxStatus] || '').toString().trim() : (row.colunas[4] || '').toString().trim();
+    const daysLeftStr = idxDaysLeft >= 0 ? (row.colunas[idxDaysLeft] || '').toString().trim() : (row.colunas[6] || '').toString().trim();
+    const daysLeft = parseInt(daysLeftStr);
+    const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
+    const date = idxDate >= 0 ? (row.colunas[idxDate] || 'Sem data') : (row.colunas[5] || 'Sem data');
+    const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
+
+    return {
+      title: title.toString().trim(),
+      status: isCompleted ? 'completed' : 'pending',
+      date: date.toString().trim(),
+      priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 30 ? 'Alta' : (daysLeft < 90 ? 'Média' : 'Baixa')),
+      daysRemaining: isNaN(daysLeft) ? null : daysLeft
+    };
+  });
+};
+
+/**
+ * Busca os treinamentos reais (Promise-based, mantido por compatibilidade).
  */
 export const fetchRealTrainings = async (trainee: Trainee) => {
-  try {
-    const q = query(
-      collection(newDb, 'global_files'), 
-      where('type', '==', 'treinamento')
-    );
-    const snap = await getDocs(q);
-    
-    if (snap.empty) return [];
+  const q = query(collection(newDb, 'global_files'), where('type', '==', 'treinamento'));
+  const snap = await getDocs(q);
+  return processRealTrainingsFromSnap(snap, trainee);
+};
 
-    // Pega o mais recente ordenando em JS
-    const sortedDocs = snap.docs.sort((a, b) => {
-      const tA = a.data().uploadedAt?.toMillis?.() || 0;
-      const tB = b.data().uploadedAt?.toMillis?.() || 0;
-      return tB - tA;
-    });
-
-    const fileData = sortedDocs[0].data();
-    const parsedData = fileData.parsedData || [];
-    
-    // Procura o cabeçalho correto
-    let headerIdx = 0;
-    while (headerIdx < parsedData.length) {
-      const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
-      if (hRow.some((h: string) => h.includes('matrícula') || h.includes('empregado') || h.includes('treinamento'))) {
-        break; 
-      }
-      headerIdx++;
-    }
-
-    if (headerIdx >= parsedData.length) return []; // Header não encontrado
-
-    const headers = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
-    
-    const idxNome = headers.findIndex((h: string) => h.includes('nome') || h.includes('empregado') || h.includes('colaborador'));
-    const idxMatricula = headers.findIndex((h: string) => h.includes('matrícula') || h.includes('matricula') || h.includes('id'));
-    const idxTitulo = headers.findIndex((h: string) => h.includes('treinamento') || h.includes('curso') || h.includes('título'));
-    const idxStatus = headers.findIndex((h: string) => h.includes('status') || h.includes('situação'));
-    const idxDate = headers.findIndex((h: string) => h.includes('data') || h.includes('vencimento') || h.includes('realização'));
-    const idxDaysLeft = headers.findIndex((h: string) => h.includes('dias') || h.includes('prazo'));
-
-    const matches = parsedData.filter((row: any, idx: number) => {
-      if (idx <= headerIdx) return false; 
-
-      const rowMatricula = idxMatricula >= 0 ? (row.colunas[idxMatricula] || '').toString().trim() : (row.colunas[1] || '').toString().trim();
-      const rowName = idxNome >= 0 ? (row.colunas[idxNome] || '').toString().toUpperCase().trim() : (row.colunas[0] || '').toString().toUpperCase().trim();
-      
-      const targetMatricula = (trainee.matricula || '').toString().trim();
-      const targetName = (trainee.name || '').toString().toUpperCase().trim();
-      const firstName = targetName.split(' ')[0] || '';
-      
-      if (targetMatricula && rowMatricula && rowMatricula.includes(targetMatricula)) {
-        return true;
-      }
-      if (targetName && rowName && rowName.includes(targetName)) {
-        return true;
-      }
-      // Fallback para primeiro nome + matricula
-      if (firstName && targetMatricula && rowName.includes(firstName) && rowMatricula.includes(targetMatricula)) {
-        return true;
-      }
-      
-      return false;
-    }).map((row: any) => {
-      const statusRaw = idxStatus >= 0 ? (row.colunas[idxStatus] || '').toString().trim() : (row.colunas[4] || '').toString().trim();
-      const daysLeftStr = idxDaysLeft >= 0 ? (row.colunas[idxDaysLeft] || '').toString().trim() : (row.colunas[6] || '').toString().trim();
-      const daysLeft = parseInt(daysLeftStr);
-      
-      const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
-      const date = idxDate >= 0 ? (row.colunas[idxDate] || 'Sem data') : (row.colunas[5] || 'Sem data');
-
-      // Normaliza a string de status para evitar problemas com acentuação ou espaços extras
-      const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
-
-      return {
-        title: title.toString().trim(),
-        status: isCompleted ? 'completed' : 'pending',
-        date: date.toString().trim(),
-        priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 30 ? 'Alta' : (daysLeft < 90 ? 'Média' : 'Baixa')),
-        daysRemaining: isNaN(daysLeft) ? null : daysLeft
-      };
-    });
-    
-    return matches;
-  } catch (error) {
-    console.error("Erro ao buscar treinamentos reais:", error);
-    throw error;
-  }
+/**
+ * Assina atualizações de treinamentos reais.
+ */
+export const subscribeToRealTrainings = (trainee: Trainee, onUpdate: (data: any[]) => void) => {
+  const q = query(collection(newDb, 'global_files'), where('type', '==', 'treinamento'));
+  return onSnapshot(q, (snap) => {
+    onUpdate(processRealTrainingsFromSnap(snap, trainee));
+  });
 };
 
 /**
@@ -249,31 +240,16 @@ export const uploadGlobalFile = async (file: File, type: 'kaizen' | 'treinamento
 };
 
 /**
- * Busca dados de Kaizen para um colaborador.
- * Retorna dados + relatório de debug para o painel espião.
+ * Processa o snapshot de arquivos globais para extrair dados de Kaizen.
  */
-export const fetchKaizenData = async (trainee: Trainee) => {
+export const processKaizenDataFromSnap = (snap: any, trainee: Trainee) => {
   const debugLog: string[] = [];
-  const log = (msg: string) => { debugLog.push(msg); console.log('[KAIZEN]', msg); };
+  const log = (msg: string) => { debugLog.push(msg); };
 
   try {
-    log(`🔍 Trainee: nome="${trainee.name}" matricula="${trainee.matricula}"`);
-    
-    const q = query(
-      collection(newDb, 'global_files'), 
-      where('type', '==', 'kaizen')
-    );
-    const snap = await getDocs(q);
-    
-    if (snap.empty) {
-      log('❌ Nenhum arquivo kaizen encontrado no Firestore.');
-      return { _debug: debugLog };
-    }
+    if (snap.empty) return { _debug: debugLog };
 
-    log(`📦 ${snap.docs.length} arquivo(s) kaizen no Firestore`);
-    
-    // Pega o mais recente ordenando em JS (evita necessidade de índice composto)
-    const sortedDocs = snap.docs.sort((a, b) => {
+    const sortedDocs = snap.docs.sort((a: any, b: any) => {
       const tA = a.data().uploadedAt?.toMillis?.() || 0;
       const tB = b.data().uploadedAt?.toMillis?.() || 0;
       return tB - tA;
@@ -281,35 +257,17 @@ export const fetchKaizenData = async (trainee: Trainee) => {
     
     const fileData = sortedDocs[0].data();
     const parsedData = fileData.parsedData || [];
-    log(`📄 Arquivo: "${fileData.name}" | ${parsedData.length} linhas`);
 
-    if (parsedData.length < 2) {
-      log('❌ Menos de 2 linhas no arquivo.');
-      return { _debug: debugLog };
-    }
+    if (parsedData.length < 2) return { _debug: debugLog };
 
-    // Mostra primeiras linhas para debug
-    for (let i = 0; i < Math.min(3, parsedData.length); i++) {
-      const preview = (parsedData[i].colunas || []).slice(0, 4).map((c: string) => String(c).substring(0, 40));
-      log(`📋 Linha[${i}]: ${JSON.stringify(preview)}`);
-    }
-
-    // Procurar a linha de cabeçalho correta
     let headerIdx = 0;
     while (headerIdx < parsedData.length) {
       const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
-      if (hRow.some((h: string) => h.includes('elaborador') || h.includes('kaizen') || h.includes('data'))) {
-        break; 
-      }
+      if (hRow.some((h: string) => h.includes('elaborador') || h.includes('kaizen') || h.includes('data'))) break; 
       headerIdx++;
     }
 
-    if (headerIdx >= parsedData.length) {
-      log('❌ Cabeçalho NÃO encontrado em nenhuma linha!');
-      return { _debug: debugLog };
-    }
-    
-    log(`✅ Header na linha ${headerIdx}`);
+    if (headerIdx >= parsedData.length) return { _debug: debugLog };
 
     const headers = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
     const elaboradoresIdx = headers.findIndex((h: string) => h.includes('elaborador'));
@@ -317,28 +275,12 @@ export const fetchKaizenData = async (trainee: Trainee) => {
     const dateIdx = headers.findIndex((h: string) => h.includes('data'));
     const implDateIdx = headers.findIndex((h: string) => h.includes('quando foi implantada') || h.includes('implantada'));
     
-    log(`📊 Índices → elaboradores=${elaboradoresIdx}, título=${titleIdx}, data=${dateIdx}, implantada=${implDateIdx}`);
-    
-    if (elaboradoresIdx < 0) {
-      log('⚠️ Coluna "Elaboradores" NÃO encontrada! Headers: ' + JSON.stringify(headers.filter((h: string) => h !== '')));
-    }
-
-    // Primeira linha de dados
-    if (parsedData.length > headerIdx + 1) {
-      const sample = String(parsedData[headerIdx + 1].colunas?.[elaboradoresIdx] || '').substring(0, 80);
-      log(`👤 Exemplo elaboradores[${headerIdx+1}]: "${sample}"`);
-    }
-
-    // Busca
     const targetMatricula = (trainee.matricula || '').toString().trim();
     const targetName = (trainee.name || '').toString().toUpperCase().trim();
     const firstName = targetName.split(' ')[0] || '';
     
-    log(`🎯 Buscando: matricula="${targetMatricula}" nome="${targetName}" primeiro="${firstName}"`);
-    
     const userRecords = parsedData.filter((row: any, idx: number) => {
       if (idx <= headerIdx) return false;
-      
       const checkMatch = (cellValue: string) => {
         const c = (cellValue || '').toString().toUpperCase();
         if (!c) return false;
@@ -347,26 +289,11 @@ export const fetchKaizenData = async (trainee: Trainee) => {
         if (firstName && targetMatricula && c.includes(firstName) && c.includes(targetMatricula)) return true;
         return false;
       };
-      
-      if (elaboradoresIdx >= 0) {
-        return checkMatch(row.colunas[elaboradoresIdx]);
-      } else {
-        return row.colunas.some(checkMatch);
-      }
+      return elaboradoresIdx >= 0 ? checkMatch(row.colunas[elaboradoresIdx]) : row.colunas.some(checkMatch);
     });
 
-    log(`📈 Registros encontrados: ${userRecords.length}`);
-    
-    if (userRecords.length === 0) {
-      const examples = parsedData.slice(headerIdx + 1, headerIdx + 4).map((r: any) => 
-        String(r.colunas?.[elaboradoresIdx] || '').substring(0, 80)
-      );
-      log('❌ Nenhum match! Exemplos de elaboradores:');
-      examples.forEach((ex: string, i: number) => log(`   [${i}]: "${ex}"`));
-      return { _debug: debugLog };
-    }
+    if (userRecords.length === 0) return { _debug: debugLog };
 
-    // Função auxiliar para determinar se foi implementado
     const isImplemented = (row: any) => {
       if (implDateIdx >= 0) {
         const val = (row.colunas[implDateIdx] || '').toString().trim();
@@ -375,13 +302,11 @@ export const fetchKaizenData = async (trainee: Trainee) => {
       return false; 
     };
 
-    // Processar evolução mensal
     const monthsMap: Record<string, { submetidos: number, implementados: number }> = {};
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     
     userRecords.forEach((row: any) => {
       let monthStr = 'Atual';
-      
       if (dateIdx >= 0) {
         const dateVal = row.colunas[dateIdx];
         if (dateVal) {
@@ -390,54 +315,37 @@ export const fetchKaizenData = async (trainee: Trainee) => {
              const parts = dateStr.split('/');
              if (parts.length >= 2) {
                const m = parseInt(parts[1], 10);
-               if (m >= 1 && m <= 12) {
-                 monthStr = monthNames[m - 1];
-               }
+               if (m >= 1 && m <= 12) monthStr = monthNames[m - 1];
              }
            } else if (dateStr.includes('-')) {
              const parts = dateStr.split('-');
              if (parts.length >= 2) {
                const m = parseInt(parts[1], 10);
-               if (m >= 1 && m <= 12) {
-                 monthStr = monthNames[m - 1];
-               }
+               if (m >= 1 && m <= 12) monthStr = monthNames[m - 1];
              }
            } else if (!isNaN(Number(dateStr))) {
-             // Tentar converter data serial do Excel se for número
              const serial = Number(dateStr);
              if (serial > 20000) {
                 const date = new Date((serial - 25569) * 86400 * 1000);
-                const m = date.getUTCMonth();
-                monthStr = monthNames[m];
+                monthStr = monthNames[date.getUTCMonth()];
              }
            }
         }
       }
-
-      if (!monthsMap[monthStr]) {
-        monthsMap[monthStr] = { submetidos: 0, implementados: 0 };
-      }
-      
+      if (!monthsMap[monthStr]) monthsMap[monthStr] = { submetidos: 0, implementados: 0 };
       monthsMap[monthStr].submetidos++;
-      if (isImplemented(row)) {
-        monthsMap[monthStr].implementados++;
-      }
+      if (isImplemented(row)) monthsMap[monthStr].implementados++;
     });
 
     const evolucaoMensal = Object.entries(monthsMap)
-        .map(([month, data]) => ({
-          month,
-          submetidos: data.submetidos,
-          implementados: data.implementados
-        }))
-        // Ordena os meses com base no array monthNames - O 'Atual' ficará por último se não tiver mês válido
+        .map(([month, data]) => ({ month, submetidos: data.submetidos, implementados: data.implementados }))
         .sort((a, b) => {
           const idxA = monthNames.indexOf(a.month);
           const idxB = monthNames.indexOf(b.month);
           return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
         });
 
-    const result = {
+    return {
       resumo: {
         submetidos: userRecords.length,
         implementados: userRecords.filter((r: any) => isImplemented(r)).length
@@ -450,12 +358,75 @@ export const fetchKaizenData = async (trainee: Trainee) => {
       })),
       _debug: debugLog
     };
-
-    log(`✅ SUCESSO! ${result.resumo.submetidos} submetidos, ${result.resumo.implementados} implementados`);
-    return result;
   } catch (error: any) {
-    log(`💥 ERRO: ${error.message || error}`);
     return { _debug: debugLog };
+  }
+};
+
+/**
+ * Busca dados de Kaizen (Promise-based).
+ */
+export const fetchKaizenData = async (trainee: Trainee) => {
+  const q = query(collection(newDb, 'global_files'), where('type', '==', 'kaizen'));
+  const snap = await getDocs(q);
+  return processKaizenDataFromSnap(snap, trainee);
+};
+
+/**
+ * Assina atualizações de dados de Kaizen.
+ */
+export const subscribeToKaizenData = (trainee: Trainee, onUpdate: (data: any) => void) => {
+  const q = query(collection(newDb, 'global_files'), where('type', '==', 'kaizen'));
+  return onSnapshot(q, (snap) => {
+    onUpdate(processKaizenDataFromSnap(snap, trainee));
+  });
+};
+
+/**
+ * Assina atualizações da lista de colaboradores.
+ */
+export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Trainee[]) => void) => {
+  if (clsId === 'global-estagio') {
+    // Lista Global (apenas estagiários ativos no novo banco)
+    const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
+    return onSnapshot(q, (snap) => {
+      const trainees = snap.docs.map(docSnapshot => {
+        const data = docSnapshot.data() as any;
+        const progressHours = (data.tableRows || []).reduce((acc: number, row: any) => acc + (parseFloat(row.duracao) || 0), 0);
+        return {
+          id: docSnapshot.id,
+          name: data.nome || 'Sem Nome',
+          matricula: data.matricula || '',
+          funcao: data.funcao || 'Colaborador',
+          progress: data.status === 'efetivado' ? 100 : Math.round((progressHours / 432) * 100),
+          status: data.status === 'efetivado' ? 'completed' : 'active',
+          turma: data.turma || ''
+        } as Trainee;
+      }).sort((a, b) => a.name.localeCompare(b.name));
+      onUpdate(trainees);
+    });
+  } else {
+    // Lista por Turma (do banco antigo, cruzando com o novo para progresso)
+    const q = collection(db, clsId);
+    return onSnapshot(q, async (snap) => {
+      const trainees = await Promise.all(snap.docs.map(async docSnapshot => {
+        const data = docSnapshot.data() as any;
+        const stageSnap = await getDoc(doc(newDb, 'estagios', data.matricula || ''));
+        const stageData = stageSnap.exists() ? stageSnap.data() as any : null;
+        const progressHours = (stageData?.tableRows || []).reduce((acc: number, row: any) => acc + (parseFloat(row.duracao) || 0), 0);
+        return {
+          id: docSnapshot.id,
+          name: data.nome || data.name || 'Sem Nome',
+          matricula: data.matricula || '',
+          funcao: data.funcao || '',
+          email: data.email || '',
+          progress: stageData?.status === 'efetivado' ? 100 : stageData ? Math.round((progressHours / 432) * 100) : 0,
+          status: stageData?.status === 'efetivado' ? 'completed' : stageData?.status === 'estagio' ? 'active' : 'none',
+          turma: clsId.split(' ').pop()?.toUpperCase() || ''
+        } as Trainee;
+      }));
+      onUpdate(trainees.sort((a, b) => a.name.localeCompare(b.name)));
+    });
   }
 };
 

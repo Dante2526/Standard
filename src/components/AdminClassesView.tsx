@@ -45,106 +45,32 @@ export default function AdminClassesView({
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
-        const snap = await getDocs(q);
-        const newCounts: Record<string, number> = { 'A': 0, 'B': 0, 'C': 0, 'D': 0 };
-        
-        snap.docs.forEach(d => {
-          const data = d.data();
-          const turma = (data.turma || '').toUpperCase().trim();
-          // Tenta extrair a letra se for algo como "TURMA A" ou apenas "A"
-          const letter = turma.includes('TURMA') ? turma.split(' ').pop() : turma;
-          if (letter && newCounts[letter] !== undefined) {
-            newCounts[letter]++;
-          }
-        });
-        setCounts(newCounts);
-      } catch (e) {
-        console.error("Erro ao buscar contagens:", e);
-      }
-    };
-    fetchCounts();
+    const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
+    
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const newCounts: Record<string, number> = { 'A': 0, 'B': 0, 'C': 0, 'D': 0 };
+      snap.docs.forEach(d => {
+        const data = d.data();
+        const turma = (data.turma || '').toUpperCase().trim();
+        const letter = turma.includes('TURMA') ? turma.split(' ').pop() : turma;
+        if (letter && newCounts[letter] !== undefined) {
+          newCounts[letter]++;
+        }
+      });
+      setCounts(newCounts);
+    }, (error) => {
+      console.error("Erro na sincronização de contagens:", error);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const handleSelectGlobalStorage = async () => {
+  const handleSelectGlobalStorage = () => {
     setSelectedClass('global-estagio');
-    setIsLoadingTrainees(true);
-    try {
-      // Carrega as turmas em paralelo para montar o mapa matrícula -> turma
-      const turmaIds = ['turma a', 'turma b', 'turma c', 'turma d'];
-      const turmaSnaps = await Promise.all(turmaIds.map(id => getDocs(collection(db, id))));
-      const turmaMap: Record<string, string> = {};
-      turmaSnaps.forEach((snap, idx) => {
-        const letra = turmaIds[idx].split(' ').pop()!.toUpperCase();
-        snap.docs.forEach(d => {
-          const mat = d.data().matricula;
-          if (mat) turmaMap[mat] = letra;
-        });
-      });
-
-      const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
-      const snap = await getDocs(q);
-      const traineesData = snap.docs.map(docSnapshot => {
-        const data = docSnapshot.data() as any;
-        const progressHours = (data.tableRows || []).reduce((acc: number, row: any) => acc + (parseFloat(row.duracao) || 0), 0);
-        const calcProgress = data.status === 'efetivado' 
-          ? 100 
-          : Math.round((progressHours / 432) * 100);
-
-        return {
-          id: docSnapshot.id,
-          name: data.nome || 'Sem Nome',
-          matricula: data.matricula || '',
-          funcao: data.funcao || 'Colaborador',
-          progress: calcProgress,
-          status: data.status === 'efetivado' ? 'completed' : 'active',
-          turma: data.turma || turmaMap[data.matricula] || ''
-        } as Trainee;
-      }).sort((a, b) => a.name.localeCompare(b.name));
-      setTrainees(traineesData);
-    } catch (e) {
-      console.error("Erro ao buscar controle de estágio:", e);
-    } finally {
-      setIsLoadingTrainees(false);
-    }
   };
 
-  const handleSelectClass = async (clsId: string) => {
+  const handleSelectClass = (clsId: string) => {
     setSelectedClass(clsId);
-    setIsLoadingTrainees(true);
-    try {
-      const snap = await getDocs(collection(db, clsId));
-      const traineesData = (await Promise.all(snap.docs.map(async docSnapshot => {
-        const data = docSnapshot.data() as any;
-        const stageSnap = await getDoc(doc(newDb, 'estagios', data.matricula || ''));
-        const stageData = stageSnap.exists() ? stageSnap.data() as any : null;
-        
-        const progressHours = (stageData?.tableRows || []).reduce((acc: number, row: any) => acc + (parseFloat(row.duracao) || 0), 0);
-        const calcProgress = stageData?.status === 'efetivado'
-          ? 100
-          : stageData
-            ? Math.round((progressHours / 432) * 100)
-            : 0;
-
-        return {
-          id: docSnapshot.id,
-          name: data.nome || data.name || 'Sem Nome',
-          matricula: data.matricula || '',
-          funcao: data.funcao || '',
-          email: data.email || '',
-          progress: calcProgress,
-          status: stageData?.status === 'efetivado' ? 'completed' : stageData?.status === 'estagio' ? 'active' : 'none',
-          turma: clsId.split(' ').pop()?.toUpperCase() || ''
-        } as Trainee;
-      }))).sort((a, b) => a.name.localeCompare(b.name));
-      setTrainees(traineesData);
-    } catch (e) {
-      console.error("Erro ao buscar alunos:", e);
-    } finally {
-      setIsLoadingTrainees(false);
-    }
   };
 
   return (

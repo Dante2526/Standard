@@ -119,24 +119,27 @@ export default function App() {
     else localStorage.removeItem('selectedTrainee');
   }, [isLoggedIn, isAdmin, userName, loginEmail, selectedClass, selectedTrainee, activeTab]);
 
-  // --- Sincronização em Tempo Real ---
+  // --- Sincronização em Tempo Real de Dados do Perfil ---
   useEffect(() => {
-    if (!selectedTrainee) return;
-    hasLoadedDataRef.current = false;
-    setIsLoadingProfile(true);
+    if (!selectedTrainee) {
+      setTableRows([]);
+      setMilestoneEvaluations({});
+      setUserStatus(null);
+      setRealTrainings([]);
+      setKaizenData(null);
+      return;
+    }
 
-    const unsubscribe = onSnapshot(doc(newDb, 'estagios', selectedTrainee.matricula), (docSnap) => {
+    setIsLoadingProfile(true);
+    
+    // 1. Assina dados de estágio (progresso, status, avaliações)
+    const unsubStage = onSnapshot(doc(newDb, 'estagios', selectedTrainee.matricula), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.tableRows) setTableRows(data.tableRows);
-        if (data.milestoneEvaluations) setMilestoneEvaluations(data.milestoneEvaluations);
-        if (data.status) {
-          setUserStatus(data.status);
-          if (data.status === 'efetivado') {
-            setActiveTab(prev => (prev === 'kaizen' || prev === 'pending' ? prev : 'pending'));
-          }
-        }
-
+        setTableRows(data.tableRows || []);
+        setMilestoneEvaluations(data.milestoneEvaluations || {});
+        setUserStatus(data.status || 'estagio');
+        
         // Armazena a versão do servidor para evitar loops de salvamento
         lastServerDataRef.current = JSON.stringify({
           tableRows: data.tableRows || [],
@@ -144,6 +147,11 @@ export default function App() {
           milestoneEvaluations: data.milestoneEvaluations || {},
           horasAcumuladas: data.horasAcumuladas || 0
         });
+
+        // Mantém a aba ativa consistente com o status
+        if (data.status === 'efetivado') {
+          setActiveTab(prev => (prev === 'kaizen' || prev === 'pending' ? prev : 'pending'));
+        }
       } else {
         const initialRows = [
           { id: 1, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
@@ -151,35 +159,40 @@ export default function App() {
           { id: 3, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
         ];
         setTableRows(initialRows);
-        // Preserva o status se o trainee já veio marcado como efetivado pela listagem
-        const inheritedStatus = selectedTrainee.status === 'completed' ? 'efetivado' : null;
-        setUserStatus(inheritedStatus);
-        if (inheritedStatus === 'efetivado') {
-          setActiveTab(prev => (prev === 'kaizen' || prev === 'pending' ? prev : 'pending'));
-        }
-        lastServerDataRef.current = JSON.stringify({ tableRows: initialRows, status: inheritedStatus, milestoneEvaluations: {}, horasAcumuladas: 0 });
+        setUserStatus('estagio');
       }
-      setTimeout(() => { 
-        hasLoadedDataRef.current = true; 
-        setIsLoadingProfile(false);
-      }, 1000);
+      setIsLoadingProfile(false);
+      hasLoadedDataRef.current = true;
     });
 
-    DataService.fetchRealTrainings(selectedTrainee).then(setRealTrainings);
-    DataService.fetchKaizenData(selectedTrainee).then((result: any) => {
-      if (result?._debug) {
-        setKaizenDebugLog(result._debug);
-        setShowDebugPanel(true);
-      }
-      if (result?.resumo) {
-        setKaizenData(result);
-      } else {
-        setKaizenData(null);
-      }
+    // 2. Assina treinamentos reais
+    const unsubReal = DataService.subscribeToRealTrainings(selectedTrainee, setRealTrainings);
+
+    // 3. Assina dados de Kaizen
+    const unsubKaizen = DataService.subscribeToKaizenData(selectedTrainee, (data) => {
+      setKaizenData(data);
+      if (data?._debug) setKaizenDebugLog(data._debug);
+    });
+
+    return () => {
+      unsubStage();
+      unsubReal();
+      unsubKaizen();
+    };
+  }, [selectedTrainee]);
+
+  // --- Sincronização em Tempo Real da Lista de Colaboradores (Admin) ---
+  useEffect(() => {
+    if (!isAdmin || !selectedClass || selectedTrainee) return;
+
+    setIsLoadingTrainees(true);
+    const unsubscribe = DataService.subscribeToTraineeList(selectedClass, (list) => {
+      setTrainees(list);
+      setIsLoadingTrainees(false);
     });
 
     return () => unsubscribe();
-  }, [selectedTrainee]);
+  }, [isAdmin, selectedClass, selectedTrainee]);
 
   // --- Auto-Save ---
   const triggerAutoSave = useCallback(() => {
