@@ -138,7 +138,7 @@ export default function App() {
         const data = docSnap.data();
         setTableRows(data.tableRows || []);
         setMilestoneEvaluations(data.milestoneEvaluations || {});
-        setUserStatus(data.status || 'estagio');
+        setUserStatus(data.status || null);
         
         // Armazena a versão do servidor para evitar loops de salvamento
         lastServerDataRef.current = JSON.stringify({
