@@ -63,6 +63,33 @@ html, body {
   box-shadow: none !important;
 }
 
+/* Estilização da Barra de Rolagem Customizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-main);
+  border-radius: 10px;
+  border: 2px solid var(--bg-main);
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Suporte para Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-main) var(--bg-main);
+}
+
 /* Ocultar barras de rolagem no mobile mantendo funcionalidade */
 @media (max-width: 768px) {
   ::-webkit-scrollbar {
