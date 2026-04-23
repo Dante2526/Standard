@@ -34,16 +34,16 @@ import { useTraineeData } from './hooks/useTraineeData';
 
 export default function App() {
   // --- Estados de Autenticação e Navegação ---
-  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
-  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true');
-  const [userName, setUserName] = useState(() => localStorage.getItem('userName') || '');
-  const [loginEmail, setLoginEmail] = useState(() => localStorage.getItem('loginEmail') || '');
+  const [isLoggedIn, setIsLoggedIn] = useState(() => sessionStorage.getItem('isLoggedIn') === 'true');
+  const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('isAdmin') === 'true');
+  const [userName, setUserName] = useState(() => sessionStorage.getItem('userName') || '');
+  const [loginEmail, setLoginEmail] = useState(() => sessionStorage.getItem('loginEmail') || '');
   const [loginError, setLoginError] = useState('');
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   
-  const [selectedClass, setSelectedClass] = useState<string | null>(() => localStorage.getItem('selectedClass'));
+  const [selectedClass, setSelectedClass] = useState<string | null>(() => sessionStorage.getItem('selectedClass'));
   const [selectedTrainee, setSelectedTrainee] = useState<Trainee | null>(() => {
-    const saved = localStorage.getItem('selectedTrainee');
+    const saved = sessionStorage.getItem('selectedTrainee');
     try {
       return saved ? JSON.parse(saved) : null;
     } catch {
@@ -51,7 +51,7 @@ export default function App() {
     }
   });
   const [activeTab, setActiveTab] = useState<'form' | 'timeline' | 'pending' | 'kaizen'>(() => 
-    (localStorage.getItem('activeTab') as any) || 'timeline'
+    (sessionStorage.getItem('activeTab') as any) || 'timeline'
   );
 
   // --- Dados do Colaborador (Gerenciados pelo Hook) ---
@@ -116,17 +116,17 @@ export default function App() {
 
   // --- Persistência de Sessão e Navegação ---
   useEffect(() => {
-    localStorage.setItem('isLoggedIn', isLoggedIn.toString());
-    localStorage.setItem('isAdmin', isAdmin.toString());
-    localStorage.setItem('userName', userName);
-    localStorage.setItem('loginEmail', loginEmail);
-    localStorage.setItem('activeTab', activeTab);
+    sessionStorage.setItem('isLoggedIn', isLoggedIn.toString());
+    sessionStorage.setItem('isAdmin', isAdmin.toString());
+    sessionStorage.setItem('userName', userName);
+    sessionStorage.setItem('loginEmail', loginEmail);
+    sessionStorage.setItem('activeTab', activeTab);
     
-    if (selectedClass) localStorage.setItem('selectedClass', selectedClass);
-    else localStorage.removeItem('selectedClass');
+    if (selectedClass) sessionStorage.setItem('selectedClass', selectedClass);
+    else sessionStorage.removeItem('selectedClass');
     
-    if (selectedTrainee) localStorage.setItem('selectedTrainee', JSON.stringify(selectedTrainee));
-    else localStorage.removeItem('selectedTrainee');
+    if (selectedTrainee) sessionStorage.setItem('selectedTrainee', JSON.stringify(selectedTrainee));
+    else sessionStorage.removeItem('selectedTrainee');
   }, [isLoggedIn, isAdmin, userName, loginEmail, selectedClass, selectedTrainee, activeTab]);
 
   // A sincronização em tempo real foi movida para o hook useTraineeData
@@ -200,13 +200,13 @@ export default function App() {
     setTrainees([]);
     setLoginEmail('');
     
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('loginEmail');
-    localStorage.removeItem('selectedClass');
-    localStorage.removeItem('selectedTrainee');
-    localStorage.removeItem('activeTab');
+    sessionStorage.removeItem('isLoggedIn');
+    sessionStorage.removeItem('isAdmin');
+    sessionStorage.removeItem('userName');
+    sessionStorage.removeItem('loginEmail');
+    sessionStorage.removeItem('selectedClass');
+    sessionStorage.removeItem('selectedTrainee');
+    sessionStorage.removeItem('activeTab');
   }, []);
 
   const updateRow = useCallback((id: number, field: keyof TrainingRow, value: string) => {

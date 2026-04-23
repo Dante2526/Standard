@@ -10,7 +10,7 @@ import {
   serverTimestamp, 
   addDoc 
 } from 'firebase/firestore';
-import { signInAnonymously } from 'firebase/auth';
+import { signInAnonymously, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { db, auth, newDb, newAuth } from '../firebase';
 import { Trainee, TrainingRow, MilestoneEvaluations } from '../types';
 import { format } from 'date-fns';
@@ -22,6 +22,10 @@ import { sanitizeString } from '../utils/securityUtils';
  */
 export const ensureAuth = async () => {
   try {
+    // Configurar persistência de sessão para ambos os bancos
+    await setPersistence(auth, browserSessionPersistence);
+    await setPersistence(newAuth, browserSessionPersistence);
+
     if (!auth.currentUser) await signInAnonymously(auth);
     if (!newAuth.currentUser) await signInAnonymously(newAuth);
   } catch (error) {
