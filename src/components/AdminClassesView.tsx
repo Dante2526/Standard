@@ -101,9 +101,11 @@ const AdminClassesView = memo(({
   useEffect(() => {
     // Busca os links da coleção 'web' em tempo real no banco NOVO
     const unsubLinks = onSnapshot(collection(newDb, 'web'), (snap) => {
-      const links: any = { _count: snap.size, _ids: snap.docs.map(d => d.id), _db: 'newDb' };
-      if (snap.empty) return; // Se vazio no novo, talvez esteja no antigo (handled by other listener)
-      
+      if (snap.empty) {
+        setWebLinks(prev => ({ ...prev, _count: 0, _dbNew: 'empty' }));
+        return;
+      }
+      const links: any = { _count: snap.size, _ids: snap.docs.map(d => d.id), _dbNew: 'ok', _errorNew: null };
       snap.docs.forEach(d => {
         const data = d.data();
         const id = d.id.toLowerCase();
@@ -120,13 +122,16 @@ const AdminClassesView = memo(({
       setWebLinks(prev => ({ ...prev, ...links }));
     }, (err) => {
       console.error("Erro no newDb:", err);
-      setWebLinks(prev => ({ ...prev, _errorNew: err.message }));
+      setWebLinks(prev => ({ ...prev, _errorNew: err.message, _dbNew: 'error' }));
     });
 
-    // Busca também no banco ANTIGO (apenas como fallback)
+    // Busca também no banco ANTIGO
     const unsubLinksOld = onSnapshot(collection(db, 'web'), (snap) => {
-      if (snap.empty) return;
-      const links: any = { _countOld: snap.size, _idsOld: snap.docs.map(d => d.id) };
+      if (snap.empty) {
+        setWebLinks(prev => ({ ...prev, _countOld: 0, _dbOld: 'empty' }));
+        return;
+      }
+      const links: any = { _countOld: snap.size, _idsOld: snap.docs.map(d => d.id), _dbOld: 'ok', _errorOld: null };
       snap.docs.forEach(d => {
         const data = d.data();
         const id = d.id.toLowerCase();
@@ -142,7 +147,8 @@ const AdminClassesView = memo(({
       });
       setWebLinks(prev => ({ ...prev, ...links }));
     }, (err) => {
-       // Silencioso no antigo
+      console.error("Erro no db antigo:", err);
+      setWebLinks(prev => ({ ...prev, _errorOld: err.message, _dbOld: 'error' }));
     });
 
     const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
