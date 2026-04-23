@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Upload, ArrowLeft, User as UserIcon, GraduationCap,
   X, Eraser, FileText, UserPlus, ListOrdered, Hourglass, 
-  Clock, PauseCircle, HelpCircle, LogOut 
+  Clock, PauseCircle, HelpCircle, LogOut, Users 
 } from 'lucide-react';
 import { collection, getDocs, getDoc, doc, query, where, onSnapshot } from 'firebase/firestore';
 import { db, newDb } from '../firebase';
@@ -24,40 +24,64 @@ interface AdminClassesViewProps {
 }
 
 const CLASSES_LIST = [
-  { id: 'turma a', name: 'TURMA A', letter: 'A', color: 'bg-[#3b82f6]', students: 32 },
-  { id: 'turma b', name: 'TURMA B', letter: 'B', color: 'bg-[#10b981]', students: 28 },
-  { id: 'turma c', name: 'TURMA C', letter: 'C', color: 'bg-[#f97316]', students: 35 },
-  { id: 'turma d', name: 'TURMA D', letter: 'D', color: 'bg-[#ef4444]', students: 25 },
+  { id: 'turma a', name: 'TURMA A', letter: 'A', gradient: 'from-[#3b82f6] to-[#2563eb]', shadow: 'shadow-blue-500/30', iconColor: 'text-blue-500' },
+  { id: 'turma b', name: 'TURMA B', letter: 'B', gradient: 'from-[#10b981] to-[#059669]', shadow: 'shadow-emerald-500/30', iconColor: 'text-emerald-500' },
+  { id: 'turma c', name: 'TURMA C', letter: 'C', gradient: 'from-[#f97316] to-[#ea580c]', shadow: 'shadow-orange-500/30', iconColor: 'text-orange-500' },
+  { id: 'turma d', name: 'TURMA D', letter: 'D', gradient: 'from-[#ef4444] to-[#dc2626]', shadow: 'shadow-red-500/30', iconColor: 'text-red-500' },
 ];
 
 const BentoClassCard = memo(({ cls, idx, onClick }: { cls: any, idx: number, onClick: () => void }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.1 + idx * 0.05, type: 'spring' }}
-      whileHover={{ y: -8, scale: 1.02 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: idx * 0.1, type: 'spring', stiffness: 260, damping: 20 }}
+      whileHover={{ y: -8, scale: 1.01 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="bg-surface rounded-[38px] p-6 sm:p-8 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-border-subtle hover:border-blue-500/50 transition-all cursor-pointer group"
+      className="bg-surface relative overflow-hidden rounded-[40px] p-7 sm:p-9 flex flex-col shadow-[0_12px_40px_rgba(0,0,0,0.03)] dark:shadow-none border border-border-subtle hover:border-blue-500/40 transition-all cursor-pointer group"
     >
-      <div className="flex items-start justify-between mb-8 gap-4">
-        <div className={`w-14 h-14 rounded-[22px] ${cls.color} flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-black/20 shrink-0`}>
-          {cls.letter}
+      {/* Background Decorator */}
+      <div className={`absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br ${cls.gradient} opacity-[0.03] group-hover:opacity-[0.08] transition-opacity rounded-full blur-2xl`} />
+
+      <div className="flex items-start justify-between mb-10 relative z-10">
+        <div className="relative">
+          {/* Outer Glow */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${cls.gradient} blur-xl opacity-40 group-hover:opacity-60 transition-opacity`} />
+          
+          <div className={`relative w-16 h-16 rounded-[24px] bg-gradient-to-br ${cls.gradient} flex items-center justify-center text-white shadow-xl ${cls.shadow} border border-white/20 shrink-0`}>
+             <div className="flex flex-col items-center leading-none">
+                <span className="text-2xl font-black">{cls.letter}</span>
+                <Users className="w-3.5 h-3.5 mt-0.5 opacity-80" />
+             </div>
+          </div>
         </div>
-        <div className="flex -space-x-3">
+
+        <div className="flex -space-x-3 pt-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="w-9 h-9 rounded-full bg-background border-4 border-surface flex items-center justify-center overflow-hidden ring-1 ring-black/5">
-              <UserIcon className="w-4 h-4 text-emerald-500" />
-            </div>
+            <motion.div 
+              key={i} 
+              whileHover={{ y: -4 }}
+              className="w-10 h-10 rounded-2xl bg-background border-[3px] border-surface flex items-center justify-center overflow-hidden shadow-sm"
+            >
+              <UserIcon className={`w-4 h-4 ${cls.iconColor} opacity-70`} />
+            </motion.div>
           ))}
+          <div className="w-10 h-10 rounded-2xl bg-surface-alt border-[3px] border-surface flex items-center justify-center text-[10px] font-black text-content-muted shadow-sm">
+            +{Math.max(0, cls.students - 3)}
+          </div>
         </div>
       </div>
 
-      <div className="mt-auto">
-        <h3 className="text-xl font-extrabold text-content tracking-tight mb-1 group-hover:text-blue-600 transition-colors uppercase">{cls.name}</h3>
-        <p className="text-sm font-bold text-content-muted leading-none">
-          {cls.students} <span className="font-medium opacity-70">colaboradores ativos</span>
-        </p>
+      <div className="mt-auto relative z-10">
+        <div className="flex items-center gap-2 mb-2">
+           <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-br ${cls.gradient} animate-pulse`} />
+           <h3 className="text-xl font-black text-content tracking-tight uppercase group-hover:translate-x-1 transition-transform duration-300">{cls.name}</h3>
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-black text-content">{cls.students}</span>
+          <span className="text-xs font-bold text-content-muted uppercase tracking-widest opacity-60">Colaboradores</span>
+        </div>
       </div>
     </motion.div>
   );
