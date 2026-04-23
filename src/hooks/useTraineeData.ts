@@ -8,7 +8,6 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
   const [tableRows, setTableRows] = useState<TrainingRow[]>([]);
   const [milestoneEvaluations, setMilestoneEvaluations] = useState<MilestoneEvaluations>({});
   const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
-  const [realTrainings, setRealTrainings] = useState<any[]>([]);
   const [kaizenData, setKaizenData] = useState<any>(null);
   const [kaizenDebugLog, setKaizenDebugLog] = useState<string[]>([]);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
@@ -26,7 +25,6 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
       setTableRows([]);
       setMilestoneEvaluations({});
       setUserStatus(null);
-      setRealTrainings([]);
       setKaizenData(null);
       setHasLoadedData(false);
       return;
