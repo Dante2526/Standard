@@ -462,7 +462,7 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
     });
 
     const targetTurma = clsId.split(' ').pop()?.toUpperCase() || '';
-    const qStage = query(collection(newDb, 'estagios'), where('turma', '==', targetTurma));
+    const qStage = collection(newDb, 'estagios');
     
     const unsubStage = onSnapshot(qStage, (snap) => {
       snap.docs.forEach(d => {
