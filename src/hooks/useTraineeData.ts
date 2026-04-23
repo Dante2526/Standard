@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { newDb } from '../firebase';
 import * as DataService from '../services/dataService';
