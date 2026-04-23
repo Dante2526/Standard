@@ -11,6 +11,27 @@ interface TraineesListViewProps {
   onSelectTrainee: (trainee: Trainee) => void;
 }
 
+const TraineeSkeleton = () => (
+  <div className="bg-surface rounded-[24px] p-5 border border-border-subtle animate-pulse">
+    <div className="flex items-start justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-surface-alt" />
+        <div className="space-y-2">
+          <div className="h-4 w-32 bg-surface-alt rounded" />
+          <div className="h-3 w-20 bg-surface-alt rounded" />
+        </div>
+      </div>
+    </div>
+    <div className="space-y-2">
+      <div className="flex justify-between">
+        <div className="h-3 w-12 bg-surface-alt rounded" />
+        <div className="h-3 w-8 bg-surface-alt rounded" />
+      </div>
+      <div className="h-1.5 w-full bg-surface-alt rounded-full" />
+    </div>
+  </div>
+);
+
 const TraineesListView = memo(({
   selectedClass,
   isLoading,
@@ -60,12 +81,18 @@ const TraineesListView = memo(({
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-8 h-8 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="lg:order-2 w-full lg:w-8 h-[400px] bg-surface rounded-2xl border border-border-subtle animate-pulse hidden lg:block" />
+            <div className="lg:order-1 flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+              {[1, 2, 3, 4, 5, 6].map(i => <TraineeSkeleton key={i} />)}
+            </div>
           </div>
         ) : trainees.length === 0 ? (
-          <div className="text-center py-12 bg-surface rounded-[24px] border border-border-subtle">
-            <p className="text-content-muted">Nenhum colaborador encontrado.</p>
+          <div className="text-center py-20 bg-surface rounded-[32px] border border-border-subtle shadow-inner">
+            <div className="w-16 h-16 bg-surface-alt rounded-full flex items-center justify-center mx-auto mb-4">
+               <UserIcon className="w-8 h-8 text-content-muted/30" />
+            </div>
+            <p className="text-content-muted font-bold uppercase tracking-widest text-xs opacity-50">Nenhum colaborador encontrado nesta turma</p>
           </div>
         ) : (
           <div className="flex flex-col lg:flex-row gap-6 relative items-start">
