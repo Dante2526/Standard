@@ -99,31 +99,50 @@ const AdminClassesView = memo(({
   const [webLinks, setWebLinks] = useState<{ kaizen?: string; treinamento?: string }>({});
 
   useEffect(() => {
-    // Busca os links da coleção 'web' em tempo real
+    // Busca os links da coleção 'web' em tempo real no banco NOVO
     const unsubLinks = onSnapshot(collection(newDb, 'web'), (snap) => {
-      const links: any = {};
+      const links: any = { _count: snap.size, _ids: snap.docs.map(d => d.id), _db: 'newDb' };
+      if (snap.empty) return; // Se vazio no novo, talvez esteja no antigo (handled by other listener)
+      
       snap.docs.forEach(d => {
         const data = d.data();
         const id = d.id.toLowerCase();
-        
-        // Prioridade 1: Campos com nome 'kaizen' ou 'treinamento'
         if (data.kaizen) links.kaizen = data.kaizen;
         if (data.treinamento) links.treinamento = data.treinamento;
-        
-        // Prioridade 2: Documento com ID 'kaizen' ou 'treinamento' contendo uma URL
         if (id === 'kaizen' && typeof data.link === 'string') links.kaizen = data.link;
         if (id === 'treinamento' && typeof data.link === 'string') links.treinamento = data.link;
-
-        // Prioridade 3: Qualquer campo que contenha 'kaizen' ou 'treinamento' no nome
         Object.keys(data).forEach(key => {
           const k = key.toLowerCase();
           if (k.includes('kaizen') && !links.kaizen) links.kaizen = data[key];
           if (k.includes('treinamento') && !links.treinamento) links.treinamento = data[key];
         });
       });
-      setWebLinks(links);
+      setWebLinks(prev => ({ ...prev, ...links }));
     }, (err) => {
-      console.error("Erro ao assinar links web:", err);
+      console.error("Erro no newDb:", err);
+      setWebLinks(prev => ({ ...prev, _errorNew: err.message }));
+    });
+
+    // Busca também no banco ANTIGO (apenas como fallback)
+    const unsubLinksOld = onSnapshot(collection(db, 'web'), (snap) => {
+      if (snap.empty) return;
+      const links: any = { _countOld: snap.size, _idsOld: snap.docs.map(d => d.id) };
+      snap.docs.forEach(d => {
+        const data = d.data();
+        const id = d.id.toLowerCase();
+        if (data.kaizen) links.kaizen = data.kaizen;
+        if (data.treinamento) links.treinamento = data.treinamento;
+        if (id === 'kaizen' && typeof data.link === 'string') links.kaizen = data.link;
+        if (id === 'treinamento' && typeof data.link === 'string') links.treinamento = data.link;
+        Object.keys(data).forEach(key => {
+          const k = key.toLowerCase();
+          if (k.includes('kaizen') && !links.kaizen) links.kaizen = data[key];
+          if (k.includes('treinamento') && !links.treinamento) links.treinamento = data[key];
+        });
+      });
+      setWebLinks(prev => ({ ...prev, ...links }));
+    }, (err) => {
+       // Silencioso no antigo
     });
 
     const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
@@ -145,6 +164,7 @@ const AdminClassesView = memo(({
 
     return () => {
       unsubLinks();
+      unsubLinksOld();
       unsubscribe();
     };
   }, []);
@@ -275,7 +295,7 @@ const AdminClassesView = memo(({
                   </button>
                 </div>
 
-                {(webLinks.treinamento || webLinks.kaizen) && (
+                {(webLinks.treinamento || webLinks.kaizen) ? (
                   <div className="space-y-3">
                     <p className="text-[10px] font-black text-content-muted uppercase tracking-widest ml-1 opacity-50">Links Externos</p>
                     <div className="grid grid-cols-1 gap-3">
@@ -298,6 +318,21 @@ const AdminClassesView = memo(({
                           <ExternalLink className="w-4 h-4 opacity-50" />
                         </button>
                       )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-4 px-4 bg-background/50 rounded-2xl border border-dashed border-border-subtle flex flex-col gap-2">
+                    <p className="text-[10px] font-bold text-content-muted uppercase text-center opacity-40">
+                      Buscando links na coleção 'web'...
+                    </p>
+                    {((webLinks as any)._errorNew || (webLinks as any)._errorOld) && (
+                      <p className="text-[9px] text-red-500 text-center font-bold">
+                        ERRO: {(webLinks as any)._errorNew || (webLinks as any)._errorOld}
+                      </p>
+                    )}
+                    <div className="flex justify-around opacity-30">
+                      <p className="text-[8px] text-content-muted font-bold">DB Novo: {(webLinks as any)._count || 0}</p>
+                      <p className="text-[8px] text-content-muted font-bold">DB Antigo: {(webLinks as any)._countOld || 0}</p>
                     </div>
                   </div>
                 )}
