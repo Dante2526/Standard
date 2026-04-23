@@ -74,14 +74,10 @@ const BentoClassCard = memo(({ cls, idx, onClick }: { cls: any, idx: number, onC
       </div>
 
       <div className="mt-auto relative z-10">
-        <div className="flex items-center gap-2 mb-2">
-           <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-br ${cls.gradient} animate-pulse`} />
-           <h3 className="text-xl font-black text-content tracking-tight uppercase group-hover:translate-x-1 transition-transform duration-300">{cls.name}</h3>
-        </div>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-black text-content">{cls.students}</span>
-          <span className="text-xs font-bold text-content-muted uppercase tracking-widest opacity-60">Colaboradores</span>
-        </div>
+        <h3 className="text-xl font-extrabold text-content tracking-tight mb-1 group-hover:text-blue-600 transition-colors uppercase">{cls.name}</h3>
+        <p className="text-sm font-bold text-content-muted leading-none">
+          {cls.students} <span className="font-medium opacity-70">colaboradores ativos</span>
+        </p>
       </div>
     </motion.div>
   );

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Check, GraduationCap } from 'lucide-react';
 import { Trainee } from '../types';
 
 interface TraineesListViewProps {
@@ -113,12 +113,19 @@ const TraineesListView = memo(({
                           <p className="text-xs text-content-muted">Mat: {trainee.matricula}</p>
                           <div className="flex gap-1.5 flex-wrap">
                             {trainee.status !== 'none' && (
-                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm ${
+                              <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1 ${
                                 trainee.status === 'active' 
                                   ? 'bg-blue-600 text-white' 
-                                  : 'bg-emerald-600 text-white'
+                                  : 'bg-emerald-500 text-white'
                               }`}>
-                                {trainee.status === 'active' ? 'ESTÁGIO' : 'EFETIVADO'}
+                                {trainee.status === 'active' ? (
+                                  <>ESTÁGIO</>
+                                ) : (
+                                  <>
+                                    <Check className="w-3 h-3 stroke-[4px]" />
+                                    EFETIVADO
+                                  </>
+                                )}
                               </span>
                             )}
                             {selectedClass === 'global-estagio' && trainee.turma && (

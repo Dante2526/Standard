@@ -425,18 +425,20 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
 
   if (clsId === 'global-estagio') {
     // Lista Global: Apenas quem está no novo banco com status 'estagio'
-    const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
+    const q = collection(newDb, 'estagios');
     return onSnapshot(q, (snap) => {
       const trainees = snap.docs.map(docSnapshot => {
         const data = docSnapshot.data() as any;
         const progressHours = (data.tableRows || []).reduce((acc: number, row: any) => acc + (parseFloat(row.duracao) || 0), 0);
+        const isEfetivado = data.status === 'efetivado';
+        
         return {
           id: docSnapshot.id,
           name: data.nome || 'Sem Nome',
           matricula: data.matricula || '',
           funcao: data.funcao || 'Colaborador',
-          progress: data.status === 'efetivado' ? 100 : Math.round((progressHours / 432) * 100),
-          status: data.status === 'efetivado' ? 'completed' : 'active',
+          progress: isEfetivado ? 100 : Math.round((progressHours / 432) * 100),
+          status: isEfetivado ? 'completed' : 'active',
           turma: data.turma || ''
         } as Trainee;
       }).sort((a, b) => a.name.localeCompare(b.name));
