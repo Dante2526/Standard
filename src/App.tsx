@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Download, User as UserIcon, 
@@ -11,7 +11,6 @@ import {
   isSameMonth, isSameDay, parseISO, isValid
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { doc, onSnapshot } from 'firebase/firestore';
 import { newDb } from './firebase';
 
 // Componentes
@@ -71,6 +70,13 @@ export default function App() {
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isLoadingTrainings, setIsLoadingTrainings] = useState(false);
   
+  const totalHours = 432;
+  const progressHours = useMemo(() => {
+    return userStatus === 'efetivado' 
+      ? totalHours 
+      : tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
+  }, [userStatus, tableRows]);
+  
   // --- Estados de UI ---
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -82,7 +88,6 @@ export default function App() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [editingMilestone, setEditingMilestone] = useState<number | null>(null);
   const [isLoadingTrainees, setIsLoadingTrainees] = useState(false);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [trainees, setTrainees] = useState<Trainee[]>([]);
 
   // --- Modais ---
@@ -288,12 +293,7 @@ export default function App() {
     );
   }, [currentMonth, updateRow]);
 
-  const totalHours = 432;
-  const progressHours = useMemo(() => {
-    return userStatus === 'efetivado' 
-      ? totalHours 
-      : tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
-  }, [userStatus, tableRows]);
+
 
   // --- Renderização Principal ---
   if (!isLoggedIn) {

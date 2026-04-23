@@ -5,7 +5,7 @@ import {
   X, Eraser, FileText, UserPlus, ListOrdered, Hourglass, 
   Clock, PauseCircle, HelpCircle, LogOut 
 } from 'lucide-react';
-import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where, onSnapshot } from 'firebase/firestore';
 import { db, newDb } from '../firebase';
 import DarkModeToggle from './DarkModeToggle';
 import { Trainee } from '../types';
@@ -41,7 +41,7 @@ const AdminClassesView = memo(({
   setSelectedClass,
   setIsLoadingTrainees,
   setTrainees
-}: AdminClassesViewProps) {
+}: AdminClassesViewProps) => {
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -235,4 +235,4 @@ const BentoClassCard = memo(({ cls, idx, onClick }: { cls: any, idx: number, onC
       </div>
     </motion.div>
   );
-}
+});
