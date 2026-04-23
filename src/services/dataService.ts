@@ -80,6 +80,35 @@ export const saveStageData = async (
 };
 
 /**
+ * Atualiza o status de conclusão manual de um treinamento.
+ */
+export const updateManualTrainingStatus = async (matricula: string, trainingTitle: string, isCompleted: boolean) => {
+  if (!matricula) return;
+  try {
+    const docRef = doc(newDb, 'estagios', matricula);
+    const snap = await getDoc(docRef);
+    let completedList: string[] = [];
+    
+    if (snap.exists()) {
+      completedList = snap.data().manualCompletedTitles || [];
+    }
+
+    if (isCompleted) {
+      if (!completedList.includes(trainingTitle)) {
+        completedList.push(trainingTitle);
+      }
+    } else {
+      completedList = completedList.filter(t => t !== trainingTitle);
+    }
+
+    await setDoc(docRef, { manualCompletedTitles: completedList }, { merge: true });
+  } catch (error) {
+    console.error("Erro ao atualizar status manual do treinamento:", error);
+    throw error;
+  }
+};
+
+/**
  * Processa o snapshot de arquivos globais para extrair treinamentos reais.
  */
 export const processRealTrainingsFromSnap = (snap: any, trainee: Trainee) => {

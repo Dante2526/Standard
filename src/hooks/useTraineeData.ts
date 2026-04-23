@@ -13,6 +13,8 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
   const [kaizenDebugLog, setKaizenDebugLog] = useState<string[]>([]);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
+  const [manualCompletedTitles, setManualCompletedTitles] = useState<string[]>([]);
+  const [rawRealTrainings, setRawRealTrainings] = useState<any[]>([]);
   
   const lastServerDataRef = useRef<string>('');
   const currentStatusRef = useRef(userStatus);
@@ -42,6 +44,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
         if (newStatus !== null || currentStatusRef.current === null) {
           setUserStatus(newStatus);
         }
+        setManualCompletedTitles(data.manualCompletedTitles || []);
         
         lastServerDataRef.current = JSON.stringify({
           tableRows: incomingRows,
@@ -64,7 +67,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
       setHasLoadedData(true);
     });
 
-    const unsubReal = DataService.subscribeToRealTrainings(selectedTrainee, setRealTrainings);
+    const unsubReal = DataService.subscribeToRealTrainings(selectedTrainee, setRawRealTrainings);
     const unsubKaizen = DataService.subscribeToKaizenData(selectedTrainee, (data) => {
       setKaizenData(data);
       if (data?._debug) setKaizenDebugLog(data._debug);
@@ -76,6 +79,13 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
       unsubKaizen();
     };
   }, [selectedTrainee]);
+
+  const realTrainings = useMemo(() => {
+    return rawRealTrainings.map(t => ({
+      ...t,
+      status: manualCompletedTitles.includes(t.title) ? 'completed' : t.status
+    }));
+  }, [rawRealTrainings, manualCompletedTitles]);
 
   return {
     tableRows, setTableRows,

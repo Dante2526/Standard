@@ -7,13 +7,15 @@ interface PendingTrainingsViewProps {
   realTrainings: any[];
   isLoading: boolean;
   isAdmin: boolean;
+  onToggleManualStatus?: (title: string, completed: boolean) => void;
 }
 
 const PendingTrainingsView = memo(({
   trainee,
   realTrainings,
   isLoading,
-  isAdmin
+  isAdmin,
+  onToggleManualStatus
 }: PendingTrainingsViewProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'all' | 'pending' | 'completed'>('all');
@@ -39,7 +41,7 @@ const PendingTrainingsView = memo(({
             <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
               <Briefcase className="w-5 h-5" />
             </div>
-            <h2 className="text-lg font-bold text-content">Treinamentos e Certificações</h2>
+            <h2 className="text-lg font-bold text-content">Meus Treinamentos</h2>
           </div>
           
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -109,7 +111,7 @@ const PendingTrainingsView = memo(({
                       </h4>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] text-content-muted font-medium uppercase tracking-wider">{item.category}</span>
-                        {item.completed && (
+                        {item.status === 'completed' && (
                           <span className="text-[10px] text-emerald-600 font-black uppercase tracking-tighter flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" /> Concluído
                           </span>
@@ -133,22 +135,25 @@ const PendingTrainingsView = memo(({
                       <div className="flex flex-col">
                         <span className="text-[9px] text-content-muted uppercase font-bold tracking-widest">Validade</span>
                         <span className={`text-[11px] font-black ${item.isExpired ? 'text-red-600' : 'text-content'}`}>
-                          {item.expiryDate}
+                          {item.date || item.expiryDate || 'N/A'}
                         </span>
                       </div>
                     </div>
                     
                     {item.status === 'completed' ? (
-                      <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-tight hover:bg-emerald-100 transition-colors">
-                        <Download className="w-3 h-3" /> Certificado
+                      <button 
+                        onClick={() => onToggleManualStatus?.(item.title, false)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-tight hover:bg-emerald-100 transition-colors"
+                      >
+                        <CheckCircle2 className="w-3 h-3" /> Concluído
                       </button>
                     ) : (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700">
-                        <Clock className="w-3 h-3" />
-                        <span className="text-[10px] font-black uppercase tracking-tight">
-                          {item.daysRemaining} dias
-                        </span>
-                      </div>
+                      <button 
+                        onClick={() => onToggleManualStatus?.(item.title, true)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 text-[10px] font-black uppercase tracking-tight hover:bg-orange-100 transition-colors"
+                      >
+                        <Clock className="w-3 h-3" /> Concluir
+                      </button>
                     )}
                   </div>
                 </motion.div>
@@ -168,7 +173,7 @@ const PendingTrainingsView = memo(({
           </div>
           <div className="flex items-end justify-between">
             <span className="text-4xl font-black text-content tracking-tighter">
-              {realTrainings.filter(t => t.completed).length}
+              {realTrainings.filter(t => t.status === 'completed').length}
             </span>
             <span className="text-xs text-content-muted font-bold uppercase tracking-widest mb-1">Concluídas</span>
           </div>
@@ -183,7 +188,7 @@ const PendingTrainingsView = memo(({
           </div>
           <div className="flex items-end justify-between">
             <span className="text-4xl font-black text-content tracking-tighter">
-              {realTrainings.filter(t => !t.completed).length}
+              {realTrainings.filter(t => t.status === 'pending').length}
             </span>
             <span className="text-xs text-content-muted font-bold uppercase tracking-widest mb-1">A realizar</span>
           </div>

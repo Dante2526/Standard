@@ -468,7 +468,17 @@ export default function App() {
               trainee={selectedTrainee!}
             />
           )}
-          {activeTab === 'pending' && <PendingTrainingsView trainee={selectedTrainee!} realTrainings={realTrainings} isLoading={isLoadingTrainings} isAdmin={isAdmin} />}
+          {activeTab === 'pending' && (
+            <PendingTrainingsView 
+              trainee={selectedTrainee!} 
+              realTrainings={realTrainings} 
+              isLoading={isLoadingTrainings} 
+              isAdmin={isAdmin} 
+              onToggleManualStatus={async (title, completed) => {
+                await DataService.updateManualTrainingStatus(selectedTrainee!.matricula, title, completed);
+              }}
+            />
+          )}
           {activeTab === 'kaizen' && <KaizenView trainee={selectedTrainee!} kaizenData={kaizenData} />}
         </div>
       </main>
