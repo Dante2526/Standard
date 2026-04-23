@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import React, { memo } from 'react';
 import { motion } from 'motion/react';
 import { Briefcase } from 'lucide-react';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
@@ -22,7 +22,7 @@ interface LoginViewProps {
   setFormData: (v: any | ((prev: any) => any)) => void;
 }
 
-function LoginView({
+const LoginView = memo(({
   isDarkMode,
   setIsDarkMode,
   loginEmail,
@@ -36,7 +36,7 @@ function LoginView({
   setIsLoggedIn,
   setSelectedTrainee,
   setFormData
-}: LoginViewProps) {
+}: LoginViewProps) => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedEmail = loginEmail.trim().toLowerCase();
@@ -162,4 +162,6 @@ function LoginView({
       </div>
     </motion.div>
   );
-}
+});
+
+export default LoginView;

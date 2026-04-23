@@ -213,8 +213,12 @@ export const exportToWord = async (formData: any, tableRows: TrainingRow[]) => {
             ]
           }),
           new Paragraph({
-            text: `Documento gerado em ${new Date().toLocaleDateString()} às ${new Date().toLocaleTimeString()}`,
-            size: 16,
+            children: [
+              new TextRun({
+                text: `Documento gerado em ${new Date().toLocaleDateString()} às ${new Date().toLocaleTimeString()}`,
+                size: 16,
+              })
+            ],
             alignment: AlignmentType.RIGHT,
             spacing: { before: 400 },
           })

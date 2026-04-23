@@ -30,6 +30,39 @@ const CLASSES_LIST = [
   { id: 'turma d', name: 'TURMA D', letter: 'D', color: 'bg-[#ef4444]', students: 25 },
 ];
 
+const BentoClassCard = memo(({ cls, idx, onClick }: { cls: any, idx: number, onClick: () => void }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.1 + idx * 0.05, type: 'spring' }}
+      whileHover={{ y: -8, scale: 1.02 }}
+      onClick={onClick}
+      className="bg-surface rounded-[38px] p-6 sm:p-8 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-border-subtle hover:border-blue-500/50 transition-all cursor-pointer group"
+    >
+      <div className="flex items-start justify-between mb-8 gap-4">
+        <div className={`w-14 h-14 rounded-[22px] ${cls.color} flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-black/20 shrink-0`}>
+          {cls.letter}
+        </div>
+        <div className="flex -space-x-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="w-9 h-9 rounded-full bg-background border-4 border-surface flex items-center justify-center overflow-hidden ring-1 ring-black/5">
+              <UserIcon className="w-4 h-4 text-emerald-500" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-auto">
+        <h3 className="text-xl font-extrabold text-content tracking-tight mb-1 group-hover:text-blue-600 transition-colors uppercase">{cls.name}</h3>
+        <p className="text-sm font-bold text-content-muted leading-none">
+          {cls.students} <span className="font-medium opacity-70">colaboradores ativos</span>
+        </p>
+      </div>
+    </motion.div>
+  );
+});
+
 const AdminClassesView = memo(({
   isDarkMode,
   setIsDarkMode,
@@ -204,35 +237,4 @@ const AdminClassesView = memo(({
 });
 export default AdminClassesView;
 
-const BentoClassCard = memo(({ cls, idx, onClick }: { cls: any, idx: number, onClick: () => void }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.1 + idx * 0.05, type: 'spring' }}
-      whileHover={{ y: -8, scale: 1.02 }}
-      onClick={onClick}
-      className="bg-surface rounded-[38px] p-6 sm:p-8 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-border-subtle hover:border-blue-500/50 transition-all cursor-pointer group"
-    >
-      <div className="flex items-start justify-between mb-8 gap-4">
-        <div className={`w-14 h-14 rounded-[22px] ${cls.color} flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-black/20 shrink-0`}>
-          {cls.letter}
-        </div>
-        <div className="flex -space-x-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="w-9 h-9 rounded-full bg-background border-4 border-surface flex items-center justify-center overflow-hidden ring-1 ring-black/5">
-              <UserIcon className="w-4 h-4 text-emerald-500" />
-            </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="mt-auto">
-        <h3 className="text-xl font-extrabold text-content tracking-tight mb-1 group-hover:text-blue-600 transition-colors uppercase">{cls.name}</h3>
-        <p className="text-sm font-bold text-content-muted leading-none">
-          {cls.students} <span className="font-medium opacity-70">colaboradores ativos</span>
-        </p>
-      </div>
-    </motion.div>
-  );
-});
