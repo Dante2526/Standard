@@ -99,22 +99,32 @@ const AdminClassesView = memo(({
   const [webLinks, setWebLinks] = useState<{ kaizen?: string; treinamento?: string }>({});
 
   useEffect(() => {
-    const fetchLinks = async () => {
-      try {
-        const q = collection(newDb, 'web');
-        const snap = await getDocs(q);
-        const links: any = {};
-        snap.docs.forEach(d => {
-          const data = d.data();
-          if (data.kaizen) links.kaizen = data.kaizen;
-          if (data.treinamento) links.treinamento = data.treinamento;
+    // Busca os links da coleção 'web' em tempo real
+    const unsubLinks = onSnapshot(collection(newDb, 'web'), (snap) => {
+      const links: any = {};
+      snap.docs.forEach(d => {
+        const data = d.data();
+        const id = d.id.toLowerCase();
+        
+        // Prioridade 1: Campos com nome 'kaizen' ou 'treinamento'
+        if (data.kaizen) links.kaizen = data.kaizen;
+        if (data.treinamento) links.treinamento = data.treinamento;
+        
+        // Prioridade 2: Documento com ID 'kaizen' ou 'treinamento' contendo uma URL
+        if (id === 'kaizen' && typeof data.link === 'string') links.kaizen = data.link;
+        if (id === 'treinamento' && typeof data.link === 'string') links.treinamento = data.link;
+
+        // Prioridade 3: Qualquer campo que contenha 'kaizen' ou 'treinamento' no nome
+        Object.keys(data).forEach(key => {
+          const k = key.toLowerCase();
+          if (k.includes('kaizen') && !links.kaizen) links.kaizen = data[key];
+          if (k.includes('treinamento') && !links.treinamento) links.treinamento = data[key];
         });
-        setWebLinks(links);
-      } catch (error) {
-        console.error("Erro ao buscar links web:", error);
-      }
-    };
-    fetchLinks();
+      });
+      setWebLinks(links);
+    }, (err) => {
+      console.error("Erro ao assinar links web:", err);
+    });
 
     const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
     
@@ -133,7 +143,10 @@ const AdminClassesView = memo(({
       console.error("Erro na sincronização de contagens:", error);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubLinks();
+      unsubscribe();
+    };
   }, []);
 
   const handleSelectGlobalStorage = () => {
