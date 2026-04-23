@@ -54,16 +54,16 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
           <div className="space-y-4">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Nome do Colaborador</span>
-              <span className="text-lg font-bold text-content uppercase">{trainee.name}</span>
+              <span className="text-lg font-bold text-content uppercase">{trainee?.name || '---'}</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Matrícula</span>
-                <span className="text-base font-bold text-content">{trainee.matricula}</span>
+                <span className="text-base font-bold text-content">{trainee?.matricula || '---'}</span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Função</span>
-                <span className="text-base font-bold text-content uppercase">{trainee.funcao || 'N/A'}</span>
+                <span className="text-base font-bold text-content uppercase">{trainee?.funcao || 'N/A'}</span>
               </div>
             </div>
           </div>

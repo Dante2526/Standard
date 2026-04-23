@@ -363,6 +363,18 @@ export default function App() {
     );
   }
 
+  // Proteção final: se chegamos aqui sem um trainee selecionado, algo está errado
+  if (!selectedTrainee) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <p className="text-content-muted font-bold uppercase tracking-widest">Sessão expirada ou erro de carregamento</p>
+          <button onClick={handleLogout} className="text-blue-600 font-black uppercase text-sm underline">Voltar para o Login</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
       <header className="flex items-center justify-between mb-8 md:mb-12 gap-4 px-6 pt-6">
@@ -371,8 +383,8 @@ export default function App() {
               <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-content" />
             </button>
             <div className="min-w-0">
-              <h1 className="text-xl md:text-3xl font-black text-content uppercase tracking-tight leading-tight truncate">{selectedTrainee.name}</h1>
-              <p className="text-[10px] md:text-xs font-bold text-content-muted tracking-widest uppercase opacity-60">{selectedTrainee.matricula}</p>
+              <h1 className="text-xl md:text-3xl font-black text-content uppercase tracking-tight leading-tight truncate">{selectedTrainee?.name || 'Carregando...'}</h1>
+              <p className="text-[10px] md:text-xs font-bold text-content-muted tracking-widest uppercase opacity-60">{selectedTrainee?.matricula || '---'}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
