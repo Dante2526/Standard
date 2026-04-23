@@ -35,7 +35,8 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
     const unsubStage = onSnapshot(doc(newDb, 'estagios', selectedTrainee.matricula), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setTableRows(data.tableRows || []);
+        const incomingRows = Array.isArray(data.tableRows) ? data.tableRows : [];
+        setTableRows(incomingRows);
         setMilestoneEvaluations(data.milestoneEvaluations || {});
         const newStatus = data.status || null;
         if (newStatus !== null || currentStatusRef.current === null) {
@@ -43,7 +44,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
         }
         
         lastServerDataRef.current = JSON.stringify({
-          tableRows: data.tableRows || [],
+          tableRows: incomingRows,
           status: data.status || null,
           milestoneEvaluations: data.milestoneEvaluations || {},
           horasAcumuladas: data.horasAcumuladas || 0

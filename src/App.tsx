@@ -72,9 +72,9 @@ export default function App() {
   
   const totalHours = 432;
   const progressHours = useMemo(() => {
-    return userStatus === 'efetivado' 
-      ? totalHours 
-      : tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
+    if (userStatus === 'efetivado') return totalHours;
+    const rows = Array.isArray(tableRows) ? tableRows : [];
+    return rows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
   }, [userStatus, tableRows]);
   
   // --- Estados de UI ---
