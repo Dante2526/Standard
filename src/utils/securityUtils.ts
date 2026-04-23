@@ -1,5 +1,5 @@
 /**
- * Utilitários de segurança para o projeto Trainify.
+ * Utilitários de segurança para o projeto Standard.
  */
 
 /**
