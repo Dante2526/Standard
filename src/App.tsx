@@ -453,6 +453,7 @@ export default function App() {
               updateRow={updateRow} addRow={addRow} removeRow={removeRow}
               isSaving={isSaving} autoSaveStatus={autoSaveStatus}
               formRef={formRef} renderCalendar={renderCalendar}
+              trainee={selectedTrainee!}
             />
           )}
           {activeTab === 'pending' && <PendingTrainingsView trainee={selectedTrainee!} realTrainings={realTrainings} isLoading={isLoadingTrainings} isAdmin={isAdmin} />}

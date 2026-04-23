@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trash2, Plus, Calendar, ChevronDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { TrainingRow, LOCAL_OPTIONS } from '../types';
+import { TrainingRow, LOCAL_OPTIONS, Trainee } from '../types';
 
 interface TrainingFormViewProps {
   tableRows: TrainingRow[];
@@ -16,6 +16,7 @@ interface TrainingFormViewProps {
   autoSaveStatus: 'idle' | 'saving' | 'saved';
   formRef: React.RefObject<HTMLDivElement>;
   renderCalendar: (rowId: number, currentDate: string) => React.ReactNode;
+  trainee: Trainee;
 }
 
 const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
@@ -26,17 +27,63 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
   updateRow,
   addRow,
   removeRow,
-  isSaving,
   autoSaveStatus,
   formRef,
-  renderCalendar
+  renderCalendar,
+  trainee
 }) => {
+  const totalHours = 432;
+  const progressHours = tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
+  const hoursLeft = Math.max(0, totalHours - progressHours);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4"
+      className="space-y-6"
     >
+      {/* Report Header Section */}
+      <div className="bg-surface rounded-[28px] p-8 shadow-sm border border-border-subtle relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32" />
+        
+        <h1 className="text-xl md:text-2xl font-black text-content uppercase tracking-tight mb-8 border-b border-border-subtle pb-4 relative z-10">
+          Relatório de Progresso de Treinamento
+        </h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+          <div className="space-y-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Nome do Colaborador</span>
+              <span className="text-lg font-bold text-content uppercase">{trainee.name}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Matrícula</span>
+                <span className="text-base font-bold text-content">{trainee.matricula}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Função</span>
+                <span className="text-base font-bold text-content uppercase">{trainee.funcao || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-surface-alt rounded-[22px] p-6 border border-border-subtle grid grid-cols-3 gap-4 shadow-inner">
+            <div className="flex flex-col items-center justify-center text-center">
+              <span className="text-[9px] font-black text-content-muted uppercase tracking-tighter mb-1">Horas Previstas</span>
+              <span className="text-xl font-black text-content">{totalHours}</span>
+            </div>
+            <div className="flex flex-col items-center justify-center text-center border-x border-border-subtle px-2">
+              <span className="text-[9px] font-black text-content-muted uppercase tracking-tighter mb-1">Horas Realizadas</span>
+              <span className="text-xl font-black text-blue-600">{progressHours}</span>
+            </div>
+            <div className="flex flex-col items-center justify-center text-center">
+              <span className="text-[9px] font-black text-content-muted uppercase tracking-tighter mb-1">Horas Faltantes</span>
+              <span className="text-xl font-black text-emerald-600">{hoursLeft}</span>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="bg-surface rounded-[28px] p-6 shadow-sm border border-border-subtle" ref={formRef}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
