@@ -506,3 +506,25 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
   }
 };
 
+/**
+ * Busca os links externos da coleção 'web'.
+ */
+export const fetchWebLinks = async () => {
+  try {
+    const q = collection(newDb, 'web');
+    const snap = await getDocs(q);
+    const links: Record<string, string> = {};
+    
+    snap.docs.forEach(d => {
+      const data = d.data();
+      if (data.kaizen) links.kaizen = data.kaizen;
+      if (data.treinamento) links.treinamento = data.treinamento;
+    });
+    
+    return links;
+  } catch (error) {
+    console.error("Erro ao buscar links web:", error);
+    return {};
+  }
+};
+

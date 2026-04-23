@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Upload, ArrowLeft, User as UserIcon, GraduationCap,
   X, Eraser, FileText, UserPlus, ListOrdered, Hourglass, 
-  Clock, PauseCircle, HelpCircle, LogOut, Users 
+  Clock, PauseCircle, HelpCircle, LogOut, Users, ExternalLink 
 } from 'lucide-react';
 import { collection, getDocs, getDoc, doc, query, where, onSnapshot } from 'firebase/firestore';
 import { db, newDb } from '../firebase';
@@ -96,8 +96,26 @@ const AdminClassesView = memo(({
   setTrainees
 }: AdminClassesViewProps) => {
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [webLinks, setWebLinks] = useState<{ kaizen?: string; treinamento?: string }>({});
 
   useEffect(() => {
+    const fetchLinks = async () => {
+      try {
+        const q = collection(newDb, 'web');
+        const snap = await getDocs(q);
+        const links: any = {};
+        snap.docs.forEach(d => {
+          const data = d.data();
+          if (data.kaizen) links.kaizen = data.kaizen;
+          if (data.treinamento) links.treinamento = data.treinamento;
+        });
+        setWebLinks(links);
+      } catch (error) {
+        console.error("Erro ao buscar links web:", error);
+      }
+    };
+    fetchLinks();
+
     const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
     
     const unsubscribe = onSnapshot(q, (snap) => {
@@ -233,20 +251,52 @@ const AdminClassesView = memo(({
                 Painel do Administrador
               </h2>
 
-              <div className="flex flex-col gap-4">
-                <button 
-                  onClick={() => { handleOpenGlobalRepo(); handleToggleProfileMenu(); }}
-                  className="w-full py-4 bg-gradient-to-br from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#0f766e] rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/30 border border-white/10"
-                >
-                  <Upload className="w-6 h-6"/> Atualizar Dados
-                </button>
+              <div className="flex flex-col gap-6">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black text-content-muted uppercase tracking-widest ml-1 opacity-50">Ferramentas</p>
+                  <button 
+                    onClick={() => { handleOpenGlobalRepo(); handleToggleProfileMenu(); }}
+                    className="w-full py-4 bg-gradient-to-br from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#0f766e] rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/30 border border-white/10"
+                  >
+                    <Upload className="w-6 h-6"/> Atualizar Dados
+                  </button>
+                </div>
+
+                {(webLinks.treinamento || webLinks.kaizen) && (
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-black text-content-muted uppercase tracking-widest ml-1 opacity-50">Links Externos</p>
+                    <div className="grid grid-cols-1 gap-3">
+                      {webLinks.treinamento && (
+                        <button 
+                          onClick={() => window.open(webLinks.treinamento, '_blank')}
+                          className="w-full py-4 bg-gradient-to-br from-[#3b82f6] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-blue-500/30 border border-white/10"
+                        >
+                          <GraduationCap className="w-6 h-6"/> Treinamento
+                          <ExternalLink className="w-4 h-4 opacity-50" />
+                        </button>
+                      )}
+
+                      {webLinks.kaizen && (
+                        <button 
+                          onClick={() => window.open(webLinks.kaizen, '_blank')}
+                          className="w-full py-4 bg-gradient-to-br from-[#f59e0b] to-[#d97706] hover:from-[#d97706] hover:to-[#b45309] rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-amber-500/30 border border-white/10"
+                        >
+                          <FileText className="w-6 h-6"/> Kaizen
+                          <ExternalLink className="w-4 h-4 opacity-50" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
                 
-                <button 
-                  onClick={handleLogout} 
-                  className="w-full py-4 bg-gradient-to-br from-[#ef4444] to-[#dc2626] hover:from-[#dc2626] hover:to-[#991b1b] rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-red-500/30 border border-white/10"
-                >
-                  <LogOut className="w-6 h-6"/> Encerrar Sessão
-                </button>
+                <div className="pt-4 border-t border-border-subtle">
+                  <button 
+                    onClick={handleLogout} 
+                    className="w-full py-4 bg-gradient-to-br from-[#ef4444] to-[#dc2626] hover:from-[#dc2626] hover:to-[#991b1b] rounded-2xl flex items-center justify-center gap-3 text-white font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-red-500/30 border border-white/10"
+                  >
+                    <LogOut className="w-6 h-6"/> Encerrar Sessão
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
