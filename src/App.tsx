@@ -339,13 +339,43 @@ export default function App() {
     );
   }
 
-  if (isLoadingProfile) {
+  if (isLoadingProfile || isLoadingLogin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
-          <p className="text-content-muted text-sm font-bold uppercase tracking-widest animate-pulse">Carregando Perfil...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+        {/* Efeitos de fundo */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
+        
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative z-10 flex flex-col items-center gap-8"
+        >
+          <div className="relative">
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="w-20 h-20 border-[3px] border-blue-600/10 border-t-blue-600 rounded-full"
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Briefcase className="w-8 h-8 text-blue-600 animate-bounce" />
+            </div>
+          </div>
+          
+          <div className="text-center space-y-2">
+            <h2 className="text-xl font-black text-content uppercase tracking-tighter">Sincronizando Dados</h2>
+            <div className="flex items-center justify-center gap-1">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                  className="w-1.5 h-1.5 bg-blue-600 rounded-full"
+                />
+              ))}
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -364,13 +394,29 @@ export default function App() {
   }
 
   // Proteção final: se chegamos aqui sem um trainee selecionado, algo está errado
-  if (!selectedTrainee) {
+  if (!selectedTrainee && isLoggedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <p className="text-content-muted font-bold uppercase tracking-widest">Sessão expirada ou erro de carregamento</p>
-          <button onClick={handleLogout} className="text-blue-600 font-black uppercase text-sm underline">Voltar para o Login</button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.05)_0%,transparent_70%)]" />
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 text-center max-w-md px-6"
+        >
+          <div className="w-20 h-20 bg-orange-50 text-orange-600 rounded-[24px] flex items-center justify-center mx-auto mb-8 shadow-sm">
+            <UserIcon className="w-10 h-10" />
+          </div>
+          <h2 className="text-2xl font-black text-content uppercase tracking-tight mb-4">Sessão Expirada</h2>
+          <p className="text-content-muted text-sm font-medium mb-10 leading-relaxed uppercase tracking-wider opacity-80">
+            Não conseguimos localizar os dados da sua sessão. Por favor, realize o login novamente para continuar.
+          </p>
+          <button 
+            onClick={handleLogout} 
+            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            Ir para tela de login
+          </button>
+        </motion.div>
       </div>
     );
   }
@@ -379,7 +425,13 @@ export default function App() {
     <div className="min-h-screen bg-background transition-colors duration-300">
       <header className="flex items-center justify-between mb-8 md:mb-12 gap-4 px-6 pt-6">
           <div className="flex items-center gap-3 md:gap-6 min-w-0">
-            <button onClick={() => setSelectedTrainee(null)} className="p-2 md:p-3 hover:bg-surface rounded-2xl transition-colors shrink-0">
+            <button 
+              onClick={() => {
+                if (isAdmin) setSelectedTrainee(null);
+                else handleLogout();
+              }} 
+              className="p-2 md:p-3 hover:bg-surface rounded-2xl transition-colors shrink-0"
+            >
               <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-content" />
             </button>
             <div className="min-w-0">
