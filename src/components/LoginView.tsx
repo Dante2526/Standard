@@ -39,66 +39,71 @@ const LoginView = memo(({
 }: LoginViewProps) => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmedEmail = loginEmail.trim().toLowerCase();
-    if (!trimmedEmail) return;
+    const input = loginEmail.trim().toLowerCase();
+    if (!input) return;
     
     setIsLoadingLogin(true);
     setLoginError('');
     
     try {
-      const emailLower = trimmedEmail;
+      const isEmail = input.includes('@');
       
-      // 1. Verifica se é administrador
-      const adminQ = query(collection(db, 'administrators'), where('email', '==', emailLower));
-      const adminSnap = await getDocs(adminQ);
-      
-      if (!adminSnap.empty) {
-        const adminData = adminSnap.docs[0].data();
-        const rawName = adminData.nome || adminData.name || trimmedEmail.split('.')[0] || 'Admin';
-        setUserName(rawName.split(' ')[0].toUpperCase());
-        setIsAdmin(true);
-        setIsLoggedIn(true);
-        return;
-      }
-
-      // 2. Verifica se é aluno em alguma turma
-      const turmas = ['turma a', 'turma b', 'turma c', 'turma d'];
-      for (const turma of turmas) {
-        const turmaQ = query(collection(db, turma), where('email', '==', emailLower));
-        const turmaSnap = await getDocs(turmaQ);
+      if (isEmail) {
+        // 1. Acesso ADM: Verifica na coleção de administradores
+        const adminQ = query(collection(db, 'administrators'), where('email', '==', input));
+        const adminSnap = await getDocs(adminQ);
         
-        if (!turmaSnap.empty) {
-          const traineeDoc = turmaSnap.docs[0];
-          const t = traineeDoc.data();
-          setIsAdmin(false);
+        if (!adminSnap.empty) {
+          const adminData = adminSnap.docs[0].data();
+          const rawName = adminData.nome || adminData.name || input.split('.')[0] || 'Admin';
+          setUserName(rawName.split(' ')[0].toUpperCase());
+          setIsAdmin(true);
           setIsLoggedIn(true);
-          
-          // Buscar progresso no novo banco de dados
-          const stageSnap = await getDoc(doc(newDb, 'estagios', t.matricula || ''));
-          const stageData = stageSnap.exists() ? stageSnap.data() as any : null;
-
-          const traineeObj: Trainee = {
-            id: traineeDoc.id,
-            name: t.nome || t.name || 'Usuário',
-            matricula: t.matricula || '',
-            funcao: t.funcao || '',
-            progress: stageData?.status === 'efetivado' ? 100 : (stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0),
-            status: stageData?.status === 'efetivado' ? 'completed' : 'active'
-          };
-          
-          setUserName(traineeObj.name.split(' ')[0].toUpperCase());
-          setSelectedTrainee(traineeObj);
-          setFormData((prev: any) => ({
-            ...prev,
-            nome: traineeObj.name,
-            matricula: traineeObj.matricula,
-            funcao: traineeObj.funcao
-          }));
           return;
         }
-      }
+        setLoginError('E-mail administrativo não encontrado.');
+      } else {
+        // 2. Acesso Colaborador: Verifica se é matrícula em alguma turma
+        const turmas = ['turma a', 'turma b', 'turma c', 'turma d'];
+        let found = false;
 
-      setLoginError('Email não encontrado no sistema.');
+        for (const turma of turmas) {
+          const turmaQ = query(collection(db, turma), where('matricula', '==', input));
+          const turmaSnap = await getDocs(turmaQ);
+          
+          if (!turmaSnap.empty) {
+            found = true;
+            const traineeDoc = turmaSnap.docs[0];
+            const t = traineeDoc.data();
+            setIsAdmin(false);
+            setIsLoggedIn(true);
+            
+            // Buscar progresso no novo banco de dados
+            const stageSnap = await getDoc(doc(newDb, 'estagios', t.matricula || ''));
+            const stageData = stageSnap.exists() ? stageSnap.data() as any : null;
+
+            const traineeObj: Trainee = {
+              id: traineeDoc.id,
+              name: t.nome || t.name || 'Usuário',
+              matricula: t.matricula || '',
+              funcao: t.funcao || '',
+              progress: stageData?.status === 'efetivado' ? 100 : (stageData ? Math.round((stageData.horasAcumuladas / 432) * 100) : 0),
+              status: stageData?.status === 'efetivado' ? 'completed' : 'active'
+            };
+            
+            setUserName(traineeObj.name.split(' ')[0].toUpperCase());
+            setSelectedTrainee(traineeObj);
+            setFormData((prev: any) => ({
+              ...prev,
+              nome: traineeObj.name,
+              matricula: traineeObj.matricula,
+              funcao: traineeObj.funcao
+            }));
+            return;
+          }
+        }
+        if (!found) setLoginError('Matrícula não encontrada.');
+      }
     } catch (error: any) {
       console.error("Erro ao fazer login:", error);
       setLoginError(error.message || 'Erro de conexão com o banco de dados.');
@@ -123,20 +128,22 @@ const LoginView = memo(({
           <Briefcase className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-3xl font-bold text-content mb-2 tracking-tight">Bem-vindo</h1>
-        <p className="text-content-muted mb-8">Faça login com seu email corporativo</p>
+        <p className="text-content-muted mb-8">Faça login para acessar o painel</p>
         
         <form onSubmit={handleLogin} className="space-y-4 w-full text-left">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-content mb-1.5 pl-1">
-              <span className="text-yellow-600 font-bold">*Digite tudo em minúsculo</span>
-            </label>
+          <div className="space-y-2">
+            <div className="flex flex-col gap-0.5 pl-1">
+              <span className="text-[13px] text-yellow-600 font-black uppercase tracking-wide">* Digite tudo em minúsculo</span>
+              <span className="text-[11px] text-yellow-600/80 font-bold leading-tight">• Colaborador loga com matrícula</span>
+              <span className="text-[11px] text-yellow-600/80 font-bold leading-tight">• Acesso ADM com e-mail corporativo</span>
+            </div>
             <input
-              type="email"
-              id="email"
+              type="text"
+              id="loginInput"
               value={loginEmail}
               onChange={(e) => setLoginEmail(e.target.value)}
-              placeholder="nome@empresa.com.br"
-              className="w-full px-4 py-3 rounded-2xl border border-border-subtle focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-background focus:bg-surface"
+              placeholder="Matrícula ou E-mail"
+              className="w-full px-4 py-3.5 rounded-2xl border border-border-subtle focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-background focus:bg-surface font-medium"
               required
               disabled={isLoadingLogin}
             />
