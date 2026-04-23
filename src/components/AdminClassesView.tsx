@@ -57,17 +57,17 @@ const BentoClassCard = memo(({ cls, idx, onClick }: { cls: any, idx: number, onC
           </div>
         </div>
 
-        <div className="flex -space-x-3 pt-2">
+        <div className="flex -space-x-3.5 pt-2">
           {[1, 2, 3].map((i) => (
             <motion.div 
               key={i} 
-              whileHover={{ y: -4 }}
-              className="w-10 h-10 rounded-2xl bg-background border-[3px] border-surface flex items-center justify-center overflow-hidden shadow-sm"
+              whileHover={{ y: -4, zIndex: 10 }}
+              className="w-10 h-10 rounded-full bg-background border-[3px] border-surface flex items-center justify-center overflow-hidden shadow-sm transition-transform"
             >
-              <UserIcon className={`w-4 h-4 ${cls.iconColor} opacity-70`} />
+              <UserIcon className={`w-4.5 h-4.5 ${cls.iconColor} opacity-80`} />
             </motion.div>
           ))}
-          <div className="w-10 h-10 rounded-2xl bg-surface-alt border-[3px] border-surface flex items-center justify-center text-[10px] font-black text-content-muted shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-background border-[3px] border-surface flex items-center justify-center text-[10px] font-black text-content-muted shadow-sm">
             +{Math.max(0, cls.students - 3)}
           </div>
         </div>
