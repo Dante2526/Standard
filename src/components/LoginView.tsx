@@ -5,6 +5,7 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import { db, newDb } from '../firebase';
 import DarkModeToggle from './DarkModeToggle';
 import { Trainee } from '../types';
+import Footer from './Footer';
 
 interface LoginViewProps {
   isDarkMode: boolean;
@@ -166,6 +167,9 @@ const LoginView = memo(({
             )}
           </button>
         </form>
+      </div>
+      <div className="absolute bottom-4 left-0 right-0">
+        <Footer />
       </div>
     </motion.div>
   );

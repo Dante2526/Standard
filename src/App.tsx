@@ -25,6 +25,7 @@ import KaizenView from './components/KaizenView';
 import DarkModeToggle from './components/DarkModeToggle';
 import GlobalUploadModal from './components/GlobalUploadModal';
 import MilestoneEvaluationModal from './components/MilestoneEvaluationModal';
+import Footer from './components/Footer';
 
 // Serviços e Tipos
 import { Trainee, TrainingRow, MilestoneEvaluations, LOCAL_OPTIONS, FUNCAO_OPTIONS, PRESET_HOURS } from './types';
@@ -376,6 +377,9 @@ export default function App() {
             </div>
           </div>
         </motion.div>
+        <div className="absolute bottom-4 left-0 right-0">
+          <Footer />
+        </div>
       </div>
     );
   }
@@ -417,6 +421,9 @@ export default function App() {
             Ir para tela de login
           </button>
         </motion.div>
+        <div className="absolute bottom-4 left-0 right-0">
+          <Footer />
+        </div>
       </div>
     );
   }
@@ -567,9 +574,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <footer className="py-8 text-center text-xs font-bold text-content-muted tracking-widest opacity-60">
-        DESENVOLVIDO POR NEAR
-      </footer>
+      <Footer />
 
       {/* === PAINEL ESPIÃO DEBUG KAIZEN === */}
       {showDebugPanel && kaizenDebugLog.length > 0 && (

@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, User as UserIcon, Check, GraduationCap } from 'lucide-react';
 import { Trainee } from '../types';
+import Footer from './Footer';
 
 interface TraineesListViewProps {
   selectedClass: string | null;
@@ -185,6 +186,9 @@ const TraineesListView = memo(({
             </div>
           </div>
         )}
+      </div>
+      <div className="mt-12 mb-8">
+        <Footer />
       </div>
     </motion.div>
   );

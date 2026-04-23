@@ -9,6 +9,7 @@ import { collection, getDocs, getDoc, doc, query, where, onSnapshot } from 'fire
 import { db, newDb } from '../firebase';
 import DarkModeToggle from './DarkModeToggle';
 import { Trainee } from '../types';
+import Footer from './Footer';
 
 interface AdminClassesViewProps {
   isDarkMode: boolean;
@@ -356,6 +357,9 @@ const AdminClassesView = memo(({
           </motion.div>
         )}
       </AnimatePresence>
+      <div className="mt-12">
+        <Footer />
+      </div>
     </motion.div>
   );
 });

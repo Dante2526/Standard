@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { GraduationCap, Briefcase, ArrowLeft } from 'lucide-react';
+import Footer from './Footer';
 
 interface StatusSelectionViewProps {
   currentStatus: 'estagio' | 'efetivado' | null;
@@ -74,6 +75,9 @@ const StatusSelectionView: React.FC<StatusSelectionViewProps> = React.memo(({
             <p className="text-content-muted font-medium">O colaborador concluiu seu ciclo de treinamento e é oficialmente membro da equipe operacional.</p>
           </div>
         </button>
+      </div>
+      <div className="mt-20">
+        <Footer />
       </div>
     </motion.div>
   );
