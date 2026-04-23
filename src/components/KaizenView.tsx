@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'motion/react';
 import { Lightbulb, CheckCircle2, Target, TrendingUp, Calendar } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -9,10 +10,10 @@ interface KaizenViewProps {
   kaizenData: any;
 }
 
-export default function KaizenView({
+const KaizenView = memo(({
   trainee,
   kaizenData
-}: KaizenViewProps) {
+}: KaizenViewProps) => {
   // Verificação de segurança para evitar erros de 'undefined' na matrícula
   if (!trainee) return null;
 
@@ -141,4 +142,6 @@ export default function KaizenView({
       </div>
     </motion.div>
   );
-}
+});
+
+export default KaizenView;

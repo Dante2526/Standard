@@ -1,0 +1,90 @@
+import { useState, useEffect, useRef } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { newDb } from '../firebase';
+import * as DataService from '../services/dataService';
+import { Trainee, TrainingRow, MilestoneEvaluations } from '../types';
+
+export function useTraineeData(selectedTrainee: Trainee | null) {
+  const [tableRows, setTableRows] = useState<TrainingRow[]>([]);
+  const [milestoneEvaluations, setMilestoneEvaluations] = useState<MilestoneEvaluations>({});
+  const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
+  const [realTrainings, setRealTrainings] = useState<any[]>([]);
+  const [kaizenData, setKaizenData] = useState<any>(null);
+  const [kaizenDebugLog, setKaizenDebugLog] = useState<string[]>([]);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
+  
+  const lastServerDataRef = useRef<string>('');
+  const currentStatusRef = useRef(userStatus);
+  
+  useEffect(() => { currentStatusRef.current = userStatus; }, [userStatus]);
+
+  useEffect(() => {
+    if (!selectedTrainee) {
+      setTableRows([]);
+      setMilestoneEvaluations({});
+      setUserStatus(null);
+      setRealTrainings([]);
+      setKaizenData(null);
+      setHasLoadedData(false);
+      return;
+    }
+
+    setIsLoadingProfile(true);
+    
+    const unsubStage = onSnapshot(doc(newDb, 'estagios', selectedTrainee.matricula), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setTableRows(data.tableRows || []);
+        setMilestoneEvaluations(data.milestoneEvaluations || {});
+        const newStatus = data.status || null;
+        if (newStatus !== null || currentStatusRef.current === null) {
+          setUserStatus(newStatus);
+        }
+        
+        lastServerDataRef.current = JSON.stringify({
+          tableRows: data.tableRows || [],
+          status: data.status || null,
+          milestoneEvaluations: data.milestoneEvaluations || {},
+          horasAcumuladas: data.horasAcumuladas || 0
+        });
+      } else {
+        const initialRows = [
+          { id: 1, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
+          { id: 2, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
+          { id: 3, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
+        ];
+        setTableRows(initialRows);
+        if (currentStatusRef.current === null) {
+          setUserStatus(null);
+        }
+      }
+      setIsLoadingProfile(false);
+      setHasLoadedData(true);
+    });
+
+    const unsubReal = DataService.subscribeToRealTrainings(selectedTrainee, setRealTrainings);
+    const unsubKaizen = DataService.subscribeToKaizenData(selectedTrainee, (data) => {
+      setKaizenData(data);
+      if (data?._debug) setKaizenDebugLog(data._debug);
+    });
+
+    return () => {
+      unsubStage();
+      unsubReal();
+      unsubKaizen();
+    };
+  }, [selectedTrainee]);
+
+  return {
+    tableRows, setTableRows,
+    milestoneEvaluations, setMilestoneEvaluations,
+    userStatus, setUserStatus,
+    realTrainings,
+    kaizenData,
+    kaizenDebugLog,
+    isLoadingProfile,
+    hasLoadedData,
+    lastServerDataRef
+  };
+}

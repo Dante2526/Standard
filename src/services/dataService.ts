@@ -15,6 +15,7 @@ import { db, auth, newDb, newAuth } from '../firebase';
 import { Trainee, TrainingRow, MilestoneEvaluations } from '../types';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
+import { sanitizeString } from '../utils/securityUtils';
 
 /**
  * Garante que o usuário está autenticado anonimamente em ambos os bancos.
@@ -48,8 +49,23 @@ export const saveStageData = async (
       horasAcumuladas: progressHours,
       status: userStatus,
       turma: trainee.turma || '',
-      tableRows: tableRows,
-      milestoneEvaluations: milestoneEvaluations,
+      tableRows: tableRows.map(row => ({
+        ...row,
+        local: sanitizeString(row.local),
+        equipamento: sanitizeString(row.equipamento),
+        instrutor: sanitizeString(row.instrutor),
+        avaliacao: sanitizeString(row.avaliacao),
+        hora: sanitizeString(row.hora),
+        duracao: sanitizeString(row.duracao)
+      })),
+      milestoneEvaluations: Object.keys(milestoneEvaluations).reduce((acc, key) => {
+        const k = Number(key);
+        acc[k] = {
+          comment: sanitizeString(milestoneEvaluations[k].comment),
+          inspector: sanitizeString(milestoneEvaluations[k].inspector)
+        };
+        return acc;
+      }, {} as MilestoneEvaluations),
       dataInicio: format(new Date(), 'yyyy-MM-dd'),
       ultimaAtualizacao: new Date().toISOString()
     }, { merge: true });
@@ -116,9 +132,9 @@ export const processRealTrainingsFromSnap = (snap: any, trainee: Trainee) => {
     const isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
 
     return {
-      title: title.toString().trim(),
+      title: sanitizeString(title),
       status: isCompleted ? 'completed' : 'pending',
-      date: date.toString().trim(),
+      date: sanitizeString(date),
       priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 30 ? 'Alta' : (daysLeft < 90 ? 'Média' : 'Baixa')),
       daysRemaining: isNaN(daysLeft) ? null : daysLeft
     };
@@ -439,7 +455,10 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
       updateFinalList();
     });
 
-    const unsubStage = onSnapshot(collection(newDb, 'estagios'), (snap) => {
+    const targetTurma = clsId.split(' ').pop()?.toUpperCase() || '';
+    const qStage = query(collection(newDb, 'estagios'), where('turma', '==', targetTurma));
+    
+    const unsubStage = onSnapshot(qStage, (snap) => {
       snap.docs.forEach(d => {
         stageDataMap[d.id] = d.data();
       });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Upload, ArrowLeft, User as UserIcon, GraduationCap,
@@ -30,7 +30,7 @@ const CLASSES_LIST = [
   { id: 'turma d', name: 'TURMA D', letter: 'D', color: 'bg-[#ef4444]', students: 25 },
 ];
 
-export default function AdminClassesView({
+const AdminClassesView = memo(({
   isDarkMode,
   setIsDarkMode,
   loginEmail,
@@ -201,9 +201,10 @@ export default function AdminClassesView({
       </AnimatePresence>
     </motion.div>
   );
-}
+});
+export default AdminClassesView;
 
-function BentoClassCard({ cls, idx, onClick }: { cls: any, idx: number, onClick: () => void }) {
+const BentoClassCard = memo(({ cls, idx, onClick }: { cls: any, idx: number, onClick: () => void }) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}

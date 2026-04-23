@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'motion/react';
 import { Briefcase } from 'lucide-react';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
@@ -21,7 +22,7 @@ interface LoginViewProps {
   setFormData: (v: any | ((prev: any) => any)) => void;
 }
 
-export default function LoginView({
+function LoginView({
   isDarkMode,
   setIsDarkMode,
   loginEmail,

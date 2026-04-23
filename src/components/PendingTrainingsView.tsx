@@ -1,35 +1,29 @@
+import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Briefcase, Clock, AlertCircle, CheckCircle2, Download, Search } from 'lucide-react';
 
 interface PendingTrainingsViewProps {
+  trainee: any;
   realTrainings: any[];
-  isLoadingTrainings: boolean;
+  isLoading: boolean;
   isAdmin: boolean;
-  searchQuery: string;
-  setSearchQuery: (v: string) => void;
-  viewMode: 'all' | 'pending' | 'completed';
-  setViewMode: (v: 'all' | 'pending' | 'completed') => void;
-  selectedTrainee: any;
 }
 
-export default function PendingTrainingsView({
+const PendingTrainingsView = memo(({
+  trainee,
   realTrainings,
-  isLoadingTrainings,
-  isAdmin,
-  searchQuery,
-  setSearchQuery,
-  viewMode,
-  setViewMode,
-  selectedTrainee
-}: PendingTrainingsViewProps) {
-  
+  isLoading,
+  isAdmin
+}: PendingTrainingsViewProps) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'all' | 'pending' | 'completed'>('all');
   const filteredTrainings = realTrainings.filter(t => {
     const titleStr = t.title ? String(t.title).toLowerCase() : '';
     const qStr = searchQuery ? String(searchQuery).toLowerCase() : '';
     const matchesSearch = titleStr.includes(qStr);
     if (viewMode === 'all') return matchesSearch;
-    if (viewMode === 'pending') return matchesSearch && !t.completed;
-    if (viewMode === 'completed') return matchesSearch && t.completed;
+    if (viewMode === 'pending') return matchesSearch && t.status === 'pending';
+    if (viewMode === 'completed') return matchesSearch && t.status === 'completed';
     return matchesSearch;
   });
 
@@ -84,7 +78,7 @@ export default function PendingTrainingsView({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
-            {isLoadingTrainings ? (
+            {isLoading ? (
               <div className="col-span-full py-20 flex flex-col items-center justify-center">
                 <div className="w-10 h-10 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mb-4" />
                 <p className="text-sm text-content-muted font-medium">Buscando documentos reais no banco de dados...</p>
@@ -122,12 +116,12 @@ export default function PendingTrainingsView({
                         )}
                       </div>
                     </div>
-                    {item.completed && (
+                    {item.status === 'completed' && (
                       <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                         <CheckCircle2 className="w-5 h-5" />
                       </div>
                     )}
-                    {!item.completed && (
+                    {item.status === 'pending' && (
                       <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
                         <AlertCircle className="w-5 h-5" />
                       </div>
@@ -144,7 +138,7 @@ export default function PendingTrainingsView({
                       </div>
                     </div>
                     
-                    {item.completed ? (
+                    {item.status === 'completed' ? (
                       <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-tight hover:bg-emerald-100 transition-colors">
                         <Download className="w-3 h-3" /> Certificado
                       </button>
@@ -226,4 +220,6 @@ export default function PendingTrainingsView({
       </div>
     </motion.div>
   );
-}
+});
+
+export default PendingTrainingsView;

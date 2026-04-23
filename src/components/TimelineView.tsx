@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'motion/react';
 import { Plus } from 'lucide-react';
 
@@ -9,13 +10,13 @@ interface TimelineViewProps {
   setEditingMilestone: (v: number | null) => void;
 }
 
-export default function TimelineView({
+const TimelineView = memo(({
   progressHours,
   totalHours,
   milestoneEvaluations,
   isAdmin,
   setEditingMilestone
-}: TimelineViewProps) {
+}: TimelineViewProps) => {
   const milestones = [
     { hours: 0, color: '#3b82f6', label: 'Início' },
     { hours: 100, color: '#22c55e', label: 'Marco 1', comment: milestoneEvaluations[100]?.comment || '', inspector: milestoneEvaluations[100]?.inspector || '' },
@@ -210,4 +211,6 @@ export default function TimelineView({
       </div>
     </motion.div>
   );
-}
+});
+
+export default TimelineView;

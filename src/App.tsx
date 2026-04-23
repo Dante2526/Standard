@@ -31,6 +31,7 @@ import MilestoneEvaluationModal from './components/MilestoneEvaluationModal';
 import { Trainee, TrainingRow, MilestoneEvaluations, LOCAL_OPTIONS, FUNCAO_OPTIONS, PRESET_HOURS } from './types';
 import * as DataService from './services/dataService';
 import * as ExportService from './services/exportService';
+import { useTraineeData } from './hooks/useTraineeData';
 
 export default function App() {
   // --- Estados de Autenticação e Navegação ---
@@ -54,15 +55,19 @@ export default function App() {
     (localStorage.getItem('activeTab') as any) || 'timeline'
   );
 
-  // --- Estados de Dados do Colaborador ---
-  const [tableRows, setTableRows] = useState<TrainingRow[]>([]);
-  const [milestoneEvaluations, setMilestoneEvaluations] = useState<MilestoneEvaluations>({});
-  const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
-  const currentStatusRef = useRef(userStatus);
-  useEffect(() => { currentStatusRef.current = userStatus; }, [userStatus]);
-  const [realTrainings, setRealTrainings] = useState<any[]>([]);
-  const [kaizenData, setKaizenData] = useState<any>(null);
-  const [kaizenDebugLog, setKaizenDebugLog] = useState<string[]>([]);
+  // --- Dados do Colaborador (Gerenciados pelo Hook) ---
+  const {
+    tableRows, setTableRows,
+    milestoneEvaluations, setMilestoneEvaluations,
+    userStatus, setUserStatus,
+    realTrainings,
+    kaizenData,
+    kaizenDebugLog,
+    isLoadingProfile,
+    hasLoadedData: hasLoadedDataFromHook,
+    lastServerDataRef
+  } = useTraineeData(selectedTrainee);
+
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isLoadingTrainings, setIsLoadingTrainings] = useState(false);
   
@@ -84,8 +89,6 @@ export default function App() {
   const [showGlobalUploadModal, setShowGlobalUploadModal] = useState(false);
 
   // --- Refs ---
-  const hasLoadedDataRef = useRef(false);
-  const lastServerDataRef = useRef<string>('');
   const autoSaveTimerRef = useRef<any>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const downloadMenuRef = useRef<HTMLDivElement>(null);
@@ -121,73 +124,12 @@ export default function App() {
     else localStorage.removeItem('selectedTrainee');
   }, [isLoggedIn, isAdmin, userName, loginEmail, selectedClass, selectedTrainee, activeTab]);
 
-  // --- Sincronização em Tempo Real de Dados do Perfil ---
+  // A sincronização em tempo real foi movida para o hook useTraineeData
   useEffect(() => {
-    if (!selectedTrainee) {
-      setTableRows([]);
-      setMilestoneEvaluations({});
-      setUserStatus(null);
-      setRealTrainings([]);
-      setKaizenData(null);
-      return;
+    if (userStatus === 'efetivado') {
+      setActiveTab(prev => (prev === 'kaizen' || prev === 'pending' ? prev : 'pending'));
     }
-
-    setIsLoadingProfile(true);
-    
-    // 1. Assina dados de estágio (progresso, status, avaliações)
-    const unsubStage = onSnapshot(doc(newDb, 'estagios', selectedTrainee.matricula), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setTableRows(data.tableRows || []);
-        setMilestoneEvaluations(data.milestoneEvaluations || {});
-        const newStatus = data.status || null;
-        // Só atualiza se o novo status não for nulo, ou se o status local ainda for nulo
-        if (newStatus !== null || currentStatusRef.current === null) {
-          setUserStatus(newStatus);
-        }
-        
-        // Armazena a versão do servidor para evitar loops de salvamento
-        lastServerDataRef.current = JSON.stringify({
-          tableRows: data.tableRows || [],
-          status: data.status || null,
-          milestoneEvaluations: data.milestoneEvaluations || {},
-          horasAcumuladas: data.horasAcumuladas || 0
-        });
-
-        // Mantém a aba ativa consistente com o status
-        if (data.status === 'efetivado') {
-          setActiveTab(prev => (prev === 'kaizen' || prev === 'pending' ? prev : 'pending'));
-        }
-      } else {
-        const initialRows = [
-          { id: 1, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
-          { id: 2, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
-          { id: 3, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' },
-        ];
-        setTableRows(initialRows);
-        if (currentStatusRef.current === null) {
-          setUserStatus(null);
-        }
-      }
-      setIsLoadingProfile(false);
-      hasLoadedDataRef.current = true;
-    });
-
-    // 2. Assina treinamentos reais
-    const unsubReal = DataService.subscribeToRealTrainings(selectedTrainee, setRealTrainings);
-
-    // 3. Assina dados de Kaizen
-    const unsubKaizen = DataService.subscribeToKaizenData(selectedTrainee, (data) => {
-      setKaizenData(data);
-      if (data?._debug) setKaizenDebugLog(data._debug);
-    });
-
-    return () => {
-      unsubStage();
-      unsubReal();
-      unsubKaizen();
-    };
-  }, [selectedTrainee]);
+  }, [userStatus]);
 
   // --- Sincronização em Tempo Real da Lista de Colaboradores (Admin) ---
   useEffect(() => {
@@ -204,7 +146,7 @@ export default function App() {
 
   // --- Auto-Save ---
   const triggerAutoSave = useCallback(() => {
-    if (!hasLoadedDataRef.current || !selectedTrainee) return;
+    if (!hasLoadedDataFromHook || !selectedTrainee) return;
     
     // Calcula as horas baseado no formulário para comparação
     const currentProgressHours = tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
@@ -240,12 +182,12 @@ export default function App() {
         setAutoSaveStatus('idle');
       }
     }, 2000);
-  }, [selectedTrainee, tableRows, userStatus, milestoneEvaluations]);
+  }, [selectedTrainee, tableRows, userStatus, milestoneEvaluations, hasLoadedDataFromHook, lastServerDataRef]);
 
   useEffect(() => { triggerAutoSave(); }, [tableRows, userStatus, milestoneEvaluations, triggerAutoSave]);
 
   // --- Handlers de UI ---
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     setIsLoggedIn(false);
     setIsAdmin(false);
     setSelectedClass(null);
@@ -253,7 +195,6 @@ export default function App() {
     setTrainees([]);
     setLoginEmail('');
     
-    // Limpa persistência
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('isAdmin');
     localStorage.removeItem('userName');
@@ -261,27 +202,26 @@ export default function App() {
     localStorage.removeItem('selectedClass');
     localStorage.removeItem('selectedTrainee');
     localStorage.removeItem('activeTab');
-  };
+  }, []);
 
-  const updateRow = (id: number, field: keyof TrainingRow, value: string) => {
+  const updateRow = useCallback((id: number, field: keyof TrainingRow, value: string) => {
     setTableRows(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row));
-  };
+  }, [setTableRows]);
 
-  const addRow = () => {
+  const addRow = useCallback(() => {
     const newId = tableRows.length > 0 ? Math.max(...tableRows.map(r => r.id)) + 1 : 1;
     setTableRows(prev => [...prev, { id: newId, local: '', equipamento: '', data: '', hora: '', duracao: '', instrutor: '', avaliacao: '' }]);
-  };
+  }, [tableRows, setTableRows]);
 
-  const removeRow = (id: number) => {
+  const removeRow = useCallback((id: number) => {
     setTableRows(prev => prev.filter(row => row.id !== id));
-  };
+  }, [setTableRows]);
   
-  const handleExport = async (type: 'pdf' | 'excel' | 'png' | 'word') => {
+  const handleExport = useCallback(async (type: 'pdf' | 'excel' | 'png' | 'word') => {
     if (!selectedTrainee) return;
     setIsDownloading(true);
     setIsDownloadMenuOpen(false);
 
-    // Pequeno delay para garantir que o menu feche antes da captura
     await new Promise(r => setTimeout(r, 300));
 
     try {
@@ -306,11 +246,11 @@ export default function App() {
     } finally {
       setIsDownloading(false);
     }
-  };
+  }, [selectedTrainee, totalHours, progressHours, tableRows]);
 
 
   // --- Renderizadores Auxiliares ---
-  const renderCalendar = (rowId: number, currentDate: string) => {
+  const renderCalendar = useCallback((rowId: number, currentDate: string) => {
     const date = currentDate ? parseISO(currentDate) : new Date();
     const days = eachDayOfInterval({
       start: startOfWeek(startOfMonth(currentMonth)),
@@ -346,12 +286,14 @@ export default function App() {
         </div>
       </motion.div>
     );
-  };
+  }, [currentMonth, updateRow]);
 
   const totalHours = 432;
-  const progressHours = userStatus === 'efetivado' 
-    ? totalHours 
-    : tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
+  const progressHours = useMemo(() => {
+    return userStatus === 'efetivado' 
+      ? totalHours 
+      : tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
+  }, [userStatus, tableRows]);
 
   // --- Renderização Principal ---
   if (!isLoggedIn) {
@@ -363,7 +305,7 @@ export default function App() {
         loginError={loginError} setLoginError={setLoginError}
         setUserName={setUserName} setIsAdmin={setIsAdmin}
         setIsLoggedIn={setIsLoggedIn} setSelectedTrainee={setSelectedTrainee}
-        setFormData={() => {}} // Não mais necessário com o novo fluxo
+        setFormData={setTableRows} 
       />
     );
   }
@@ -513,7 +455,7 @@ export default function App() {
               formRef={formRef} renderCalendar={renderCalendar}
             />
           )}
-          {activeTab === 'pending' && <PendingTrainingsView trainee={selectedTrainee!} realTrainings={realTrainings} isLoading={isLoadingTrainings} />}
+          {activeTab === 'pending' && <PendingTrainingsView trainee={selectedTrainee!} realTrainings={realTrainings} isLoading={isLoadingTrainings} isAdmin={isAdmin} />}
           {activeTab === 'kaizen' && <KaizenView trainee={selectedTrainee!} kaizenData={kaizenData} />}
         </div>
       </main>

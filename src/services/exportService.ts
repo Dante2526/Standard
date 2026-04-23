@@ -1,7 +1,3 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import * as XLSX from 'xlsx';
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, VerticalAlign } from 'docx';
 import { TrainingRow } from '../types';
 
 /**
@@ -46,6 +42,7 @@ const captureElementHighRes = async (element: HTMLElement | null): Promise<HTMLC
   document.body.appendChild(clone);
 
   try {
+    const html2canvas = (await import('html2canvas')).default;
     const canvas = await html2canvas(clone, {
       scale: 3, // Resolução "Retina"
       useCORS: true,
@@ -84,8 +81,9 @@ export const exportToPNG = async (element: HTMLElement) => {
 /**
  * Exporta os dados de treinamento como Excel.
  */
-export const exportToExcel = (formData: any, tableRows: TrainingRow[]) => {
+export const exportToExcel = async (formData: any, tableRows: TrainingRow[]) => {
   try {
+    const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
     
     // Garantir que os dados existam ou tenham fallbacks (prevenção de erro mobile)
@@ -144,6 +142,8 @@ export const exportToExcel = (formData: any, tableRows: TrainingRow[]) => {
  */
 export const exportToWord = async (formData: any, tableRows: TrainingRow[]) => {
   try {
+    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, VerticalAlign } = await import('docx');
+    
     const doc = new Document({
       sections: [{
         properties: {},
@@ -240,6 +240,7 @@ export const exportToWord = async (formData: any, tableRows: TrainingRow[]) => {
  */
 export const exportToPDF = async (element: HTMLElement) => {
   try {
+    const jsPDF = (await import('jspdf')).default;
     const canvas = await captureElementHighRes(element);
     const imgData = canvas.toDataURL('image/png', 1.0);
     

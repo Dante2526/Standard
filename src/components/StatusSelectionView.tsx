@@ -9,7 +9,7 @@ interface StatusSelectionViewProps {
   onBack?: () => void;
 }
 
-const StatusSelectionView: React.FC<StatusSelectionViewProps> = ({
+const StatusSelectionView: React.FC<StatusSelectionViewProps> = React.memo(({
   currentStatus,
   onStatusChange,
   isAdmin,
@@ -77,6 +77,6 @@ const StatusSelectionView: React.FC<StatusSelectionViewProps> = ({
       </div>
     </motion.div>
   );
-};
+});
 
 export default StatusSelectionView;

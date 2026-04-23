@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, User as UserIcon } from 'lucide-react';
 import { Trainee } from '../types';
@@ -10,13 +11,13 @@ interface TraineesListViewProps {
   onSelectTrainee: (trainee: Trainee) => void;
 }
 
-export default function TraineesListView({
+const TraineesListView = memo(({
   selectedClass,
   isLoading,
   trainees,
   onBack,
   onSelectTrainee
-}: TraineesListViewProps) {
+}: TraineesListViewProps) => {
 
   const scrollToLetter = (letter: string) => {
     const firstTrainee = trainees.find(t => t.name.toUpperCase().startsWith(letter));
@@ -153,4 +154,6 @@ export default function TraineesListView({
       </div>
     </motion.div>
   );
-}
+});
+
+export default TraineesListView;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trash2, Plus, Calendar, ChevronDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -18,7 +18,7 @@ interface TrainingFormViewProps {
   renderCalendar: (rowId: number, currentDate: string) => React.ReactNode;
 }
 
-const TrainingFormView: React.FC<TrainingFormViewProps> = ({
+const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
   tableRows,
   isAdmin,
   openDropdownId,
@@ -201,6 +201,6 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = ({
       </div>
     </motion.div>
   );
-};
+});
 
 export default TrainingFormView;
