@@ -1,10 +1,12 @@
 import { memo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, User as UserIcon, Check, GraduationCap, LayoutGrid, Network } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Check, GraduationCap, LayoutGrid, Network, Trophy } from 'lucide-react';
 import { Trainee } from '../types';
 import Footer from './Footer';
 import DelayedTrainingsColmeia from './DelayedTrainingsColmeia';
+import KaizenRankingView from './KaizenRankingView';
 import { useDelayedTrainings } from '../hooks/useDelayedTrainings';
+import { useKaizenRanking } from '../hooks/useKaizenRanking';
 
 interface TraineesListViewProps {
   selectedClass: string | null;
@@ -55,8 +57,9 @@ const TraineesListView = memo(({
     }
   };
 
-  const [activeTab, setActiveTab] = useState<'grid' | 'colmeia'>('grid');
+  const [activeTab, setActiveTab] = useState<'grid' | 'colmeia' | 'kaizen'>('grid');
   const { delayedMap, isLoading: isLoadingDelayed } = useDelayedTrainings(activeTab === 'colmeia' ? trainees : []);
+  const { ranking: kaizenRanking, isLoading: isLoadingKaizen } = useKaizenRanking(activeTab === 'kaizen' ? trainees : []);
 
   return (
     <motion.div 
@@ -111,6 +114,17 @@ const TraineesListView = memo(({
               <Network className="w-4 h-4" />
               Visão de Pendências
             </button>
+            <button
+              onClick={() => setActiveTab('kaizen')}
+              className={`px-6 py-2.5 rounded-[18px] text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+                activeTab === 'kaizen' 
+                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' 
+                  : 'bg-surface border border-border-subtle text-content-muted hover:bg-background'
+              }`}
+            >
+              <Trophy className="w-4 h-4" />
+              Ranking Kaizen
+            </button>
           </div>
         )}
 
@@ -134,6 +148,12 @@ const TraineesListView = memo(({
             delayedMap={delayedMap} 
             isLoading={isLoadingDelayed} 
             onSelectTrainee={onSelectTrainee} 
+          />
+        ) : activeTab === 'kaizen' ? (
+          <KaizenRankingView
+            ranking={kaizenRanking}
+            isLoading={isLoadingKaizen}
+            onSelectTrainee={onSelectTrainee}
           />
         ) : (
           <div className="flex flex-col lg:flex-row gap-6 relative items-start">

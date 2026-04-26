@@ -354,6 +354,117 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
 };
 
 /**
+ * Busca o ranking de Kaizens para a turma toda (lote único).
+ */
+export const fetchKaizenRankingForClass = async (trainees: Trainee[]) => {
+  if (!trainees || trainees.length === 0) return [];
+
+  const q = query(collection(newDb, 'global_files'), where('type', '==', 'kaizen'));
+  const snap = await getDocs(q);
+  
+  if (snap.empty) return [];
+
+  const sortedDocs = snap.docs.sort((a: any, b: any) => {
+    const tA = a.data().uploadedAt?.toMillis?.() || 0;
+    const tB = b.data().uploadedAt?.toMillis?.() || 0;
+    return tB - tA;
+  });
+  
+  const fileData = sortedDocs[0].data();
+  
+  let parsedData = fileData.parsedData || [];
+  if (fileData.isChunked) {
+    parsedData = await loadParsedDataForDoc(fileData);
+  }
+
+  if (parsedData.length < 2) return [];
+
+  let headerIdx = 0;
+  while (headerIdx < parsedData.length) {
+    const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
+    if (hRow.some((h: string) => h.includes('elaborador') || h.includes('kaizen') || h.includes('data'))) break; 
+    headerIdx++;
+  }
+
+  if (headerIdx >= parsedData.length) return [];
+
+  const headers = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
+  const elaboradoresIdx = headers.findIndex((h: string) => h.includes('elaborador'));
+  const implDateIdx = headers.findIndex((h: string) => h.includes('quando foi implantada') || h.includes('implantada'));
+  
+  // Prepara dados dos trainees para matching flexível
+  const traineeMatchData = trainees.map(t => ({
+    trainee: t,
+    matricula: (t.matricula || '').toString().trim(),
+    name: (t.name || '').toString().toUpperCase().trim(),
+    firstName: ((t.name || '').toString().toUpperCase().trim().split(' ')[0] || '')
+  }));
+
+  const findMatchingTrainees = (rowCells: any[]) => {
+    const matches: Trainee[] = [];
+    
+    // Check against elaboradores column specifically if it exists, otherwise check all cells
+    const cellValue = elaboradoresIdx >= 0 ? (rowCells[elaboradoresIdx] || '').toString().toUpperCase() : rowCells.join(' ').toUpperCase();
+    
+    if (!cellValue) return matches;
+
+    for (const td of traineeMatchData) {
+      if (td.matricula && cellValue.includes(td.matricula)) { matches.push(td.trainee); continue; }
+      if (td.name && cellValue.includes(td.name)) { matches.push(td.trainee); continue; }
+      if (td.firstName && td.matricula && cellValue.includes(td.firstName) && cellValue.includes(td.matricula)) { matches.push(td.trainee); continue; }
+    }
+    return matches;
+  };
+
+  const isImplemented = (row: any) => {
+    if (implDateIdx >= 0) {
+      const val = (row.colunas[implDateIdx] || '').toString().trim();
+      return val.length > 0 && val !== '-';
+    }
+    return false; 
+  };
+
+  // Maps to store counts
+  const counts = new Map<string, { total: number, implementados: number, submetidos: number, trainee: Trainee }>();
+  
+  trainees.forEach(t => {
+    counts.set(t.matricula, { total: 0, implementados: 0, submetidos: 0, trainee: t });
+  });
+
+  for (let i = headerIdx + 1; i < parsedData.length; i++) {
+    const row = parsedData[i];
+    const matchedTrainees = findMatchingTrainees(row.colunas);
+    
+    if (matchedTrainees.length > 0) {
+      const implemented = isImplemented(row);
+      matchedTrainees.forEach(t => {
+        const stats = counts.get(t.matricula);
+        if (stats) {
+          stats.total += 1;
+          if (implemented) {
+            stats.implementados += 1;
+          } else {
+            stats.submetidos += 1;
+          }
+        }
+      });
+    }
+  }
+
+  // Convert to array and sort
+  const ranking = Array.from(counts.values())
+    .filter(stat => stat.total > 0)
+    .sort((a, b) => {
+      // First sort by total
+      if (b.total !== a.total) return b.total - a.total;
+      // Then tie break by implementados
+      return b.implementados - a.implementados;
+    });
+
+  return ranking;
+};
+
+/**
  * Estima o tamanho em bytes de um objeto para verificar limite do Firestore.
  */
 const estimateDocSize = (data: any): number => {
