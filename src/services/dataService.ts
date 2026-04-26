@@ -291,19 +291,33 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
   const results: Record<string, any[]> = {};
   trainees.forEach(t => { results[t.matricula] = []; });
 
-  // Cria um mapa para busca rápida por matrícula
-  const traineeMap = new Map<string, Trainee>();
-  trainees.forEach(t => {
-    if (t.matricula) traineeMap.set(t.matricula.toString().trim(), t);
-  });
+  // Prepara dados dos trainees para matching flexível (igual à lógica individual)
+  const traineeMatchData = trainees.map(t => ({
+    trainee: t,
+    matricula: (t.matricula || '').toString().trim(),
+    name: (t.name || '').toString().toUpperCase().trim(),
+    firstName: ((t.name || '').toString().toUpperCase().trim().split(' ')[0] || '')
+  }));
+
+  // Função de matching flexível - mesma lógica do processRealTrainingsFromParsedData
+  const findMatchingTrainee = (rowMatricula: string, rowName: string) => {
+    for (const td of traineeMatchData) {
+      if (td.matricula && rowMatricula && rowMatricula.includes(td.matricula)) return td.trainee;
+      if (td.name && rowName && rowName.includes(td.name)) return td.trainee;
+      if (td.firstName && td.matricula && rowName.includes(td.firstName) && rowMatricula.includes(td.matricula)) return td.trainee;
+    }
+    return null;
+  };
 
   // Itera os dados globais uma única vez
   for (let i = headerIdx + 1; i < parsedData.length; i++) {
     const row = parsedData[i];
     const rowMatricula = idxMatricula >= 0 ? (row.colunas[idxMatricula] || '').toString().trim() : (row.colunas[1] || '').toString().trim();
+    const rowName = idxNome >= 0 ? (row.colunas[idxNome] || '').toString().toUpperCase().trim() : (row.colunas[0] || '').toString().toUpperCase().trim();
     
-    // Se a matrícula existir na nossa turma
-    if (rowMatricula && traineeMap.has(rowMatricula)) {
+    // Busca flexível: matrícula parcial OU nome
+    const matchedTrainee = findMatchingTrainee(rowMatricula, rowName);
+    if (matchedTrainee) {
       const statusRaw = idxStatus >= 0 ? (row.colunas[idxStatus] || '').toString().trim() : (row.colunas[4] || '').toString().trim();
       const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
       const isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
@@ -325,7 +339,7 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
         }
         if (!date) date = 'Sem data';
 
-        results[rowMatricula].push({
+        results[matchedTrainee.matricula].push({
           title: sanitizeString(title),
           status: 'pending',
           date: sanitizeString(date),
