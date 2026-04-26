@@ -119,7 +119,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
           )}
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="w-full overflow-visible">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border-subtle">
