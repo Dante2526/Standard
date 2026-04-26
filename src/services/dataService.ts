@@ -175,7 +175,16 @@ export const processRealTrainingsFromParsedData = (parsedData: any[], trainee: T
     const daysLeftStr = idxDaysLeft >= 0 ? (row.colunas[idxDaysLeft] || '').toString().trim() : (row.colunas[6] || '').toString().trim();
     const daysLeft = parseInt(daysLeftStr);
     const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
-    const date = idxDate >= 0 ? (row.colunas[idxDate] || 'Sem data') : (row.colunas[5] || 'Sem data');
+    let date = idxDate >= 0 ? (row.colunas[idxDate] || '').toString().trim() : (row.colunas[5] || '').toString().trim();
+    
+    // Se a data estiver vazia mas temos dias restantes, calcular a data limite
+    if (!date && !isNaN(daysLeft)) {
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + daysLeft);
+      date = targetDate.toLocaleDateString('pt-BR');
+    }
+    if (!date) date = 'Sem data';
+
     const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
     const isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
 
@@ -183,7 +192,7 @@ export const processRealTrainingsFromParsedData = (parsedData: any[], trainee: T
       title: sanitizeString(title),
       status: isCompleted ? 'completed' : 'pending',
       date: sanitizeString(date),
-      priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 30 ? 'Alta' : (daysLeft < 90 ? 'Média' : 'Baixa')),
+      priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 0 ? 'Alta' : (daysLeft < 30 ? 'Alta' : (daysLeft < 90 ? 'Média' : 'Baixa'))),
       daysRemaining: isNaN(daysLeft) ? null : daysLeft
     };
   });
@@ -382,15 +391,15 @@ export const uploadGlobalFile = async (file: File, type: 'kaizen' | 'treinamento
         totalRows: structuredData.length,
       });
 
-      // Salvar cada chunk como documento separado
-      for (let i = 0; i < chunks.length; i++) {
-        await addDoc(collection(newDb, 'global_files_chunks'), {
+      // Salvar todos os chunks em paralelo (muito mais rápido)
+      await Promise.all(chunks.map((chunk, i) =>
+        addDoc(collection(newDb, 'global_files_chunks'), {
           chunkParentId: parentId,
           chunkIndex: i,
           type: type,
-          parsedData: chunks[i],
-        });
-      }
+          parsedData: chunk,
+        })
+      ));
     }
   } catch (error) {
     console.error("Erro no upload do arquivo global:", error);
