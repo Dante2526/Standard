@@ -308,31 +308,30 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
       const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
       const isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
       
-      // Só nos interessam os não concluídos
+      // Só nos interessam os não concluídos (pendentes)
       if (!isCompleted) {
         const daysLeftStr = idxDaysLeft >= 0 ? (row.colunas[idxDaysLeft] || '').toString().trim() : (row.colunas[6] || '').toString().trim();
         const daysLeft = parseInt(daysLeftStr);
         
-        // Se estiver atrasado (dias restantes < 0)
-        if (!isNaN(daysLeft) && daysLeft < 0) {
-          const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
-          let date = idxDate >= 0 ? (row.colunas[idxDate] || '').toString().trim() : (row.colunas[5] || '').toString().trim();
-          
-          if (!date && !isNaN(daysLeft)) {
-            const targetDate = new Date();
-            targetDate.setDate(targetDate.getDate() + daysLeft);
-            date = targetDate.toLocaleDateString('pt-BR');
-          }
-          if (!date) date = 'Sem data';
-
-          results[rowMatricula].push({
-            title: sanitizeString(title),
-            status: 'pending',
-            date: sanitizeString(date),
-            priority: 'Alta', // Sempre alta pois está atrasado
-            daysRemaining: daysLeft
-          });
+        // Vamos incluir TODOS os treinamentos pendentes (não concluídos)
+        // pois o usuário considera "Pendência" como algo a ser acompanhado na colmeia
+        const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
+        let date = idxDate >= 0 ? (row.colunas[idxDate] || '').toString().trim() : (row.colunas[5] || '').toString().trim();
+        
+        if (!date && !isNaN(daysLeft)) {
+          const targetDate = new Date();
+          targetDate.setDate(targetDate.getDate() + daysLeft);
+          date = targetDate.toLocaleDateString('pt-BR');
         }
+        if (!date) date = 'Sem data';
+
+        results[rowMatricula].push({
+          title: sanitizeString(title),
+          status: 'pending',
+          date: sanitizeString(date),
+          priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 0 ? 'Alta' : 'Média'),
+          daysRemaining: isNaN(daysLeft) ? 0 : daysLeft
+        });
       }
     }
   }

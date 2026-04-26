@@ -109,7 +109,7 @@ const TraineesListView = memo(({
               }`}
             >
               <Network className="w-4 h-4" />
-              Visão de Atrasos
+              Visão de Pendências
             </button>
           </div>
         )}
