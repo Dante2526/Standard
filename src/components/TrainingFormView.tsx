@@ -46,7 +46,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
       className="space-y-6"
     >
       {/* Report Header Section */}
-      <div className="bg-surface rounded-[28px] p-8 shadow-sm border border-border-subtle relative overflow-hidden">
+      <div className="bg-surface rounded-[28px] p-8 shadow-sm border border-border-subtle relative overflow-visible">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32" />
         
         <h1 className="text-xl md:text-2xl font-black text-content uppercase tracking-tight mb-8 border-b border-border-subtle pb-4 relative z-10">
