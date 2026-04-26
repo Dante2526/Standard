@@ -286,7 +286,7 @@ export default function App() {
           <span className="text-sm font-bold text-content uppercase tracking-tight">{format(currentMonth, 'MMMM yyyy', { locale: ptBR })}</span>
           <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1.5 hover:bg-background rounded-lg transition-colors"><ChevronRight className="w-4 h-4" /></button>
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5">
           {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-[10px] font-black text-content-muted text-center py-1">{d}</div>)}
           {days.map(day => (
             <button
@@ -295,7 +295,7 @@ export default function App() {
                 updateRow(rowId, 'data', format(day, 'yyyy-MM-dd'));
                 setOpenDropdownId(null);
               }}
-              className={`h-8 text-xs rounded-lg transition-all flex items-center justify-center ${!isSameMonth(day, currentMonth) ? 'text-content-muted opacity-20' : 'text-content hover:bg-blue-50 hover:text-blue-600'} ${isSameDay(day, date) ? 'bg-blue-600 !text-white font-bold' : ''}`}
+              className={`h-7 text-xs rounded-lg transition-all flex items-center justify-center ${!isSameMonth(day, currentMonth) ? 'text-content-muted opacity-20' : 'text-content hover:bg-blue-50 hover:text-blue-600'} ${isSameDay(day, date) ? 'bg-blue-600 !text-white font-bold' : ''}`}
             >
               {format(day, 'd')}
             </button>
