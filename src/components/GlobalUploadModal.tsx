@@ -9,6 +9,8 @@ interface GlobalUploadModalProps {
   loginEmail: string;
 }
 
+const MAX_FILES = 20;
+
 const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, loginEmail }) => {
   const [kaizenFiles, setKaizenFiles] = useState<File[]>([]);
   const [trainingFiles, setTrainingFiles] = useState<File[]>([]);
@@ -114,7 +116,7 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
                           if (e.target.files && e.target.files.length > 0) {
-                            setTrainingFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                            setTrainingFiles(prev => [...prev, ...Array.from(e.target.files!)].slice(0, MAX_FILES));
                           }
                         }}
                       />
@@ -186,7 +188,7 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
                           if (e.target.files && e.target.files.length > 0) {
-                            setKaizenFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                            setKaizenFiles(prev => [...prev, ...Array.from(e.target.files!)].slice(0, MAX_FILES));
                           }
                         }}
                       />

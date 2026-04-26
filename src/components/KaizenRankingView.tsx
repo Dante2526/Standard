@@ -90,7 +90,7 @@ const KaizenRankingView = memo(({
                 </div>
 
                 <div className="w-20 h-20 rounded-full bg-background/50 border border-border-subtle text-content-muted flex items-center justify-center mb-4 mt-4 overflow-hidden">
-                  {item.trainee.avatar ? (
+                  {item.trainee.avatar && /^https?:\/\//i.test(item.trainee.avatar) ? (
                     <img src={item.trainee.avatar} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <UserIcon className="w-10 h-10" />

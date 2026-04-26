@@ -98,15 +98,13 @@ const AdminClassesView = memo(({
 }: AdminClassesViewProps) => {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [webLinks, setWebLinks] = useState<{ kaizen?: string; treinamento?: string }>({});
+  const [webLinksError, setWebLinksError] = useState<string | null>(null);
 
   useEffect(() => {
     // Busca os links da coleção 'web' em tempo real no banco NOVO
     const unsubLinks = onSnapshot(collection(newDb, 'web'), (snap) => {
-      if (snap.empty) {
-        setWebLinks(prev => ({ ...prev, _count: 0, _dbNew: 'empty' }));
-        return;
-      }
-      const links: any = { _count: snap.size, _ids: snap.docs.map(d => d.id), _dbNew: 'ok', _errorNew: null };
+      if (snap.empty) return;
+      const links: { kaizen?: string; treinamento?: string } = {};
       snap.docs.forEach(d => {
         const data = d.data();
         const id = d.id.toLowerCase();
@@ -120,19 +118,16 @@ const AdminClassesView = memo(({
           if (k.includes('treinamento') && !links.treinamento) links.treinamento = data[key];
         });
       });
-      setWebLinks(prev => ({ ...prev, ...links }));
+      setWebLinks(links);
     }, (err) => {
       console.error("Erro no newDb:", err);
-      setWebLinks(prev => ({ ...prev, _errorNew: err.message, _dbNew: 'error' }));
+      setWebLinksError(err.message);
     });
 
     // Busca também no banco ANTIGO
     const unsubLinksOld = onSnapshot(collection(db, 'web'), (snap) => {
-      if (snap.empty) {
-        setWebLinks(prev => ({ ...prev, _countOld: 0, _dbOld: 'empty' }));
-        return;
-      }
-      const links: any = { _countOld: snap.size, _idsOld: snap.docs.map(d => d.id), _dbOld: 'ok', _errorOld: null };
+      if (snap.empty) return;
+      const links: { kaizen?: string; treinamento?: string } = {};
       snap.docs.forEach(d => {
         const data = d.data();
         const id = d.id.toLowerCase();
@@ -149,7 +144,7 @@ const AdminClassesView = memo(({
       setWebLinks(prev => ({ ...prev, ...links }));
     }, (err) => {
       console.error("Erro no db antigo:", err);
-      setWebLinks(prev => ({ ...prev, _errorOld: err.message, _dbOld: 'error' }));
+      setWebLinksError(err.message);
     });
 
     const q = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
@@ -332,15 +327,11 @@ const AdminClassesView = memo(({
                     <p className="text-[10px] font-bold text-content-muted uppercase text-center opacity-40">
                       Buscando links na coleção 'web'...
                     </p>
-                    {((webLinks as any)._errorNew || (webLinks as any)._errorOld) && (
+                    {webLinksError && (
                       <p className="text-[9px] text-red-500 text-center font-bold">
-                        ERRO: {(webLinks as any)._errorNew || (webLinks as any)._errorOld}
+                        ERRO: {webLinksError}
                       </p>
                     )}
-                    <div className="flex justify-around opacity-30">
-                      <p className="text-[8px] text-content-muted font-bold">DB Novo: {(webLinks as any)._count || 0}</p>
-                      <p className="text-[8px] text-content-muted font-bold">DB Antigo: {(webLinks as any)._countOld || 0}</p>
-                    </div>
                   </div>
                 )}
                 

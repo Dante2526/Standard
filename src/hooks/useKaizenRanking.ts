@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Trainee } from '../types';
 import * as DataService from '../services/dataService';
 
@@ -14,7 +14,16 @@ export const useKaizenRanking = (trainees: Trainee[]) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Estabiliza a referência usando as matrículas como key
+  const traineeKeyRef = useRef('');
+
+  const currentKey = trainees.map(t => t.matricula).sort().join(',');
+
   useEffect(() => {
+    // Só re-executa se as matrículas mudaram de verdade
+    if (currentKey === traineeKeyRef.current) return;
+    traineeKeyRef.current = currentKey;
+
     let isMounted = true;
 
     const fetchRanking = async () => {
@@ -48,7 +57,7 @@ export const useKaizenRanking = (trainees: Trainee[]) => {
     return () => {
       isMounted = false;
     };
-  }, [trainees]);
+  }, [currentKey]);
 
   return { ranking, isLoading, error };
 };

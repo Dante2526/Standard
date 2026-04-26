@@ -57,15 +57,16 @@ const TraineesListView = memo(({
     }
   };
 
+  const tabStorageKey = `trainees_active_tab_${selectedClass || ''}`;
   const [activeTab, setActiveTabState] = useState<'grid' | 'colmeia' | 'kaizen'>(() => {
-    const saved = localStorage.getItem('trainees_active_tab');
+    const saved = sessionStorage.getItem(tabStorageKey);
     if (saved === 'grid' || saved === 'colmeia' || saved === 'kaizen') return saved;
     return 'grid';
   });
 
   const setActiveTab = (tab: 'grid' | 'colmeia' | 'kaizen') => {
     setActiveTabState(tab);
-    localStorage.setItem('trainees_active_tab', tab);
+    sessionStorage.setItem(tabStorageKey, tab);
   };
   const { delayedMap, isLoading: isLoadingDelayed } = useDelayedTrainings(activeTab === 'colmeia' ? trainees : []);
   const { ranking: kaizenRanking, isLoading: isLoadingKaizen } = useKaizenRanking(activeTab === 'kaizen' ? trainees : []);

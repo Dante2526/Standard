@@ -3,7 +3,8 @@
  */
 
 /**
- * Sanitiza uma string removendo tags HTML e possíveis scripts.
+ * Sanitiza uma string removendo tags HTML e scripts.
+ * Faz APENAS strip de tags, sem escape duplo para evitar corrupção de dados.
  * @param str A string a ser sanitizada.
  * @returns A string limpa.
  */
@@ -12,20 +13,8 @@ export const sanitizeString = (str: any): string => {
     return str ? String(str) : '';
   }
 
-  // Remove tags HTML básicas
-  return str
-    .replace(/<[^>]*>?/gm, '') // Remove tags HTML
-    .replace(/[&<>"']/g, (m) => { // Escapa caracteres especiais
-      const map: Record<string, string> = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-      };
-      return map[m];
-    })
-    .trim();
+  // Remove tags HTML apenas (sem escape duplo que corrompe dados com &)
+  return str.replace(/<[^>]*>?/gm, '').trim();
 };
 
 /**

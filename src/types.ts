@@ -7,6 +7,7 @@ export interface Trainee {
   status: 'active' | 'pending' | 'completed' | 'none';
   email?: string;
   turma?: string;
+  avatar?: string;
 }
 
 export interface ClassItem {

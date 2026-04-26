@@ -105,6 +105,18 @@ export default function App() {
     DataService.ensureAuth();
   }, []);
 
+  // Click-outside para fechar o menu de download
+  useEffect(() => {
+    if (!isDownloadMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target as Node)) {
+        setIsDownloadMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isDownloadMenuOpen]);
+
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -151,36 +163,33 @@ export default function App() {
   }, [isAdmin, selectedClass, selectedTrainee]);
 
   // --- Auto-Save ---
-  const triggerAutoSave = useCallback(() => {
+  // Usa refs para evitar cascata de recriação de callbacks
+  const dataForSaveRef = useRef({ tableRows, userStatus, milestoneEvaluations });
+  dataForSaveRef.current = { tableRows, userStatus, milestoneEvaluations };
+
+  useEffect(() => {
     if (!hasLoadedDataFromHook || !selectedTrainee) return;
-    
-    // Calcula as horas baseado no formulário para comparação
-    const currentProgressHours = tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
-
-    // Compara os dados atuais com a última versão do servidor
-    const currentData = JSON.stringify({
-      tableRows,
-      status: userStatus,
-      milestoneEvaluations,
-      horasAcumuladas: currentProgressHours
-    });
-
-    if (currentData === lastServerDataRef.current) {
-      // Se os dados são iguais aos do servidor, não precisamos salvar
-      return;
-    }
 
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    setAutoSaveStatus('saving');
-    
+
     autoSaveTimerRef.current = setTimeout(async () => {
+      const { tableRows: rows, userStatus: status, milestoneEvaluations: evals } = dataForSaveRef.current;
+      const currentProgressHours = rows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
+
+      const currentData = JSON.stringify({
+        tableRows: rows,
+        status: status,
+        milestoneEvaluations: evals,
+        horasAcumuladas: currentProgressHours
+      });
+
+      if (currentData === lastServerDataRef.current) return;
+
+      setAutoSaveStatus('saving');
       try {
-        const progressHours = userStatus === 'efetivado' ? 432 : currentProgressHours;
-        await DataService.saveStageData(selectedTrainee, progressHours, userStatus, tableRows, milestoneEvaluations);
-        
-        // Atualiza a referência local após um salvamento bem-sucedido
+        const progressHours = status === 'efetivado' ? 432 : currentProgressHours;
+        await DataService.saveStageData(selectedTrainee, progressHours, status, rows, evals);
         lastServerDataRef.current = currentData;
-        
         setAutoSaveStatus('saved');
         setTimeout(() => setAutoSaveStatus('idle'), 2000);
       } catch (e) {
@@ -188,9 +197,11 @@ export default function App() {
         setAutoSaveStatus('idle');
       }
     }, 2000);
-  }, [selectedTrainee, tableRows, userStatus, milestoneEvaluations, hasLoadedDataFromHook, lastServerDataRef]);
 
-  useEffect(() => { triggerAutoSave(); }, [tableRows, userStatus, milestoneEvaluations, triggerAutoSave]);
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [tableRows, userStatus, milestoneEvaluations, hasLoadedDataFromHook, selectedTrainee, lastServerDataRef]);
 
   // --- Handlers de UI ---
   const handleLogout = useCallback(() => {
@@ -276,10 +287,10 @@ export default function App() {
           <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1.5 hover:bg-background rounded-lg transition-colors"><ChevronRight className="w-4 h-4" /></button>
         </div>
         <div className="grid grid-cols-7 gap-1">
-          {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => <div key={d} className="text-[10px] font-black text-content-muted text-center py-1">{d}</div>)}
+          {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-[10px] font-black text-content-muted text-center py-1">{d}</div>)}
           {days.map(day => (
             <button
-              key={day.toString()}
+              key={day.toISOString()}
               onClick={() => {
                 updateRow(rowId, 'data', format(day, 'yyyy-MM-dd'));
                 setOpenDropdownId(null);

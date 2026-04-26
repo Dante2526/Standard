@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Briefcase } from 'lucide-react';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
@@ -23,6 +23,9 @@ interface LoginViewProps {
   setFormData: (v: any | ((prev: any) => any)) => void;
 }
 
+const MAX_ATTEMPTS = 5;
+const COOLDOWN_MS = 30000;
+
 const LoginView = memo(({
   isDarkMode,
   setIsDarkMode,
@@ -38,10 +41,20 @@ const LoginView = memo(({
   setSelectedTrainee,
   setFormData
 }: LoginViewProps) => {
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const failedAttemptsRef = useRef(0);
+  const cooldownTimerRef = useRef<any>(null);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const input = loginEmail.trim().toLowerCase();
     if (!input) return;
+
+    // Rate limiting
+    if (failedAttemptsRef.current >= MAX_ATTEMPTS) {
+      setLoginError(`Muitas tentativas. Aguarde ${Math.ceil(cooldownRemaining / 1000)}s.`);
+      return;
+    }
     
     setIsLoadingLogin(true);
     setLoginError('');
@@ -60,9 +73,11 @@ const LoginView = memo(({
           setUserName(rawName.split(' ')[0].toUpperCase());
           setIsAdmin(true);
           setIsLoggedIn(true);
+          failedAttemptsRef.current = 0; // Reset on success
           return;
         }
         setLoginError('E-mail administrativo não encontrado.');
+        failedAttemptsRef.current++;
       } else {
         // 2. Acesso Colaborador: Verifica se é matrícula em alguma turma
         const turmas = ['turma a', 'turma b', 'turma c', 'turma d'];
@@ -103,13 +118,32 @@ const LoginView = memo(({
             return;
           }
         }
-        if (!found) setLoginError('Matrícula não encontrada.');
+        if (!found) {
+          setLoginError('Matrícula não encontrada.');
+          failedAttemptsRef.current++;
+        }
       }
     } catch (error: any) {
       console.error("Erro ao fazer login:", error);
       setLoginError(error.message || 'Erro de conexão com o banco de dados.');
     } finally {
       setIsLoadingLogin(false);
+      // Se atingiu o limite, inicia cooldown
+      if (failedAttemptsRef.current >= MAX_ATTEMPTS && !cooldownTimerRef.current) {
+        let remaining = COOLDOWN_MS;
+        setCooldownRemaining(remaining);
+        cooldownTimerRef.current = setInterval(() => {
+          remaining -= 1000;
+          setCooldownRemaining(remaining);
+          if (remaining <= 0) {
+            clearInterval(cooldownTimerRef.current);
+            cooldownTimerRef.current = null;
+            failedAttemptsRef.current = 0;
+            setCooldownRemaining(0);
+            setLoginError('');
+          }
+        }, 1000);
+      }
     }
   };
 

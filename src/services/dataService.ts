@@ -18,6 +18,30 @@ import * as XLSX from 'xlsx';
 import { sanitizeString } from '../utils/securityUtils';
 
 /**
+ * Helper: Ordena documentos Firestore por uploadedAt (mais recente primeiro).
+ */
+const sortDocsByUploadedAt = (docs: any[]) => {
+  return [...docs].sort((a: any, b: any) => {
+    const tA = a.data().uploadedAt?.toMillis?.() || 0;
+    const tB = b.data().uploadedAt?.toMillis?.() || 0;
+    return tB - tA;
+  });
+};
+
+/**
+ * Helper: Encontra o índice da linha de cabeçalho em parsedData.
+ */
+const findHeaderRow = (parsedData: any[], keywords: string[]): number => {
+  let headerIdx = 0;
+  while (headerIdx < parsedData.length) {
+    const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
+    if (hRow.some((h: string) => keywords.some(kw => h.includes(kw)))) break;
+    headerIdx++;
+  }
+  return headerIdx;
+};
+
+/**
  * Garante que o usuário está autenticado anonimamente em ambos os bancos.
  */
 export const ensureAuth = async () => {
@@ -47,7 +71,11 @@ export const saveStageData = async (
   if (!trainee) return;
   
   try {
-    await setDoc(doc(newDb, 'estagios', trainee.matricula), {
+    const docRef = doc(newDb, 'estagios', trainee.matricula);
+    
+    // Verifica se o documento já existe para preservar dataInicio
+    const existingDoc = await getDoc(docRef);
+    const payload: any = {
       matricula: trainee.matricula,
       nome: trainee.name,
       horasAcumuladas: progressHours,
@@ -70,9 +98,15 @@ export const saveStageData = async (
         };
         return acc;
       }, {} as MilestoneEvaluations),
-      dataInicio: format(new Date(), 'yyyy-MM-dd'),
       ultimaAtualizacao: new Date().toISOString()
-    }, { merge: true });
+    };
+
+    // Só define dataInicio quando o documento é criado pela primeira vez
+    if (!existingDoc.exists()) {
+      payload.dataInicio = format(new Date(), 'yyyy-MM-dd');
+    }
+
+    await setDoc(docRef, payload, { merge: true });
   } catch (error) {
     console.error("Erro ao salvar dados de estágio:", error);
     throw error;
@@ -850,9 +884,10 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
     });
 
     const targetTurma = clsId.split(' ').pop()?.toUpperCase() || '';
-    const qStage = collection(newDb, 'estagios');
+    const qStage = query(collection(newDb, 'estagios'), where('turma', '==', targetTurma));
     
     const unsubStage = onSnapshot(qStage, (snap) => {
+      stageDataMap = {}; // Reset para evitar dados stale ao filtrar
       snap.docs.forEach(d => {
         stageDataMap[d.id] = d.data();
       });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Trainee } from '../types';
 import { fetchDelayedTrainingsForClass } from '../services/dataService';
 
@@ -6,7 +6,18 @@ export const useDelayedTrainings = (trainees: Trainee[]) => {
   const [delayedMap, setDelayedMap] = useState<Record<string, any[]>>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  // Estabiliza a referência usando as matrículas como key
+  const traineeKeyRef = useRef('');
+  const traineesRef = useRef<Trainee[]>([]);
+
+  const currentKey = trainees.map(t => t.matricula).sort().join(',');
+
   useEffect(() => {
+    // Só re-executa se as matrículas mudaram de verdade
+    if (currentKey === traineeKeyRef.current) return;
+    traineeKeyRef.current = currentKey;
+    traineesRef.current = trainees;
+
     let isMounted = true;
 
     const loadDelayed = async () => {
@@ -34,7 +45,7 @@ export const useDelayedTrainings = (trainees: Trainee[]) => {
     return () => {
       isMounted = false;
     };
-  }, [trainees]);
+  }, [currentKey]);
 
   return { delayedMap, isLoading };
 };
