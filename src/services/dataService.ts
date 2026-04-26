@@ -883,13 +883,16 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
       updateFinalList();
     });
 
-    const targetTurma = clsId.split(' ').pop()?.toUpperCase() || '';
-    const qStage = query(collection(newDb, 'estagios'), where('turma', '==', targetTurma));
+    const qStage = collection(newDb, 'estagios');
     
     const unsubStage = onSnapshot(qStage, (snap) => {
-      stageDataMap = {}; // Reset para evitar dados stale ao filtrar
+      stageDataMap = {};
+      // Só armazena documentos cujas matrículas estão na turma
+      const validMatriculas = new Set(baseTrainees.map(t => t.matricula));
       snap.docs.forEach(d => {
-        stageDataMap[d.id] = d.data();
+        if (validMatriculas.has(d.id) || validMatriculas.size === 0) {
+          stageDataMap[d.id] = d.data();
+        }
       });
       updateFinalList();
     });
