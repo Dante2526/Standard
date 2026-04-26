@@ -1,8 +1,10 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, User as UserIcon, Check, GraduationCap } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Check, GraduationCap, LayoutGrid, Network } from 'lucide-react';
 import { Trainee } from '../types';
 import Footer from './Footer';
+import DelayedTrainingsColmeia from './DelayedTrainingsColmeia';
+import { useDelayedTrainings } from '../hooks/useDelayedTrainings';
 
 interface TraineesListViewProps {
   selectedClass: string | null;
@@ -53,6 +55,9 @@ const TraineesListView = memo(({
     }
   };
 
+  const [activeTab, setActiveTab] = useState<'grid' | 'colmeia'>('grid');
+  const { delayedMap, isLoading: isLoadingDelayed } = useDelayedTrainings(activeTab === 'colmeia' ? trainees : []);
+
   return (
     <motion.div 
       key="trainees"
@@ -81,6 +86,34 @@ const TraineesListView = memo(({
           </div>
         </div>
 
+        {/* --- Abas de Navegação --- */}
+        {!isLoading && trainees.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-8 custom-scrollbar no-scrollbar scroll-smooth">
+            <button
+              onClick={() => setActiveTab('grid')}
+              className={`px-6 py-2.5 rounded-[18px] text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+                activeTab === 'grid' 
+                  ? 'bg-blue-600 text-white shadow-md' 
+                  : 'bg-surface border border-border-subtle text-content-muted hover:bg-background'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              Visão Geral
+            </button>
+            <button
+              onClick={() => setActiveTab('colmeia')}
+              className={`px-6 py-2.5 rounded-[18px] text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+                activeTab === 'colmeia' 
+                  ? 'bg-red-600 text-white shadow-md shadow-red-500/20' 
+                  : 'bg-surface border border-border-subtle text-content-muted hover:bg-background'
+              }`}
+            >
+              <Network className="w-4 h-4" />
+              Visão de Atrasos
+            </button>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex flex-col lg:flex-row gap-6 items-start">
             <div className="lg:order-2 w-full lg:w-8 h-[400px] bg-surface rounded-2xl border border-border-subtle animate-pulse hidden lg:block" />
@@ -95,6 +128,13 @@ const TraineesListView = memo(({
             </div>
             <p className="text-content-muted font-bold uppercase tracking-widest text-xs opacity-50">Nenhum colaborador encontrado nesta turma</p>
           </div>
+        ) : activeTab === 'colmeia' ? (
+          <DelayedTrainingsColmeia 
+            trainees={trainees} 
+            delayedMap={delayedMap} 
+            isLoading={isLoadingDelayed} 
+            onSelectTrainee={onSelectTrainee} 
+          />
         ) : (
           <div className="flex flex-col lg:flex-row gap-6 relative items-start">
             <div className="lg:order-2 lg:sticky lg:top-8 flex lg:flex-col flex-wrap justify-center gap-1 p-2 bg-surface rounded-2xl border border-border-subtle shadow-sm z-10 w-full lg:w-auto">

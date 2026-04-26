@@ -249,6 +249,98 @@ export const subscribeToRealTrainings = (trainee: Trainee, onUpdate: (data: any[
 };
 
 /**
+ * Busca todos os treinamentos atrasados de uma lista de colaboradores em lote.
+ * Retorna um objeto mapeando a matrícula do colaborador para a lista de seus treinamentos atrasados.
+ */
+export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promise<Record<string, any[]>> => {
+  if (trainees.length === 0) return {};
+
+  const q = query(collection(newDb, 'global_files'), where('type', '==', 'treinamento'));
+  const snap = await getDocs(q);
+  if (snap.empty) return {};
+
+  const sortedDocs = snap.docs.sort((a: any, b: any) => {
+    const tA = a.data().uploadedAt?.toMillis?.() || 0;
+    const tB = b.data().uploadedAt?.toMillis?.() || 0;
+    return tB - tA;
+  });
+  const fileData = sortedDocs[0].data();
+  const parsedData = await loadParsedDataForDoc(fileData);
+
+  if (!parsedData || parsedData.length === 0) return {};
+
+  let headerIdx = 0;
+  while (headerIdx < parsedData.length) {
+    const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
+    if (hRow.some((h: string) => h.includes('matrícula') || h.includes('empregado') || h.includes('treinamento'))) {
+      break; 
+    }
+    headerIdx++;
+  }
+
+  if (headerIdx >= parsedData.length) return {};
+
+  const headers = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
+  const idxNome = headers.findIndex((h: string) => h.includes('nome') || h.includes('empregado') || h.includes('colaborador'));
+  const idxMatricula = headers.findIndex((h: string) => h.includes('matrícula') || h.includes('matricula') || h.includes('id'));
+  const idxTitulo = headers.findIndex((h: string) => h.includes('treinamento') || h.includes('curso') || h.includes('título'));
+  const idxStatus = headers.findIndex((h: string) => h.includes('status') || h.includes('situação'));
+  const idxDate = headers.findIndex((h: string) => h.includes('data') || h.includes('vencimento') || h.includes('realização'));
+  const idxDaysLeft = headers.findIndex((h: string) => h.includes('dias') || h.includes('prazo'));
+
+  const results: Record<string, any[]> = {};
+  trainees.forEach(t => { results[t.matricula] = []; });
+
+  // Cria um mapa para busca rápida por matrícula
+  const traineeMap = new Map<string, Trainee>();
+  trainees.forEach(t => {
+    if (t.matricula) traineeMap.set(t.matricula.toString().trim(), t);
+  });
+
+  // Itera os dados globais uma única vez
+  for (let i = headerIdx + 1; i < parsedData.length; i++) {
+    const row = parsedData[i];
+    const rowMatricula = idxMatricula >= 0 ? (row.colunas[idxMatricula] || '').toString().trim() : (row.colunas[1] || '').toString().trim();
+    
+    // Se a matrícula existir na nossa turma
+    if (rowMatricula && traineeMap.has(rowMatricula)) {
+      const statusRaw = idxStatus >= 0 ? (row.colunas[idxStatus] || '').toString().trim() : (row.colunas[4] || '').toString().trim();
+      const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
+      
+      // Só nos interessam os não concluídos
+      if (!isCompleted) {
+        const daysLeftStr = idxDaysLeft >= 0 ? (row.colunas[idxDaysLeft] || '').toString().trim() : (row.colunas[6] || '').toString().trim();
+        const daysLeft = parseInt(daysLeftStr);
+        
+        // Se estiver atrasado (dias restantes < 0)
+        if (!isNaN(daysLeft) && daysLeft < 0) {
+          const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
+          let date = idxDate >= 0 ? (row.colunas[idxDate] || '').toString().trim() : (row.colunas[5] || '').toString().trim();
+          
+          if (!date && !isNaN(daysLeft)) {
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + daysLeft);
+            date = targetDate.toLocaleDateString('pt-BR');
+          }
+          if (!date) date = 'Sem data';
+
+          results[rowMatricula].push({
+            title: sanitizeString(title),
+            status: 'pending',
+            date: sanitizeString(date),
+            priority: 'Alta', // Sempre alta pois está atrasado
+            daysRemaining: daysLeft
+          });
+        }
+      }
+    }
+  }
+
+  return results;
+};
+
+/**
  * Estima o tamanho em bytes de um objeto para verificar limite do Firestore.
  */
 const estimateDocSize = (data: any): number => {
