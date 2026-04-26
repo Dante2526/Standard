@@ -92,20 +92,21 @@ const DelayedTrainingsColmeia = memo(({
                 
                 {/* SVG Connections (Desktop Only) */}
                 <div className="hidden md:block absolute left-[-48px] top-0 bottom-0 w-12 pointer-events-none">
-                   <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0 }}>
+                   <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}>
                      {delays.map((_, i) => {
                        const total = delays.length;
                        const spacing = 100 / total;
-                       const yPos = `${(spacing / 2) + (i * spacing)}%`;
+                       const yPos = (spacing / 2) + (i * spacing);
                        
                        return (
                          <path 
                            key={i}
-                           d={`M 0 50% C 24 50%, 24 ${yPos}, 48 ${yPos}`} 
+                           d={`M 0 50 C 50 50, 50 ${yPos}, 100 ${yPos}`} 
                            fill="none" 
-                           stroke="rgba(239, 68, 68, 0.3)" 
-                           strokeWidth="3"
-                           strokeDasharray="6 4"
+                           stroke="rgba(239, 68, 68, 0.4)" 
+                           strokeWidth="2"
+                           strokeDasharray="4 4"
+                           vectorEffect="non-scaling-stroke"
                          />
                        );
                      })}
