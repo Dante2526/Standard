@@ -278,7 +278,7 @@ export default function App() {
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="absolute z-[100] mt-2 p-4 bg-surface border border-border-subtle rounded-2xl shadow-2xl min-w-[280px] left-1/2 -translate-x-1/2"
+        className="absolute z-[100] mt-2 p-6 bg-surface border border-border-subtle rounded-2xl shadow-2xl min-w-[300px] left-1/2 -translate-x-1/2"
         ref={datePickerRef}
       >
         <div className="flex items-center justify-between mb-4">
