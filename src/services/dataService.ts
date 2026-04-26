@@ -81,6 +81,7 @@ export const saveStageData = async (
       nome: trainee.name,
       horasAcumuladas: progressHours,
       status: userStatus,
+      horasPrevistas: horasPrevistas,
       turma: trainee.turma || '',
       tableRows: tableRows.map(row => ({
         ...row,
