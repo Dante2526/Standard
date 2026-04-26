@@ -109,20 +109,35 @@ export const updateManualTrainingStatus = async (matricula: string, trainingTitl
 };
 
 /**
- * Processa o snapshot de arquivos globais para extrair treinamentos reais.
+ * Carrega parsedData de um documento, buscando chunks se necessário.
  */
-export const processRealTrainingsFromSnap = (snap: any, trainee: Trainee) => {
-  if (snap.empty) return [];
-
-  const sortedDocs = snap.docs.sort((a: any, b: any) => {
-    const tA = a.data().uploadedAt?.toMillis?.() || 0;
-    const tB = b.data().uploadedAt?.toMillis?.() || 0;
-    return tB - tA;
-  });
-
-  const fileData = sortedDocs[0].data();
-  const parsedData = fileData.parsedData || [];
+const loadParsedDataForDoc = async (fileData: any): Promise<any[]> => {
+  if (!fileData.isChunked) {
+    return fileData.parsedData || [];
+  }
+  // Buscar chunks da subcoleção
+  const chunksQ = query(
+    collection(newDb, 'global_files_chunks'),
+    where('chunkParentId', '==', fileData.chunkParentId)
+  );
+  const chunksSnap = await getDocs(chunksQ);
+  const sortedChunks = chunksSnap.docs
+    .map(d => d.data())
+    .sort((a, b) => a.chunkIndex - b.chunkIndex);
   
+  let allData: any[] = [];
+  for (const chunk of sortedChunks) {
+    allData = allData.concat(chunk.parsedData || []);
+  }
+  return allData;
+};
+
+/**
+ * Processa parsedData para extrair treinamentos reais de um trainee.
+ */
+export const processRealTrainingsFromParsedData = (parsedData: any[], trainee: Trainee) => {
+  if (!parsedData || parsedData.length === 0) return [];
+
   let headerIdx = 0;
   while (headerIdx < parsedData.length) {
     const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
@@ -175,26 +190,70 @@ export const processRealTrainingsFromSnap = (snap: any, trainee: Trainee) => {
 };
 
 /**
- * Busca os treinamentos reais (Promise-based, mantido por compatibilidade).
+ * Compatibilidade: processa snap diretamente (para documentos não-chunked).
+ */
+export const processRealTrainingsFromSnap = (snap: any, trainee: Trainee) => {
+  if (snap.empty) return [];
+  const sortedDocs = snap.docs.sort((a: any, b: any) => {
+    const tA = a.data().uploadedAt?.toMillis?.() || 0;
+    const tB = b.data().uploadedAt?.toMillis?.() || 0;
+    return tB - tA;
+  });
+  const fileData = sortedDocs[0].data();
+  if (fileData.isChunked) return []; // Será tratado pelo fetch async
+  return processRealTrainingsFromParsedData(fileData.parsedData || [], trainee);
+};
+
+/**
+ * Busca os treinamentos reais (Promise-based) com suporte a chunks.
  */
 export const fetchRealTrainings = async (trainee: Trainee) => {
   const q = query(collection(newDb, 'global_files'), where('type', '==', 'treinamento'));
   const snap = await getDocs(q);
-  return processRealTrainingsFromSnap(snap, trainee);
+  if (snap.empty) return [];
+  const sortedDocs = snap.docs.sort((a: any, b: any) => {
+    const tA = a.data().uploadedAt?.toMillis?.() || 0;
+    const tB = b.data().uploadedAt?.toMillis?.() || 0;
+    return tB - tA;
+  });
+  const fileData = sortedDocs[0].data();
+  const parsedData = await loadParsedDataForDoc(fileData);
+  return processRealTrainingsFromParsedData(parsedData, trainee);
 };
 
 /**
- * Assina atualizações de treinamentos reais.
+ * Assina atualizações de treinamentos reais (com suporte a chunks).
  */
 export const subscribeToRealTrainings = (trainee: Trainee, onUpdate: (data: any[]) => void) => {
   const q = query(collection(newDb, 'global_files'), where('type', '==', 'treinamento'));
-  return onSnapshot(q, (snap) => {
-    onUpdate(processRealTrainingsFromSnap(snap, trainee));
+  return onSnapshot(q, async (snap) => {
+    if (snap.empty) { onUpdate([]); return; }
+    const sortedDocs = snap.docs.sort((a: any, b: any) => {
+      const tA = a.data().uploadedAt?.toMillis?.() || 0;
+      const tB = b.data().uploadedAt?.toMillis?.() || 0;
+      return tB - tA;
+    });
+    const fileData = sortedDocs[0].data();
+    const parsedData = await loadParsedDataForDoc(fileData);
+    onUpdate(processRealTrainingsFromParsedData(parsedData, trainee));
   });
 };
 
 /**
+ * Estima o tamanho em bytes de um objeto para verificar limite do Firestore.
+ */
+const estimateDocSize = (data: any): number => {
+  return new TextEncoder().encode(JSON.stringify(data)).length;
+};
+
+/**
+ * Limite seguro por documento Firestore (800KB para margem de segurança).
+ */
+const FIRESTORE_SAFE_LIMIT = 800 * 1024;
+
+/**
  * Processa e faz o upload de um arquivo CSV ou Excel global.
+ * Para arquivos grandes, divide automaticamente em múltiplos documentos (chunks).
  */
 export const uploadGlobalFile = async (file: File, type: 'kaizen' | 'treinamento', userEmail: string) => {
   try {
@@ -274,14 +333,65 @@ export const uploadGlobalFile = async (file: File, type: 'kaizen' | 'treinamento
       colunas: row
     }));
 
-    await addDoc(collection(newDb, 'global_files'), {
-      name: file.name,
-      type: type,
-      uploadedAt: serverTimestamp(),
-      uploadedBy: userEmail,
-      isRawData: true,
-      parsedData: structuredData,
-    });
+    // Verificar se o documento ultrapassa o limite do Firestore
+    const estimatedSize = estimateDocSize(structuredData);
+
+    if (estimatedSize <= FIRESTORE_SAFE_LIMIT) {
+      // Cabe em um único documento
+      await addDoc(collection(newDb, 'global_files'), {
+        name: file.name,
+        type: type,
+        uploadedAt: serverTimestamp(),
+        uploadedBy: userEmail,
+        isRawData: true,
+        parsedData: structuredData,
+      });
+    } else {
+      // Arquivo grande: dividir em chunks
+      const parentId = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      const chunks: typeof structuredData[] = [];
+      let currentChunk: typeof structuredData = [];
+      let currentChunkSize = 0;
+
+      for (const row of structuredData) {
+        const rowSize = estimateDocSize(row);
+        if (currentChunkSize + rowSize > FIRESTORE_SAFE_LIMIT && currentChunk.length > 0) {
+          chunks.push(currentChunk);
+          currentChunk = [];
+          currentChunkSize = 0;
+        }
+        currentChunk.push(row);
+        currentChunkSize += rowSize;
+      }
+      if (currentChunk.length > 0) {
+        chunks.push(currentChunk);
+      }
+
+      console.log(`Arquivo grande (${(estimatedSize / 1024).toFixed(0)}KB). Dividindo em ${chunks.length} chunks...`);
+
+      // Salvar documento principal (sem parsedData, apenas metadados)
+      await addDoc(collection(newDb, 'global_files'), {
+        name: file.name,
+        type: type,
+        uploadedAt: serverTimestamp(),
+        uploadedBy: userEmail,
+        isRawData: true,
+        isChunked: true,
+        chunkParentId: parentId,
+        totalChunks: chunks.length,
+        totalRows: structuredData.length,
+      });
+
+      // Salvar cada chunk como documento separado
+      for (let i = 0; i < chunks.length; i++) {
+        await addDoc(collection(newDb, 'global_files_chunks'), {
+          chunkParentId: parentId,
+          chunkIndex: i,
+          type: type,
+          parsedData: chunks[i],
+        });
+      }
+    }
   } catch (error) {
     console.error("Erro no upload do arquivo global:", error);
     throw error;
@@ -413,21 +523,46 @@ export const processKaizenDataFromSnap = (snap: any, trainee: Trainee) => {
 };
 
 /**
- * Busca dados de Kaizen (Promise-based).
+ * Busca dados de Kaizen (Promise-based) com suporte a chunks.
  */
 export const fetchKaizenData = async (trainee: Trainee) => {
   const q = query(collection(newDb, 'global_files'), where('type', '==', 'kaizen'));
   const snap = await getDocs(q);
+  if (snap.empty) return { _debug: [] };
+  const sortedDocs = snap.docs.sort((a: any, b: any) => {
+    const tA = a.data().uploadedAt?.toMillis?.() || 0;
+    const tB = b.data().uploadedAt?.toMillis?.() || 0;
+    return tB - tA;
+  });
+  const fileData = sortedDocs[0].data();
+  if (fileData.isChunked) {
+    const parsedData = await loadParsedDataForDoc(fileData);
+    const mockSnap = { empty: false, docs: [{ data: () => ({ ...fileData, parsedData, isChunked: false }) }] };
+    return processKaizenDataFromSnap(mockSnap, trainee);
+  }
   return processKaizenDataFromSnap(snap, trainee);
 };
 
 /**
- * Assina atualizações de dados de Kaizen.
+ * Assina atualizações de dados de Kaizen (com suporte a chunks).
  */
 export const subscribeToKaizenData = (trainee: Trainee, onUpdate: (data: any) => void) => {
   const q = query(collection(newDb, 'global_files'), where('type', '==', 'kaizen'));
-  return onSnapshot(q, (snap) => {
-    onUpdate(processKaizenDataFromSnap(snap, trainee));
+  return onSnapshot(q, async (snap) => {
+    if (snap.empty) { onUpdate({ _debug: [] }); return; }
+    const sortedDocs = snap.docs.sort((a: any, b: any) => {
+      const tA = a.data().uploadedAt?.toMillis?.() || 0;
+      const tB = b.data().uploadedAt?.toMillis?.() || 0;
+      return tB - tA;
+    });
+    const fileData = sortedDocs[0].data();
+    if (fileData.isChunked) {
+      const parsedData = await loadParsedDataForDoc(fileData);
+      const mockSnap = { empty: false, docs: [{ data: () => ({ ...fileData, parsedData, isChunked: false }) }] };
+      onUpdate(processKaizenDataFromSnap(mockSnap, trainee));
+    } else {
+      onUpdate(processKaizenDataFromSnap(snap, trainee));
+    }
   });
 };
 

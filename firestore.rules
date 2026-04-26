@@ -4,6 +4,22 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: kaizens
+    // Document ID: auto-generated
+    // Fields:
+    //   - matricula: string (required, max 50 chars)
+    //   - title: string (required, max 200 chars)
+    //   - date: string (required, ISO 8601 date format)
+    //   - status: string (required, max 50 chars)
+    //   - impact: string (required, max 100 chars)
+    //   - createdAt: string (required, ISO 8601 date-time format)
+    //
+    // ===============================================================
+
+    // ===============================================================
     // Helper Functions
     // ===============================================================
     
@@ -13,6 +29,10 @@ service cloud.firestore {
 
     function hasRequiredFields(fields) {
       return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
     }
 
     function validStringLength(field, minLen, maxLen) {
@@ -26,54 +46,57 @@ service cloud.firestore {
         dateStr.matches("^\\d{4}-\\d{2}-\\d{2}.*$");
     }
 
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidKaizen() {
+      return hasRequiredFields(['matricula', 'title', 'date', 'status', 'impact', 'createdAt']) &&
+             hasOnlyAllowedFields(['matricula', 'title', 'date', 'status', 'impact', 'createdAt']) &&
+             validStringLength('matricula', 1, 50) &&
+             validStringLength('title', 1, 200) &&
+             isValidDateString(request.resource.data.date) &&
+             validStringLength('status', 1, 50) &&
+             validStringLength('impact', 1, 100) &&
+             isValidDateString(request.resource.data.createdAt);
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
 
     match /kaizens/{kaizenId} {
-      // Bloqueia acesso se não estiver autenticado
       allow read: if isAuthenticated();
-      
-      // Validação rigorosa na criação e atualização
-      allow create, update: if isAuthenticated() && 
-        hasRequiredFields(['matricula', 'title', 'date', 'status', 'impact', 'createdAt']) &&
-        validStringLength('matricula', 1, 50) &&
-        validStringLength('title', 1, 500); // Título pode ser longo
-      
+      allow create: if isAuthenticated() && isValidKaizen();
+      allow update: if isAuthenticated() && isValidKaizen() && areImmutableFieldsUnchanged(['createdAt']);
       allow delete: if isAuthenticated();
     }
 
     match /estagios/{matricula} {
       allow read: if isAuthenticated();
-      
-      // Validação de estrutura para evitar corrupção de dados
-      allow create, update: if isAuthenticated() && 
-        hasRequiredFields(['matricula', 'horasAcumuladas', 'status', 'tableRows']) &&
-        request.resource.data.horasAcumuladas is number &&
-        request.resource.data.tableRows is list;
-        
+      allow create, update: if isAuthenticated() && hasRequiredFields(['matricula', 'horasAcumuladas', 'status', 'dataInicio', 'ultimaAtualizacao']);
       allow delete: if isAuthenticated();
     }
 
     match /global_files/{fileId} {
-      // FECHADO: Apenas usuários autenticados podem ler arquivos globais
-      // Isso protege contra vazamento de dados de planilhas para o público geral
-      allow read: if isAuthenticated();
-      
-      // Apenas usuários autenticados podem subir arquivos
+      allow read: if true;
       allow write: if isAuthenticated();
     }
 
-    // Regras padrão para outras coleções (bloqueio total por padrão)
-    match /{document=**} {
-      allow read, write: if false;
+    // Regra necessária para suportar arquivos grandes divididos em chunks
+    match /global_files_chunks/{chunkId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
-    
-    // Abrir coleções legadas do banco antigo apenas para leitura autenticada
-    match /administrators/{adminId} { allow read: if isAuthenticated(); }
-    match /turma a/{id} { allow read: if isAuthenticated(); }
-    match /turma b/{id} { allow read: if isAuthenticated(); }
-    match /turma c/{id} { allow read: if isAuthenticated(); }
-    match /turma d/{id} { allow read: if isAuthenticated(); }
+
+    // NOVA REGRA PARA OS LINKS EXTERNOS
+    match /web/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Apenas leitura pelo aplicativo
+    }
   }
 }
