@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Upload, X, Check, FileSpreadsheet, FileBarChart } from 'lucide-react';
+import { Upload, X, Check, FileSpreadsheet, FileBarChart, Trash2 } from 'lucide-react';
 import * as DataService from '../services/dataService';
 
 interface GlobalUploadModalProps {
@@ -10,34 +10,51 @@ interface GlobalUploadModalProps {
 }
 
 const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, loginEmail }) => {
-  const [kaizenFile, setKaizenFile] = useState<File | null>(null);
-  const [trainingFile, setTrainingFile] = useState<File | null>(null);
+  const [kaizenFiles, setKaizenFiles] = useState<File[]>([]);
+  const [trainingFiles, setTrainingFiles] = useState<File[]>([]);
   const [uploadingKaizen, setUploadingKaizen] = useState(false);
   const [uploadingTraining, setUploadingTraining] = useState(false);
   const [successKaizen, setSuccessKaizen] = useState(false);
   const [successTraining, setSuccessTraining] = useState(false);
+  const [progressKaizen, setProgressKaizen] = useState('');
+  const [progressTraining, setProgressTraining] = useState('');
 
   const handleUpload = async (type: 'kaizen' | 'treinamento') => {
-    const file = type === 'kaizen' ? kaizenFile : trainingFile;
-    if (!file) return;
+    const files = type === 'kaizen' ? kaizenFiles : trainingFiles;
+    if (!files.length) return;
 
     if (type === 'kaizen') setUploadingKaizen(true);
     else setUploadingTraining(true);
 
     try {
-      await DataService.uploadGlobalFile(file, type, loginEmail);
+      for (let i = 0; i < files.length; i++) {
+        const label = `Processando ${i + 1} de ${files.length}...`;
+        if (type === 'kaizen') setProgressKaizen(label);
+        else setProgressTraining(label);
+
+        await DataService.uploadGlobalFile(files[i], type, loginEmail);
+      }
+
       if (type === 'kaizen') setSuccessKaizen(true);
       else setSuccessTraining(true);
       
       setTimeout(() => {
-        if (type === 'kaizen') { setSuccessKaizen(false); setKaizenFile(null); }
-        else { setSuccessTraining(false); setTrainingFile(null); }
+        if (type === 'kaizen') { setSuccessKaizen(false); setKaizenFiles([]); setProgressKaizen(''); }
+        else { setSuccessTraining(false); setTrainingFiles([]); setProgressTraining(''); }
       }, 3000);
     } catch (e: any) {
       alert(`Ocorreu um erro no upload (${type}).\n\nIsso geralmente acontece se o arquivo estiver salvo com Rótulos de Confidencialidade ou Criptografado.\nPor favor, abra o arquivo, clique em 'Salvar Como' e tente enviá-lo novamente, ou salve no formato .CSV.\n\nDetalhe técnico: ${e.message}`);
     } finally {
-      if (type === 'kaizen') setUploadingKaizen(false);
-      else setUploadingTraining(false);
+      if (type === 'kaizen') { setUploadingKaizen(false); setProgressKaizen(''); }
+      else { setUploadingTraining(false); setProgressTraining(''); }
+    }
+  };
+
+  const removeFile = (type: 'kaizen' | 'treinamento', index: number) => {
+    if (type === 'kaizen') {
+      setKaizenFiles(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setTrainingFiles(prev => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -79,50 +96,65 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
                   <h3 className="text-xl font-bold tracking-tight">Treinamentos</h3>
                 </div>
                 <p className="text-sm font-medium text-content-muted mb-6">
-                  Carregue a planilha atualizada com os registros de treinamento de todos os colaboradores.
+                  Carregue as planilhas com os registros de treinamento. Você pode selecionar múltiplos arquivos.
                 </p>
 
                 {successTraining ? (
                   <div className="flex-1 flex flex-col items-center justify-center py-8 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-200 dark:border-emerald-800">
                     <Check className="w-10 h-10 mb-2" />
-                    <p className="font-bold">Planilha Processada!</p>
+                    <p className="font-bold">{trainingFiles.length > 1 ? `${trainingFiles.length} Planilhas Processadas!` : 'Planilha Processada!'}</p>
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col justify-between space-y-4">
-                    <div className="border-2 border-dashed border-blue-300 dark:border-blue-700/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors cursor-pointer relative h-40">
+                    <div className="border-2 border-dashed border-blue-300 dark:border-blue-700/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors cursor-pointer relative min-h-[10rem]">
                       <input 
                         type="file" 
-                        accept=".csv"
+                        accept=".csv,.xlsx,.xls"
+                        multiple
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            setTrainingFile(e.target.files[0]);
+                          if (e.target.files && e.target.files.length > 0) {
+                            setTrainingFiles(prev => [...prev, ...Array.from(e.target.files!)]);
                           }
                         }}
                       />
                       <Upload className="w-8 h-8 text-blue-500 mb-2" />
-                      {trainingFile ? (
-                        <p className="text-sm font-bold text-blue-700 dark:text-blue-300 truncate w-full px-4">{trainingFile.name}</p>
+                      {trainingFiles.length > 0 ? (
+                        <p className="text-sm font-bold text-blue-700 dark:text-blue-300">{trainingFiles.length} arquivo(s) selecionado(s)</p>
                       ) : (
                         <>
-                          <p className="text-sm font-bold text-blue-600 dark:text-blue-400">Clique ou arraste um arquivo</p>
-                          <p className="text-xs text-blue-500/70 mt-1">.CSV apenas</p>
+                          <p className="text-sm font-bold text-blue-600 dark:text-blue-400">Clique ou arraste arquivos</p>
+                          <p className="text-xs text-blue-500/70 mt-1">.CSV ou .XLSX (múltiplos)</p>
                         </>
                       )}
                     </div>
 
+                    {/* File list */}
+                    {trainingFiles.length > 0 && (
+                      <div className="max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
+                        {trainingFiles.map((f, i) => (
+                          <div key={i} className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-xl text-xs">
+                            <span className="font-bold text-blue-700 dark:text-blue-300 truncate flex-1 mr-2">{f.name}</span>
+                            <button onClick={() => removeFile('treinamento', i)} className="text-red-400 hover:text-red-600 shrink-0 p-0.5">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <button
                       onClick={() => handleUpload('treinamento')}
-                      disabled={!trainingFile || uploadingTraining}
+                      disabled={trainingFiles.length === 0 || uploadingTraining}
                       className="w-full py-4 bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] text-white rounded-2xl font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-black/20 border border-white/10"
                     >
                       {uploadingTraining ? (
                         <>
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Processando...
+                          {progressTraining || 'Processando...'}
                         </>
                       ) : (
-                        'Atualizar Base de Treino'
+                        `Atualizar Base de Treino${trainingFiles.length > 1 ? ` (${trainingFiles.length})` : ''}`
                       )}
                     </button>
                   </div>
@@ -136,50 +168,65 @@ const GlobalUploadModal: React.FC<GlobalUploadModalProps> = ({ show, onClose, lo
                   <h3 className="text-xl font-bold tracking-tight">Sistema Kaizen</h3>
                 </div>
                 <p className="text-sm font-medium text-emerald-800/60 dark:text-emerald-200/60 mb-6">
-                  Carregue a base de dados do Kaizen para sincronizar as avaliações no sistema.
+                  Carregue as bases de dados do Kaizen. Você pode selecionar múltiplos arquivos.
                 </p>
 
                 {successKaizen ? (
                   <div className="flex-1 flex flex-col items-center justify-center py-8 text-emerald-600 bg-white dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800">
                     <Check className="w-10 h-10 mb-2" />
-                    <p className="font-bold">Base Kaizen Atualizada!</p>
+                    <p className="font-bold">{kaizenFiles.length > 1 ? `${kaizenFiles.length} Bases Atualizadas!` : 'Base Kaizen Atualizada!'}</p>
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col justify-between space-y-4">
-                    <div className="border-2 border-dashed border-emerald-300 dark:border-emerald-700/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:bg-emerald-100/50 dark:hover:bg-emerald-800/30 transition-colors cursor-pointer relative h-40 bg-white/50 dark:bg-black/10">
+                    <div className="border-2 border-dashed border-emerald-300 dark:border-emerald-700/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:bg-emerald-100/50 dark:hover:bg-emerald-800/30 transition-colors cursor-pointer relative min-h-[10rem] bg-white/50 dark:bg-black/10">
                       <input 
                         type="file" 
-                        accept=".csv"
+                        accept=".csv,.xlsx,.xls"
+                        multiple
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            setKaizenFile(e.target.files[0]);
+                          if (e.target.files && e.target.files.length > 0) {
+                            setKaizenFiles(prev => [...prev, ...Array.from(e.target.files!)]);
                           }
                         }}
                       />
                       <Upload className="w-8 h-8 text-emerald-500 mb-2" />
-                      {kaizenFile ? (
-                        <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300 truncate w-full px-4">{kaizenFile.name}</p>
+                      {kaizenFiles.length > 0 ? (
+                        <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">{kaizenFiles.length} arquivo(s) selecionado(s)</p>
                       ) : (
                         <>
-                          <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Escolha o arquivo Kaizen</p>
-                          <p className="text-xs text-emerald-500/70 mt-1">.CSV apenas</p>
+                          <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Escolha os arquivos Kaizen</p>
+                          <p className="text-xs text-emerald-500/70 mt-1">.CSV ou .XLSX (múltiplos)</p>
                         </>
                       )}
                     </div>
 
+                    {/* File list */}
+                    {kaizenFiles.length > 0 && (
+                      <div className="max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
+                        {kaizenFiles.map((f, i) => (
+                          <div key={i} className="flex items-center justify-between bg-emerald-100 dark:bg-emerald-900/30 px-3 py-1.5 rounded-xl text-xs">
+                            <span className="font-bold text-emerald-700 dark:text-emerald-300 truncate flex-1 mr-2">{f.name}</span>
+                            <button onClick={() => removeFile('kaizen', i)} className="text-red-400 hover:text-red-600 shrink-0 p-0.5">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <button
                       onClick={() => handleUpload('kaizen')}
-                      disabled={!kaizenFile || uploadingKaizen}
+                      disabled={kaizenFiles.length === 0 || uploadingKaizen}
                       className="w-full py-4 bg-gradient-to-br from-[#10b981] to-[#059669] hover:from-[#059669] hover:to-[#047857] text-white rounded-2xl font-black text-sm uppercase transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-black/20 border border-white/10"
                     >
                       {uploadingKaizen ? (
                         <>
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Processando...
+                          {progressKaizen || 'Processando...'}
                         </>
                       ) : (
-                        'Atualizar Base Kaizen'
+                        `Atualizar Base Kaizen${kaizenFiles.length > 1 ? ` (${kaizenFiles.length})` : ''}`
                       )}
                     </button>
                   </div>
