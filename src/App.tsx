@@ -60,6 +60,7 @@ export default function App() {
     tableRows, setTableRows,
     milestoneEvaluations, setMilestoneEvaluations,
     userStatus, setUserStatus,
+    horasPrevistas, setHorasPrevistas,
     realTrainings,
     kaizenData,
     kaizenDebugLog,
@@ -71,12 +72,12 @@ export default function App() {
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isLoadingTrainings, setIsLoadingTrainings] = useState(false);
   
-  const totalHours = 432;
+  const totalHours = horasPrevistas || 432;
   const progressHours = useMemo(() => {
     if (userStatus === 'efetivado') return totalHours;
     const rows = Array.isArray(tableRows) ? tableRows : [];
     return rows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
-  }, [userStatus, tableRows]);
+  }, [userStatus, tableRows, totalHours]);
   
   // --- Estados de UI ---
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
@@ -164,8 +165,8 @@ export default function App() {
 
   // --- Auto-Save ---
   // Usa refs para evitar cascata de recriação de callbacks
-  const dataForSaveRef = useRef({ tableRows, userStatus, milestoneEvaluations });
-  dataForSaveRef.current = { tableRows, userStatus, milestoneEvaluations };
+  const dataForSaveRef = useRef({ tableRows, userStatus, horasPrevistas, milestoneEvaluations });
+  dataForSaveRef.current = { tableRows, userStatus, horasPrevistas, milestoneEvaluations };
 
   useEffect(() => {
     if (!hasLoadedDataFromHook || !selectedTrainee) return;
@@ -173,12 +174,13 @@ export default function App() {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
 
     autoSaveTimerRef.current = setTimeout(async () => {
-      const { tableRows: rows, userStatus: status, milestoneEvaluations: evals } = dataForSaveRef.current;
+      const { tableRows: rows, userStatus: status, horasPrevistas: currentHorasPrevistas, milestoneEvaluations: evals } = dataForSaveRef.current;
       const currentProgressHours = rows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
 
       const currentData = JSON.stringify({
         tableRows: rows,
         status: status,
+        horasPrevistas: currentHorasPrevistas,
         milestoneEvaluations: evals,
         horasAcumuladas: currentProgressHours
       });
@@ -187,8 +189,8 @@ export default function App() {
 
       setAutoSaveStatus('saving');
       try {
-        const progressHours = status === 'efetivado' ? 432 : currentProgressHours;
-        await DataService.saveStageData(selectedTrainee, progressHours, status, rows, evals);
+        const computedProgressHours = status === 'efetivado' ? (currentHorasPrevistas || 432) : currentProgressHours;
+        await DataService.saveStageData(selectedTrainee, computedProgressHours, status, currentHorasPrevistas, rows, evals);
         lastServerDataRef.current = currentData;
         setAutoSaveStatus('saved');
         setTimeout(() => setAutoSaveStatus('idle'), 2000);
@@ -201,7 +203,7 @@ export default function App() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [tableRows, userStatus, milestoneEvaluations, hasLoadedDataFromHook, selectedTrainee, lastServerDataRef]);
+  }, [tableRows, userStatus, horasPrevistas, milestoneEvaluations, hasLoadedDataFromHook, selectedTrainee, lastServerDataRef]);
 
   // --- Handlers de UI ---
   const handleLogout = useCallback(() => {
@@ -400,7 +402,10 @@ export default function App() {
       <div className="min-h-screen bg-background flex flex-col">
         <StatusSelectionView 
           currentStatus={userStatus} 
-          onStatusChange={setUserStatus} 
+          onStatusChange={(status, hours) => {
+            setUserStatus(status);
+            if (hours) setHorasPrevistas(hours);
+          }} 
           isAdmin={isAdmin}
           onBack={() => setSelectedTrainee(null)}
         />
@@ -536,6 +541,8 @@ export default function App() {
               isSaving={isSaving} autoSaveStatus={autoSaveStatus}
               formRef={formRef} renderCalendar={renderCalendar}
               trainee={selectedTrainee!}
+              totalHours={totalHours}
+              onUpdateTotalHours={setHorasPrevistas}
             />
           )}
           {activeTab === 'pending' && (

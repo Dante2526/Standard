@@ -65,6 +65,7 @@ export const saveStageData = async (
   trainee: Trainee, 
   progressHours: number, 
   userStatus: string | null, 
+  horasPrevistas: number | null,
   tableRows: TrainingRow[],
   milestoneEvaluations: MilestoneEvaluations
 ) => {

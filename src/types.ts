@@ -8,6 +8,7 @@ export interface Trainee {
   email?: string;
   turma?: string;
   avatar?: string;
+  horasPrevistas?: number;
 }
 
 export interface ClassItem {

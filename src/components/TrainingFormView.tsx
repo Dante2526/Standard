@@ -17,6 +17,8 @@ interface TrainingFormViewProps {
   formRef: React.RefObject<HTMLDivElement>;
   renderCalendar: (rowId: number, currentDate: string) => React.ReactNode;
   trainee: Trainee;
+  totalHours: number;
+  onUpdateTotalHours: (hours: number) => void;
 }
 
 const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
@@ -30,9 +32,10 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
   autoSaveStatus,
   formRef,
   renderCalendar,
-  trainee
+  trainee,
+  totalHours,
+  onUpdateTotalHours
 }) => {
-  const totalHours = 432;
   const progressHours = tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
   const hoursLeft = Math.max(0, totalHours - progressHours);
 
@@ -56,22 +59,46 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
               <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Nome do Colaborador</span>
               <span className="text-lg font-bold text-content uppercase">{trainee?.name || '---'}</span>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Matrícula</span>
-                <span className="text-base font-bold text-content">{trainee?.matricula || '---'}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Função</span>
-                <span className="text-base font-bold text-content uppercase">{trainee?.funcao || 'N/A'}</span>
-              </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Matrícula</span>
+              <span className="text-base font-bold text-content">{trainee?.matricula || '---'}</span>
             </div>
           </div>
 
           <div className="bg-surface-alt rounded-[22px] p-6 border border-border-subtle grid grid-cols-3 gap-4 shadow-inner">
-            <div className="flex flex-col items-center justify-center text-center">
+            <div className="flex flex-col items-center justify-center text-center relative">
               <span className="text-[9px] font-black text-content-muted uppercase tracking-tighter mb-1">Horas Previstas</span>
-              <span className="text-xl font-black text-content">{totalHours}</span>
+              <button 
+                onClick={() => setOpenDropdownId(openDropdownId === 'horas-previstas' ? null : 'horas-previstas')}
+                className="flex items-center gap-1 hover:bg-background px-3 py-1 rounded-lg transition-colors"
+              >
+                <span className="text-xl font-black text-content">{totalHours}</span>
+                <ChevronDown className="w-4 h-4 text-content-muted" />
+              </button>
+              
+              <AnimatePresence>
+                {openDropdownId === 'horas-previstas' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    className="absolute z-50 top-full mt-2 left-1/2 -translate-x-1/2 bg-surface border border-border-subtle rounded-xl shadow-xl overflow-hidden py-1 min-w-[120px]"
+                  >
+                    {[432, 240].map((hours) => (
+                      <button
+                        key={hours}
+                        onClick={() => {
+                          onUpdateTotalHours(hours);
+                          setOpenDropdownId(null);
+                        }}
+                        className={`w-full text-center px-4 py-3 text-sm transition-colors hover:bg-blue-50 hover:text-blue-600 ${totalHours === hours ? 'bg-blue-50 text-blue-600 font-bold' : 'text-content-muted font-medium'}`}
+                      >
+                        {hours}h
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             <div className="flex flex-col items-center justify-center text-center border-x border-border-subtle px-2">
               <span className="text-[9px] font-black text-content-muted uppercase tracking-tighter mb-1">Horas Realizadas</span>
