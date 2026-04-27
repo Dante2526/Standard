@@ -63,7 +63,7 @@ const DelayedTrainingsColmeia = memo(({
   return (
     <div className="flex flex-col lg:flex-row gap-6 relative items-start">
       {/* Alphabetical Sidebar */}
-      <div className="lg:order-2 self-start sticky top-4 lg:top-8 flex lg:flex-col flex-wrap justify-center gap-1 p-2 bg-surface/90 backdrop-blur-md rounded-2xl border border-border-subtle shadow-sm z-40 w-full lg:w-auto">
+      <div className="lg:fixed lg:right-6 lg:top-1/2 lg:-translate-y-1/2 sticky top-4 flex lg:flex-col flex-wrap justify-center gap-1 p-2 bg-surface/90 backdrop-blur-md rounded-2xl border border-border-subtle shadow-xl z-50 w-full lg:w-auto">
         {Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ').map(letter => {
           const hasTrainees = traineesWithDelays.some(t => t.name.toUpperCase().startsWith(letter));
           return (
