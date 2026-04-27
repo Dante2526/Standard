@@ -191,7 +191,7 @@ const AdminClassesView = memo(({
       <div className="max-w-6xl mx-auto px-6">
         {/* Header Section - Asymmetric Design */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
-          <div className="max-w-xl">
+          <div className="max-w-xl text-center md:text-left mx-auto md:mx-0">
             <motion.h1 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}

@@ -100,7 +100,7 @@ const TraineesListView = memo(({
         </div>
 
         {/* --- Abas de Navegação --- */}
-        {!isLoading && trainees.length > 0 && (
+        {!isLoading && trainees.length > 0 && selectedClass !== 'global-estagio' && (
           <div className="grid grid-cols-2 md:flex md:flex-row gap-2 mb-8">
             <button
               onClick={() => setActiveTab('grid')}
