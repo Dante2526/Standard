@@ -2,6 +2,17 @@ name: Disparo de E-mail de Marco (Milestone)
 on:
   repository_dispatch:
     types: [milestone_reached]
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Nome do Colaborador'
+        required: true
+      matricula:
+        description: 'Matrícula'
+        required: true
+      milestoneHours:
+        description: 'Horas do Marco'
+        required: true
 
 jobs:
   send_email:
@@ -21,7 +32,7 @@ jobs:
           # Required: password for SMTP authentication
           password: ${{ secrets.EMAIL_PASS }}
           # Required: email subject
-          subject: '[Treinamento] Pré-avaliação solicitada: ${{ github.event.client_payload.name }} atingiu o marco de ${{ github.event.client_payload.milestoneHours }}h'
+          subject: '[Treinamento] Pré-avaliação solicitada: ${{ github.event.client_payload.name || github.event.inputs.name }} atingiu o marco de ${{ github.event.client_payload.milestoneHours || github.event.inputs.milestoneHours }}h'
           # Required: recipient(s) address
           to: ${{ secrets.EMAIL_TO }}
           # Required: sender address
@@ -33,9 +44,9 @@ jobs:
             O colaborador atingiu um novo marco em sua jornada de treinamento e precisa de uma pré-avaliação na plataforma.
 
             Dados do Colaborador:
-            - Nome: ${{ github.event.client_payload.name }}
-            - Matrícula: ${{ github.event.client_payload.matricula }}
-            - Marco Atingido: ${{ github.event.client_payload.milestoneHours }} horas
+            - Nome: ${{ github.event.client_payload.name || github.event.inputs.name }}
+            - Matrícula: ${{ github.event.client_payload.matricula || github.event.inputs.matricula }}
+            - Marco Atingido: ${{ github.event.client_payload.milestoneHours || github.event.inputs.milestoneHours }} horas
 
             Por favor, acesse o sistema Trainify para registrar a avaliação deste marco.
 
