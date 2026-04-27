@@ -32,11 +32,11 @@ jobs:
           # Required: password for SMTP authentication
           password: ${{ secrets.EMAIL_PASS }}
           # Required: email subject
-          subject: '[Treinamento] Pré-avaliação solicitada: ${{ github.event.client_payload.name || github.event.inputs.name }} atingiu o marco de ${{ github.event.client_payload.milestoneHours || github.event.inputs.milestoneHours }}h'
+          subject: 'Pré-avaliação solicitada: ${{ github.event.client_payload.name || github.event.inputs.name }}'
           # Required: recipient(s) address
           to: ${{ secrets.EMAIL_TO }}
           # Required: sender address
-          from: Trainify System <${{ secrets.EMAIL_USER }}>
+          from: Standard System <${{ secrets.EMAIL_USER }}>
           # Optional: body string
           body: |
             Olá,
@@ -48,7 +48,4 @@ jobs:
             - Matrícula: ${{ github.event.client_payload.matricula || github.event.inputs.matricula }}
             - Marco Atingido: ${{ github.event.client_payload.milestoneHours || github.event.inputs.milestoneHours }} horas
 
-            Por favor, acesse o sistema Trainify para registrar a avaliação deste marco.
-
-            Atenciosamente,
-            Equipe Trainify
+            Por favor, acesse o sistema Standard para registrar a avaliação deste marco.

@@ -2,7 +2,7 @@
 // Responsável por acionar os fluxos de trabalho (workflows) do GitHub Actions
 
 const GITHUB_REPO_OWNER = import.meta.env.VITE_GITHUB_OWNER || 'Dante2526'; 
-const GITHUB_REPO_NAME = import.meta.env.VITE_GITHUB_REPO || 'Trainify';
+const GITHUB_REPO_NAME = import.meta.env.VITE_GITHUB_REPO || 'Standard';
 const GITHUB_PAT = import.meta.env.VITE_GITHUB_PAT; // Personal Access Token
 
 /**
