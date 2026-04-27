@@ -9,6 +9,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
   const [milestoneEvaluations, setMilestoneEvaluations] = useState<MilestoneEvaluations>({});
   const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
   const [horasPrevistas, setHorasPrevistas] = useState<number | null>(null);
+  const [supervisor, setSupervisor] = useState<string>('');
   const [kaizenData, setKaizenData] = useState<any>(null);
   const [kaizenDebugLog, setKaizenDebugLog] = useState<string[]>([]);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
@@ -27,6 +28,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
       setMilestoneEvaluations({});
       setUserStatus(null);
       setHorasPrevistas(null);
+      setSupervisor('');
       setKaizenData(null);
       setHasLoadedData(false);
       return;
@@ -45,12 +47,14 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
           setUserStatus(newStatus);
         }
         setHorasPrevistas(data.horasPrevistas || null);
+        setSupervisor(data.supervisor || '');
         setManualCompletedTitles(data.manualCompletedTitles || []);
         
         lastServerDataRef.current = JSON.stringify({
           tableRows: incomingRows,
           status: data.status || null,
           horasPrevistas: data.horasPrevistas || null,
+          supervisor: data.supervisor || '',
           milestoneEvaluations: data.milestoneEvaluations || {},
           horasAcumuladas: data.horasAcumuladas || 0
         });
@@ -94,6 +98,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
     milestoneEvaluations, setMilestoneEvaluations,
     userStatus, setUserStatus,
     horasPrevistas, setHorasPrevistas,
+    supervisor, setSupervisor,
     realTrainings,
     kaizenData,
     kaizenDebugLog,

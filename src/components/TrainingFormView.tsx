@@ -19,6 +19,8 @@ interface TrainingFormViewProps {
   trainee: Trainee;
   totalHours: number;
   onUpdateTotalHours: (hours: number) => void;
+  supervisor: string;
+  onUpdateSupervisor: (v: string) => void;
 }
 
 const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
@@ -34,7 +36,9 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
   renderCalendar,
   trainee,
   totalHours,
-  onUpdateTotalHours
+  onUpdateTotalHours,
+  supervisor,
+  onUpdateSupervisor
 }) => {
   const progressHours = tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
   const hoursLeft = Math.max(0, totalHours - progressHours);
@@ -97,6 +101,17 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                     </motion.div>
                   )}
                 </AnimatePresence>
+              </div>
+              
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Supervisor</span>
+                <input 
+                  type="text"
+                  value={supervisor}
+                  onChange={(e) => onUpdateSupervisor(e.target.value)}
+                  placeholder="Nome do Supervisor"
+                  className="text-base font-bold text-content bg-transparent border-b border-transparent hover:border-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-content-muted/30 placeholder:font-normal uppercase"
+                />
               </div>
             </div>
           </div>

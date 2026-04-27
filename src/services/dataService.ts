@@ -67,7 +67,8 @@ export const saveStageData = async (
   userStatus: string | null, 
   horasPrevistas: number | null,
   tableRows: TrainingRow[],
-  milestoneEvaluations: MilestoneEvaluations
+  milestoneEvaluations: MilestoneEvaluations,
+  supervisor?: string
 ) => {
   if (!trainee) return;
   
@@ -82,6 +83,7 @@ export const saveStageData = async (
       horasAcumuladas: progressHours,
       status: userStatus,
       horasPrevistas: horasPrevistas,
+      supervisor: sanitizeString(supervisor || ''),
       turma: trainee.turma || '',
       tableRows: tableRows.map(row => ({
         ...row,

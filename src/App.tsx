@@ -61,6 +61,7 @@ export default function App() {
     milestoneEvaluations, setMilestoneEvaluations,
     userStatus, setUserStatus,
     horasPrevistas, setHorasPrevistas,
+    supervisor, setSupervisor,
     realTrainings,
     kaizenData,
     kaizenDebugLog,
@@ -165,8 +166,8 @@ export default function App() {
 
   // --- Auto-Save ---
   // Usa refs para evitar cascata de recriação de callbacks
-  const dataForSaveRef = useRef({ tableRows, userStatus, horasPrevistas, milestoneEvaluations });
-  dataForSaveRef.current = { tableRows, userStatus, horasPrevistas, milestoneEvaluations };
+  const dataForSaveRef = useRef({ tableRows, userStatus, horasPrevistas, supervisor, milestoneEvaluations });
+  dataForSaveRef.current = { tableRows, userStatus, horasPrevistas, supervisor, milestoneEvaluations };
 
   useEffect(() => {
     if (!hasLoadedDataFromHook || !selectedTrainee) return;
@@ -174,13 +175,14 @@ export default function App() {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
 
     autoSaveTimerRef.current = setTimeout(async () => {
-      const { tableRows: rows, userStatus: status, horasPrevistas: currentHorasPrevistas, milestoneEvaluations: evals } = dataForSaveRef.current;
+      const { tableRows: rows, userStatus: status, horasPrevistas: currentHorasPrevistas, supervisor: currentSupervisor, milestoneEvaluations: evals } = dataForSaveRef.current;
       const currentProgressHours = rows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
 
       const currentData = JSON.stringify({
         tableRows: rows,
         status: status,
         horasPrevistas: currentHorasPrevistas,
+        supervisor: currentSupervisor,
         milestoneEvaluations: evals,
         horasAcumuladas: currentProgressHours
       });
@@ -190,7 +192,7 @@ export default function App() {
       setAutoSaveStatus('saving');
       try {
         const computedProgressHours = status === 'efetivado' ? (currentHorasPrevistas || 432) : currentProgressHours;
-        await DataService.saveStageData(selectedTrainee, computedProgressHours, status, currentHorasPrevistas, rows, evals);
+        await DataService.saveStageData(selectedTrainee, computedProgressHours, status, currentHorasPrevistas, rows, evals, currentSupervisor);
         lastServerDataRef.current = currentData;
         setAutoSaveStatus('saved');
         setTimeout(() => setAutoSaveStatus('idle'), 2000);
@@ -203,7 +205,7 @@ export default function App() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [tableRows, userStatus, horasPrevistas, milestoneEvaluations, hasLoadedDataFromHook, selectedTrainee, lastServerDataRef]);
+  }, [tableRows, userStatus, horasPrevistas, supervisor, milestoneEvaluations, hasLoadedDataFromHook, selectedTrainee, lastServerDataRef]);
 
   // --- Handlers de UI ---
   const handleLogout = useCallback(() => {
@@ -543,6 +545,8 @@ export default function App() {
               trainee={selectedTrainee!}
               totalHours={totalHours}
               onUpdateTotalHours={setHorasPrevistas}
+              supervisor={supervisor}
+              onUpdateSupervisor={setSupervisor}
             />
           )}
           {activeTab === 'pending' && (
