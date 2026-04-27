@@ -59,7 +59,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
               <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Nome do Colaborador</span>
               <span className="text-lg font-bold text-content uppercase">{trainee?.name || '---'}</span>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex gap-12">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Matrícula</span>
                 <span className="text-base font-bold text-content">{trainee?.matricula || '---'}</span>
@@ -70,7 +70,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   onClick={() => setOpenDropdownId(openDropdownId === 'funcao' ? null : 'funcao')}
                   className="text-base font-bold text-content uppercase text-left flex items-center gap-1 group cursor-pointer hover:text-blue-600 transition-colors"
                 >
-                  {totalHours === 240 ? 'OFF' : 'MAQUINISTA PÁTIO'}
+                  {totalHours === 240 ? 'MAQUINISTA PÁTIO' : 'OFF'}
                   <ChevronDown className="w-4 h-4 text-content-muted group-hover:text-blue-600 transition-colors" />
                 </button>
 
@@ -86,13 +86,13 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                         onClick={() => { onUpdateTotalHours(432); setOpenDropdownId(null); }}
                         className={`w-full text-left px-4 py-3 text-sm transition-colors hover:bg-blue-50 hover:text-blue-600 ${totalHours === 432 ? 'bg-blue-50 text-blue-600 font-bold' : 'text-content-muted font-medium'}`}
                       >
-                        MAQUINISTA PÁTIO (432h)
+                        OFF (432h)
                       </button>
                       <button
                         onClick={() => { onUpdateTotalHours(240); setOpenDropdownId(null); }}
                         className={`w-full text-left px-4 py-3 text-sm transition-colors hover:bg-blue-50 hover:text-blue-600 ${totalHours === 240 ? 'bg-blue-50 text-blue-600 font-bold' : 'text-content-muted font-medium'}`}
                       >
-                        OFF (240h)
+                        MAQUINISTA PÁTIO (240h)
                       </button>
                     </motion.div>
                   )}

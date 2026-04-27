@@ -51,7 +51,7 @@ const StatusSelectionView: React.FC<StatusSelectionViewProps> = React.memo(({
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative z-10">
               <h3 className="text-4xl font-black text-content uppercase tracking-tight mb-2">432h</h3>
-              <p className="text-content-muted font-medium">Função: MAQUINISTA PÁTIO</p>
+              <p className="text-content-muted font-medium">Função: OFF</p>
             </div>
           </button>
 
@@ -62,7 +62,7 @@ const StatusSelectionView: React.FC<StatusSelectionViewProps> = React.memo(({
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative z-10">
               <h3 className="text-4xl font-black text-content uppercase tracking-tight mb-2">240h</h3>
-              <p className="text-content-muted font-medium">Função: OFF</p>
+              <p className="text-content-muted font-medium">Função: MAQUINISTA PÁTIO</p>
             </div>
           </button>
         </div>
