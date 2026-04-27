@@ -91,6 +91,7 @@ export const exportToExcel = async (formData: any, tableRows: TrainingRow[]) => 
       nome: formData?.nome || 'N/A',
       matricula: formData?.matricula || 'N/A',
       funcao: formData?.funcao || 'N/A',
+      supervisor: formData?.supervisor || 'N/A',
       previstas: formData?.horasPrevistas || 0,
       realizadas: formData?.horasRealizadas || 0,
       faltantes: formData?.horasFaltantes || 0
@@ -102,6 +103,7 @@ export const exportToExcel = async (formData: any, tableRows: TrainingRow[]) => 
       ['NOME DO COLABORADOR', dataInfo.nome.toUpperCase()],
       ['MATRÍCULA', dataInfo.matricula],
       ['FUNÇÃO', dataInfo.funcao.toUpperCase()],
+      ['SUPERVISOR', dataInfo.supervisor.toUpperCase()],
       ['HORAS PREVISTAS', dataInfo.previstas],
       ['HORAS REALIZADAS', dataInfo.realizadas],
       ['HORAS FALTANTES', dataInfo.faltantes],
@@ -168,6 +170,7 @@ export const exportToWord = async (formData: any, tableRows: TrainingRow[]) => {
           new Paragraph({ text: `NOME: ${formData.nome?.toUpperCase() || 'N/A'}` }),
           new Paragraph({ text: `MATRÍCULA: ${formData.matricula || 'N/A'}` }),
           new Paragraph({ text: `FUNÇÃO: ${formData.funcao?.toUpperCase() || 'N/A'}` }),
+          new Paragraph({ text: `SUPERVISOR: ${formData.supervisor?.toUpperCase() || 'N/A'}` }),
           new Paragraph({ text: `HORAS PREVISTAS: ${formData.horasPrevistas || 0}` }),
           new Paragraph({ text: `HORAS REALIZADAS: ${formData.horasRealizadas || 0}` }),
           new Paragraph({ text: `HORAS FALTANTES: ${formData.horasFaltantes || 0}`, spacing: { after: 400 } }),

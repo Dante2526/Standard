@@ -249,7 +249,8 @@ export default function App() {
       const exportData = {
         nome: selectedTrainee.name,
         matricula: selectedTrainee.matricula,
-        funcao: selectedTrainee.funcao,
+        funcao: totalHours === 240 ? 'MAQUINISTA PÁTIO' : 'OFF',
+        supervisor: supervisor,
         horasPrevistas: totalHours,
         horasRealizadas: progressHours,
         horasFaltantes: totalHours - progressHours

@@ -210,7 +210,7 @@ const PendingTrainingsView = memo(({
               realTrainings
                 .filter(t => t.daysRemaining !== null && t.daysRemaining < 365)
                 .sort((a, b) => (a.daysRemaining || 0) - (b.daysRemaining || 0))
-                .slice(0, 5)
+                .slice(0, 3)
                 .map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center text-sm p-2 hover:bg-background rounded-lg transition-colors">
                     <span className="text-content-muted max-w-[70%] truncate">{item.title}</span>
