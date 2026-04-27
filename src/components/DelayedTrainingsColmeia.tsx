@@ -49,9 +49,11 @@ const DelayedTrainingsColmeia = memo(({
   const scrollToLetter = (letter: string) => {
     const firstTrainee = traineesWithDelays.find(t => t.name.toUpperCase().startsWith(letter));
     if (firstTrainee) {
-      const element = document.getElementById(`trainee-colmeia-${firstTrainee.id}`);
+      // Procura o ID do cartão interno do usuário para rolar exatamente até o nome
+      const element = document.getElementById(`trainee-colmeia-inner-${firstTrainee.id}`);
       if (element) {
-        const yOffset = -100; 
+        // Reduz o offset para centralizar melhor a visualização
+        const yOffset = -150; 
         const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
         window.scrollTo({top: y, behavior: 'smooth'});
       }
@@ -100,6 +102,7 @@ const DelayedTrainingsColmeia = memo(({
               {/* Parent Node (Trainee) */}
               <div className="relative z-10 md:w-1/3 flex-shrink-0 flex items-center">
                 <div 
+                  id={`trainee-colmeia-inner-${trainee.id}`}
                   onClick={() => onSelectTrainee(trainee)}
                   className="w-full bg-surface p-6 rounded-[24px] border-2 border-red-500/20 hover:border-red-500/50 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
                 >
