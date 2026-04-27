@@ -153,6 +153,11 @@ export default function App() {
     }
   }, [userStatus]);
 
+  // Resetar scroll para o topo quando mudar de aba ou visualização
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab, selectedTrainee, selectedClass]);
+
   // --- Sincronização em Tempo Real da Lista de Colaboradores (Admin) ---
   useEffect(() => {
     if (!isAdmin || !selectedClass || selectedTrainee) return;
