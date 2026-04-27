@@ -17,12 +17,18 @@ const TimelineView = memo(({
   isAdmin,
   setEditingMilestone
 }: TimelineViewProps) => {
-  const milestones = [
+  const milestones = totalHours === 240 ? [
+    { hours: 0, color: '#3b82f6', label: 'Início' },
+    { hours: 60, color: '#22c55e', label: 'Marco 1', comment: milestoneEvaluations[60]?.comment || '', inspector: milestoneEvaluations[60]?.inspector || '' },
+    { hours: 120, color: '#f97316', label: 'Marco 2', comment: milestoneEvaluations[120]?.comment || '', inspector: milestoneEvaluations[120]?.inspector || '' },
+    { hours: 180, color: '#a855f7', label: 'Marco 3', comment: milestoneEvaluations[180]?.comment || '', inspector: milestoneEvaluations[180]?.inspector || '' },
+    { hours: 240, color: '#10b981', label: 'Conclusão', comment: milestoneEvaluations[240]?.comment || '', inspector: milestoneEvaluations[240]?.inspector || '' }
+  ] : [
     { hours: 0, color: '#3b82f6', label: 'Início' },
     { hours: 100, color: '#22c55e', label: 'Marco 1', comment: milestoneEvaluations[100]?.comment || '', inspector: milestoneEvaluations[100]?.inspector || '' },
     { hours: 200, color: '#f97316', label: 'Marco 2', comment: milestoneEvaluations[200]?.comment || '', inspector: milestoneEvaluations[200]?.inspector || '' },
     { hours: 300, color: '#a855f7', label: 'Marco 3', comment: milestoneEvaluations[300]?.comment || '', inspector: milestoneEvaluations[300]?.inspector || '' },
-    { hours: 432, color: '#10b981', label: 'Conclusão', comment: milestoneEvaluations[432]?.comment || '', inspector: milestoneEvaluations[432]?.inspector || '' }
+    { hours: totalHours, color: '#10b981', label: 'Conclusão', comment: milestoneEvaluations[totalHours]?.comment || '', inspector: milestoneEvaluations[totalHours]?.inspector || '' }
   ];
 
   const currentMilestone = [...milestones].reverse().find(m => progressHours >= m.hours);
