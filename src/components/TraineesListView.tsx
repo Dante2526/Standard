@@ -74,9 +74,9 @@ const TraineesListView = memo(({
   return (
     <motion.div 
       key="trainees"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
       className="pt-12"
     >
       <div className="max-w-6xl mx-auto px-4 mb-8">
@@ -167,7 +167,7 @@ const TraineesListView = memo(({
           />
         ) : (
           <div className="flex flex-col lg:flex-row gap-6 relative items-start">
-            <div className="lg:fixed lg:right-6 lg:top-1/2 lg:-translate-y-1/2 sticky top-4 flex lg:flex-col flex-wrap justify-center gap-1 p-2 bg-surface/90 backdrop-blur-md rounded-2xl border border-border-subtle shadow-xl z-50 w-full lg:w-auto">
+            <div className="lg:order-2 lg:sticky lg:top-8 flex lg:flex-col flex-wrap justify-center gap-1 p-2 bg-surface rounded-2xl border border-border-subtle shadow-sm z-10 w-full lg:w-auto">
               {Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ').map(letter => {
                 const hasTrainees = trainees.some(t => t.name.toUpperCase().startsWith(letter));
                 return (
