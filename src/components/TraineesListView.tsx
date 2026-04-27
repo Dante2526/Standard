@@ -101,10 +101,10 @@ const TraineesListView = memo(({
 
         {/* --- Abas de Navegação --- */}
         {!isLoading && trainees.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-4 mb-8 custom-scrollbar no-scrollbar scroll-smooth">
+          <div className="grid grid-cols-2 md:flex md:flex-row gap-2 mb-8">
             <button
               onClick={() => setActiveTab('grid')}
-              className={`px-6 py-2.5 rounded-[18px] text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+              className={`col-span-1 px-2 md:px-6 py-2.5 rounded-[18px] text-xs md:text-sm font-bold transition-all whitespace-nowrap flex items-center justify-center gap-2 ${
                 activeTab === 'grid' 
                   ? 'bg-blue-600 text-white shadow-md' 
                   : 'bg-surface border border-border-subtle text-content-muted hover:bg-background'
@@ -115,7 +115,7 @@ const TraineesListView = memo(({
             </button>
             <button
               onClick={() => setActiveTab('colmeia')}
-              className={`px-6 py-2.5 rounded-[18px] text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+              className={`col-span-1 px-2 md:px-6 py-2.5 rounded-[18px] text-xs md:text-sm font-bold transition-all whitespace-nowrap flex items-center justify-center gap-2 ${
                 activeTab === 'colmeia' 
                   ? 'bg-red-600 text-white shadow-md shadow-red-500/20' 
                   : 'bg-surface border border-border-subtle text-content-muted hover:bg-background'
@@ -124,17 +124,19 @@ const TraineesListView = memo(({
               <Network className="w-4 h-4" />
               Visão de Pendências
             </button>
-            <button
-              onClick={() => setActiveTab('kaizen')}
-              className={`px-6 py-2.5 rounded-[18px] text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-                activeTab === 'kaizen' 
-                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' 
-                  : 'bg-surface border border-border-subtle text-content-muted hover:bg-background'
-              }`}
-            >
-              <Trophy className="w-4 h-4" />
-              Ranking Kaizen
-            </button>
+            <div className="col-span-2 flex justify-center md:contents">
+              <button
+                onClick={() => setActiveTab('kaizen')}
+                className={`w-full md:w-auto px-6 py-2.5 rounded-[18px] text-xs md:text-sm font-bold transition-all whitespace-nowrap flex items-center justify-center gap-2 ${
+                  activeTab === 'kaizen' 
+                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' 
+                    : 'bg-surface border border-border-subtle text-content-muted hover:bg-background'
+                }`}
+              >
+                <Trophy className="w-4 h-4" />
+                Ranking Kaizen
+              </button>
+            </div>
           </div>
         )}
 
