@@ -46,19 +46,54 @@ const DelayedTrainingsColmeia = memo(({
     );
   }
 
+  const scrollToLetter = (letter: string) => {
+    const firstTrainee = traineesWithDelays.find(t => t.name.toUpperCase().startsWith(letter));
+    if (firstTrainee) {
+      const element = document.getElementById(`trainee-colmeia-${firstTrainee.id}`);
+      if (element) {
+        const yOffset = -100; 
+        const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
+        window.scrollTo({top: y, behavior: 'smooth'});
+      }
+    }
+  };
+
   return (
-    <div className="space-y-12">
-      {traineesWithDelays.map((trainee, index) => {
-        const delays = delayedMap[trainee.matricula];
-        
-        return (
-          <motion.div 
-            key={trainee.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="relative"
-          >
+    <div className="flex flex-col lg:flex-row gap-6 relative items-start">
+      {/* Alphabetical Sidebar */}
+      <div className="lg:order-2 lg:sticky lg:top-8 flex lg:flex-col flex-wrap justify-center gap-1 p-2 bg-surface rounded-2xl border border-border-subtle shadow-sm z-10 w-full lg:w-auto">
+        {Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ').map(letter => {
+          const hasTrainees = traineesWithDelays.some(t => t.name.toUpperCase().startsWith(letter));
+          return (
+            <button
+              key={letter}
+              onClick={() => scrollToLetter(letter)}
+              disabled={!hasTrainees}
+              className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                hasTrainees 
+                  ? 'text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/30 cursor-pointer' 
+                  : 'text-content-muted/30 cursor-not-allowed'
+              }`}
+            >
+              {letter}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="lg:order-1 flex-1 space-y-12 w-full">
+        {traineesWithDelays.map((trainee, index) => {
+          const delays = delayedMap[trainee.matricula];
+          
+          return (
+            <motion.div 
+              key={trainee.id}
+              id={`trainee-colmeia-${trainee.id}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="relative"
+            >
             {/* Mindmap Layout Container */}
             <div className="flex flex-col md:flex-row items-stretch gap-0">
               
@@ -165,6 +200,7 @@ const DelayedTrainingsColmeia = memo(({
           </motion.div>
         );
       })}
+      </div>
     </div>
   );
 });
