@@ -31,6 +31,7 @@ import Footer from './components/Footer';
 import { Trainee, TrainingRow, MilestoneEvaluations, LOCAL_OPTIONS, FUNCAO_OPTIONS, PRESET_HOURS } from './types';
 import * as DataService from './services/dataService';
 import * as ExportService from './services/exportService';
+import { triggerMilestoneEmail } from './services/githubActionsService';
 import { useTraineeData } from './hooks/useTraineeData';
 
 export default function App() {
@@ -62,6 +63,7 @@ export default function App() {
     userStatus, setUserStatus,
     horasPrevistas, setHorasPrevistas,
     supervisor, setSupervisor,
+    notifiedMilestones, setNotifiedMilestones,
     realTrainings,
     kaizenData,
     kaizenDebugLog,
@@ -164,10 +166,9 @@ export default function App() {
     return () => unsubscribe();
   }, [isAdmin, selectedClass, selectedTrainee]);
 
-  // --- Auto-Save ---
-  // Usa refs para evitar cascata de recriação de callbacks
-  const dataForSaveRef = useRef({ tableRows, userStatus, horasPrevistas, supervisor, milestoneEvaluations });
-  dataForSaveRef.current = { tableRows, userStatus, horasPrevistas, supervisor, milestoneEvaluations };
+  // --- Auto-Save e Notificações ---
+  const dataForSaveRef = useRef({ tableRows, userStatus, horasPrevistas, supervisor, milestoneEvaluations, notifiedMilestones });
+  dataForSaveRef.current = { tableRows, userStatus, horasPrevistas, supervisor, milestoneEvaluations, notifiedMilestones };
 
   useEffect(() => {
     if (!hasLoadedDataFromHook || !selectedTrainee) return;
@@ -175,8 +176,30 @@ export default function App() {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
 
     autoSaveTimerRef.current = setTimeout(async () => {
-      const { tableRows: rows, userStatus: status, horasPrevistas: currentHorasPrevistas, supervisor: currentSupervisor, milestoneEvaluations: evals } = dataForSaveRef.current;
+      const { tableRows: rows, userStatus: status, horasPrevistas: currentHorasPrevistas, supervisor: currentSupervisor, milestoneEvaluations: evals, notifiedMilestones: currentNotified } = dataForSaveRef.current;
       const currentProgressHours = rows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
+      const computedProgressHours = status === 'efetivado' ? (currentHorasPrevistas || 432) : currentProgressHours;
+
+      // Verifica se alcançou novos marcos
+      const currentMilestones = (currentHorasPrevistas || 432) === 240 
+        ? [60, 120, 180, 240] 
+        : [100, 200, 300, (currentHorasPrevistas || 432)];
+        
+      let newNotified = [...currentNotified];
+      let hasNewMilestone = false;
+
+      for (const m of currentMilestones) {
+        if (computedProgressHours >= m && !newNotified.includes(m)) {
+          // Alcançou um novo marco! Dispara a notificação via GitHub Actions
+          triggerMilestoneEmail(selectedTrainee.name, selectedTrainee.matricula, m);
+          newNotified.push(m);
+          hasNewMilestone = true;
+        }
+      }
+
+      if (hasNewMilestone) {
+        setNotifiedMilestones(newNotified);
+      }
 
       const currentData = JSON.stringify({
         tableRows: rows,
@@ -184,15 +207,15 @@ export default function App() {
         horasPrevistas: currentHorasPrevistas,
         supervisor: currentSupervisor,
         milestoneEvaluations: evals,
-        horasAcumuladas: currentProgressHours
+        horasAcumuladas: currentProgressHours,
+        notifiedMilestones: newNotified
       });
 
       if (currentData === lastServerDataRef.current) return;
 
       setAutoSaveStatus('saving');
       try {
-        const computedProgressHours = status === 'efetivado' ? (currentHorasPrevistas || 432) : currentProgressHours;
-        await DataService.saveStageData(selectedTrainee, computedProgressHours, status, currentHorasPrevistas, rows, evals, currentSupervisor);
+        await DataService.saveStageData(selectedTrainee, computedProgressHours, status, currentHorasPrevistas, rows, evals, currentSupervisor, newNotified);
         lastServerDataRef.current = currentData;
         setAutoSaveStatus('saved');
         setTimeout(() => setAutoSaveStatus('idle'), 2000);
@@ -205,7 +228,7 @@ export default function App() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [tableRows, userStatus, horasPrevistas, supervisor, milestoneEvaluations, hasLoadedDataFromHook, selectedTrainee, lastServerDataRef]);
+  }, [tableRows, userStatus, horasPrevistas, supervisor, milestoneEvaluations, notifiedMilestones, hasLoadedDataFromHook, selectedTrainee, lastServerDataRef]);
 
   // --- Handlers de UI ---
   const handleLogout = useCallback(() => {

@@ -1,0 +1,43 @@
+name: Disparo de E-mail de Marco (Milestone)
+on:
+  repository_dispatch:
+    types: [milestone_reached]
+
+jobs:
+  send_email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          # Required: SMTP server address
+          server_address: ${{ secrets.SMTP_SERVER }}
+          # Required: SMTP server port
+          server_port: ${{ secrets.SMTP_PORT }}
+          # Optional: (default: false)
+          secure: true
+          # Required: username for SMTP authentication
+          username: ${{ secrets.EMAIL_USER }}
+          # Required: password for SMTP authentication
+          password: ${{ secrets.EMAIL_PASS }}
+          # Required: email subject
+          subject: '[Treinamento] Pré-avaliação solicitada: ${{ github.event.client_payload.name }} atingiu o marco de ${{ github.event.client_payload.milestoneHours }}h'
+          # Required: recipient(s) address
+          to: ${{ secrets.EMAIL_TO }}
+          # Required: sender address
+          from: Trainify System <${{ secrets.EMAIL_USER }}>
+          # Optional: body string
+          body: |
+            Olá,
+
+            O colaborador atingiu um novo marco em sua jornada de treinamento e precisa de uma pré-avaliação na plataforma.
+
+            Dados do Colaborador:
+            - Nome: ${{ github.event.client_payload.name }}
+            - Matrícula: ${{ github.event.client_payload.matricula }}
+            - Marco Atingido: ${{ github.event.client_payload.milestoneHours }} horas
+
+            Por favor, acesse o sistema Trainify para registrar a avaliação deste marco.
+
+            Atenciosamente,
+            Equipe Trainify

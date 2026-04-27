@@ -10,6 +10,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
   const [userStatus, setUserStatus] = useState<'estagio' | 'efetivado' | null>(null);
   const [horasPrevistas, setHorasPrevistas] = useState<number | null>(null);
   const [supervisor, setSupervisor] = useState<string>('');
+  const [notifiedMilestones, setNotifiedMilestones] = useState<number[]>([]);
   const [kaizenData, setKaizenData] = useState<any>(null);
   const [kaizenDebugLog, setKaizenDebugLog] = useState<string[]>([]);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
@@ -49,6 +50,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
         setHorasPrevistas(data.horasPrevistas || null);
         setSupervisor(data.supervisor || '');
         setManualCompletedTitles(data.manualCompletedTitles || []);
+        setNotifiedMilestones(data.notifiedMilestones || []);
         
         lastServerDataRef.current = JSON.stringify({
           tableRows: incomingRows,
@@ -56,7 +58,8 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
           horasPrevistas: data.horasPrevistas || null,
           supervisor: data.supervisor || '',
           milestoneEvaluations: data.milestoneEvaluations || {},
-          horasAcumuladas: data.horasAcumuladas || 0
+          horasAcumuladas: data.horasAcumuladas || 0,
+          notifiedMilestones: data.notifiedMilestones || []
         });
       } else {
         const initialRows = [
@@ -99,6 +102,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
     userStatus, setUserStatus,
     horasPrevistas, setHorasPrevistas,
     supervisor, setSupervisor,
+    notifiedMilestones, setNotifiedMilestones,
     realTrainings,
     kaizenData,
     kaizenDebugLog,

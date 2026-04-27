@@ -10,6 +10,7 @@ export interface Trainee {
   avatar?: string;
   horasPrevistas?: number;
   supervisor?: string;
+  notifiedMilestones?: number[];
 }
 
 export interface ClassItem {
