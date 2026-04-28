@@ -64,14 +64,14 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Nome do Colaborador</span>
                 <span className="text-lg font-bold text-content uppercase truncate">{trainee?.name || '---'}</span>
               </div>
-              <div className="flex flex-col gap-1 text-right shrink-0">
+              <div className="flex flex-col gap-1 items-center shrink-0">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Matrícula</span>
                 <span className="text-base font-bold text-content">{trainee?.matricula || '---'}</span>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 sm:flex sm:gap-12">
-              <div className="flex flex-col gap-1 relative">
+            <div className="flex flex-wrap gap-x-8 gap-y-4 sm:gap-12">
+              <div className="flex flex-col gap-1 relative shrink-0">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Função</span>
                 <button 
                   onClick={() => setOpenDropdownId(openDropdownId === 'funcao' ? null : 'funcao')}
@@ -106,14 +106,14 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                 </AnimatePresence>
               </div>
               
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 min-w-0 flex-1">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Supervisor</span>
                 <input 
                   type="text"
                   value={supervisor}
                   onChange={(e) => onUpdateSupervisor(e.target.value)}
                   placeholder="Nome do Supervisor"
-                  className="text-base font-bold text-content bg-transparent border-b border-transparent hover:border-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-content-muted/30 placeholder:font-normal uppercase w-full"
+                  className="text-base font-bold text-content bg-transparent border-b border-transparent hover:border-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-content-muted/30 placeholder:font-normal uppercase w-full min-w-0 truncate"
                 />
               </div>
             </div>
