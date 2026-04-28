@@ -59,15 +59,18 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
           <div className="space-y-4">
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Nome do Colaborador</span>
-              <span className="text-lg font-bold text-content uppercase">{trainee?.name || '---'}</span>
-            </div>
-            <div className="flex gap-12">
-              <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-start gap-4">
+              <div className="flex flex-col gap-1 min-w-0">
+                <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Nome do Colaborador</span>
+                <span className="text-lg font-bold text-content uppercase truncate">{trainee?.name || '---'}</span>
+              </div>
+              <div className="flex flex-col gap-1 text-right shrink-0">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Matrícula</span>
                 <span className="text-base font-bold text-content">{trainee?.matricula || '---'}</span>
               </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 sm:flex sm:gap-12">
               <div className="flex flex-col gap-1 relative">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Função</span>
                 <button 
@@ -110,7 +113,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   value={supervisor}
                   onChange={(e) => onUpdateSupervisor(e.target.value)}
                   placeholder="Nome do Supervisor"
-                  className="text-base font-bold text-content bg-transparent border-b border-transparent hover:border-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-content-muted/30 placeholder:font-normal uppercase"
+                  className="text-base font-bold text-content bg-transparent border-b border-transparent hover:border-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-content-muted/30 placeholder:font-normal uppercase w-full"
                 />
               </div>
             </div>
@@ -197,7 +200,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
           )}
         </div>
 
-        <div className="w-full overflow-visible">
+        <div className="w-full overflow-x-auto custom-scrollbar pb-32">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border-subtle">
