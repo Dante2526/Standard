@@ -36,41 +36,44 @@ const PendingTrainingsView = memo(({
       className="space-y-6"
     >
       <div className="bg-surface rounded-[28px] p-6 shadow-sm border border-border-subtle">
-        <div className="flex flex-col md:flex-row justify-between items-center md:items-center gap-4 mb-6">
-          <div className="flex items-center justify-center md:justify-start gap-3 w-full md:w-auto">
-            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0">
-              <Briefcase className="w-5 h-5" />
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+          <div className="flex flex-col items-center md:items-start md:flex-row gap-4 w-full md:w-auto">
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-blue-100">
+              <Briefcase className="w-6 h-6" />
             </div>
-            <h2 className="text-lg font-bold text-content">Meus Treinamentos</h2>
+            <div className="text-center md:text-left">
+              <h2 className="text-xl font-black text-content uppercase tracking-tight">Meus Treinamentos</h2>
+              <p className="text-[10px] font-bold text-content-muted uppercase tracking-widest opacity-60">Gestão de Capacitação</p>
+            </div>
           </div>
           
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
-            <div className="relative flex-1 min-w-[240px] md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted" />
+          <div className="flex flex-col items-center md:flex-row gap-4 w-full md:w-auto">
+            <div className="relative w-full max-w-[320px] md:w-64">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted" />
               <input 
                 type="text"
                 placeholder="Buscar treinamento..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-background border border-border-subtle rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                className="w-full pl-11 pr-4 py-2.5 bg-background border border-border-subtle rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-center md:text-left"
               />
             </div>
-            <div className="flex bg-background p-1 rounded-xl border border-border-subtle mx-auto md:mx-0">
+            <div className="flex bg-background p-1 rounded-xl border border-border-subtle shadow-sm">
               <button 
                 onClick={() => setViewMode('all')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'text-content-muted hover:text-content'}`}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'text-content-muted hover:text-content'}`}
               >
                 Todos
               </button>
               <button 
                 onClick={() => setViewMode('pending')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'pending' ? 'bg-blue-600 text-white shadow-sm' : 'text-content-muted hover:text-content'}`}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'pending' ? 'bg-blue-600 text-white shadow-sm' : 'text-content-muted hover:text-content'}`}
               >
                 Pendentes
               </button>
               <button 
                 onClick={() => setViewMode('completed')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'completed' ? 'bg-blue-600 text-white shadow-sm' : 'text-content-muted hover:text-content'}`}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'completed' ? 'bg-blue-600 text-white shadow-sm' : 'text-content-muted hover:text-content'}`}
               >
                 Concluídos
               </button>
