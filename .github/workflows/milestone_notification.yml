@@ -19,33 +19,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send email
+        # Padrão Ouro: dados externos isolados em variáveis de ambiente
+        # Isso evita injeção de comandos caso os dados venham de fontes não confiáveis
+        env:
+          TRAINEE_NAME: ${{ github.event.client_payload.name || github.event.inputs.name }}
+          TRAINEE_MATRICULA: ${{ github.event.client_payload.matricula || github.event.inputs.matricula }}
+          TRAINEE_MILESTONE: ${{ github.event.client_payload.milestoneHours || github.event.inputs.milestoneHours }}
         uses: dawidd6/action-send-mail@v3
         with:
-          # Required: SMTP server address
           server_address: ${{ secrets.SMTP_SERVER }}
-          # Required: SMTP server port
           server_port: ${{ secrets.SMTP_PORT }}
-          # Optional: (default: false)
           secure: true
-          # Required: username for SMTP authentication
           username: ${{ secrets.EMAIL_USER }}
-          # Required: password for SMTP authentication
           password: ${{ secrets.EMAIL_PASS }}
-          # Required: email subject
-          subject: 'Pré-avaliação solicitada: ${{ github.event.client_payload.name || github.event.inputs.name }}'
-          # Required: recipient(s) address
+          subject: 'Pré-avaliação solicitada: ${{ env.TRAINEE_NAME }}'
           to: ${{ secrets.EMAIL_TO }}
-          # Required: sender address
           from: Standard System <${{ secrets.EMAIL_USER }}>
-          # Optional: body string
           body: |
             Olá,
 
             O colaborador atingiu um novo marco em sua jornada de treinamento e precisa de uma pré-avaliação na plataforma.
 
             Dados do Colaborador:
-            - Nome: ${{ github.event.client_payload.name || github.event.inputs.name }}
-            - Matrícula: ${{ github.event.client_payload.matricula || github.event.inputs.matricula }}
-            - Marco Atingido: ${{ github.event.client_payload.milestoneHours || github.event.inputs.milestoneHours }} horas
+            - Nome: ${{ env.TRAINEE_NAME }}
+            - Matrícula: ${{ env.TRAINEE_MATRICULA }}
+            - Marco Atingido: ${{ env.TRAINEE_MILESTONE }} horas
 
             Por favor, acesse o sistema Standard para registrar a avaliação deste marco.
