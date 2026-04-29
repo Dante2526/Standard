@@ -200,9 +200,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
           )}
         </div>
 
-        <div className={`w-full overflow-x-auto custom-scrollbar transition-all duration-300 ${
-          openDropdownId && (openDropdownId.startsWith('local-') || openDropdownId.startsWith('date-')) ? 'pb-72' : 'pb-2'
-        }`}>
+        <div className="w-full overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border-subtle">
@@ -233,23 +231,35 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                       <AnimatePresence>
                         {openDropdownId === `local-${row.id}` && (
                           <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            className="absolute z-50 left-0 right-0 mt-1 bg-surface border border-border-subtle rounded-xl shadow-xl overflow-hidden py-1 min-w-[160px]"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm sm:bg-transparent sm:backdrop-blur-none sm:absolute sm:inset-auto sm:left-0 sm:right-0 sm:mt-1 sm:top-full flex items-center justify-center sm:block"
+                            onClick={() => setOpenDropdownId(null)}
                           >
-                            {LOCAL_OPTIONS.map((option) => (
-                              <button
-                                key={option}
-                                onClick={() => {
-                                  updateRow(row.id, 'local', option);
-                                  setOpenDropdownId(null);
-                                }}
-                                className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-blue-50 hover:text-blue-600 ${row.local === option ? 'bg-blue-50 text-blue-600 font-medium' : 'text-content-muted'}`}
-                              >
-                                {option}
-                              </button>
-                            ))}
+                            <motion.div
+                              initial={{ scale: 0.95 }}
+                              animate={{ scale: 1 }}
+                              exit={{ scale: 0.95 }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="bg-surface border border-border-subtle rounded-2xl shadow-2xl py-2 w-[calc(100vw-3rem)] sm:w-full max-w-[320px] sm:max-w-none sm:min-w-[160px] max-h-[60vh] sm:max-h-48 overflow-y-auto custom-scrollbar"
+                            >
+                              <div className="sm:hidden px-4 pb-3 mb-2 mt-1 border-b border-border-subtle flex justify-between items-center">
+                                <span className="text-sm font-bold text-content">Selecionar Local</span>
+                              </div>
+                              {LOCAL_OPTIONS.map((option) => (
+                                <button
+                                  key={option}
+                                  onClick={() => {
+                                    updateRow(row.id, 'local', option);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className={`w-full text-left px-4 py-3 sm:py-2 text-sm transition-colors hover:bg-blue-50 hover:text-blue-600 ${row.local === option ? 'bg-blue-50 text-blue-600 font-medium' : 'text-content-muted'}`}
+                                >
+                                  {option}
+                                </button>
+                              ))}
+                            </motion.div>
                           </motion.div>
                         )}
                       </AnimatePresence>

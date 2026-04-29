@@ -309,31 +309,41 @@ export default function App() {
 
     return (
       <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="absolute z-[100] mt-2 p-6 bg-surface border border-border-subtle rounded-2xl shadow-2xl min-w-[300px] left-1/2 -translate-x-1/2"
-        ref={datePickerRef}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm sm:bg-transparent sm:backdrop-blur-none sm:absolute sm:inset-auto sm:left-1/2 sm:-translate-x-1/2 sm:mt-2 flex items-center justify-center sm:block"
+        onClick={() => setOpenDropdownId(null)}
       >
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1.5 hover:bg-background rounded-lg transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-          <span className="text-sm font-bold text-content uppercase tracking-tight">{format(currentMonth, 'MMMM yyyy', { locale: ptBR })}</span>
-          <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1.5 hover:bg-background rounded-lg transition-colors"><ChevronRight className="w-4 h-4" /></button>
-        </div>
-        <div className="grid grid-cols-7 gap-0.5">
-          {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-[10px] font-black text-content-muted text-center py-1">{d}</div>)}
-          {days.map(day => (
-            <button
-              key={day.toISOString()}
-              onClick={() => {
-                updateRow(rowId, 'data', format(day, 'yyyy-MM-dd'));
-                setOpenDropdownId(null);
-              }}
-              className={`h-7 text-xs rounded-lg transition-all flex items-center justify-center ${!isSameMonth(day, currentMonth) ? 'text-content-muted opacity-20' : 'text-content hover:bg-blue-50 hover:text-blue-600'} ${isSameDay(day, date) ? 'bg-blue-600 !text-white font-bold' : ''}`}
-            >
-              {format(day, 'd')}
-            </button>
-          ))}
-        </div>
+        <motion.div
+          initial={{ scale: 0.95, y: 10 }}
+          animate={{ scale: 1, y: 0 }}
+          exit={{ scale: 0.95, y: 10 }}
+          onClick={(e) => e.stopPropagation()}
+          className="bg-surface border border-border-subtle rounded-3xl sm:rounded-2xl shadow-2xl p-6 min-w-[320px] sm:min-w-[300px]"
+          ref={datePickerRef}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1.5 hover:bg-background rounded-lg transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+            <span className="text-sm font-bold text-content uppercase tracking-tight">{format(currentMonth, 'MMMM yyyy', { locale: ptBR })}</span>
+            <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1.5 hover:bg-background rounded-lg transition-colors"><ChevronRight className="w-4 h-4" /></button>
+          </div>
+          <div className="grid grid-cols-7 gap-0.5">
+            {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-[10px] font-black text-content-muted text-center py-1">{d}</div>)}
+            {days.map(day => (
+              <button
+                key={day.toISOString()}
+                onClick={() => {
+                  updateRow(rowId, 'data', format(day, 'yyyy-MM-dd'));
+                  setOpenDropdownId(null);
+                }}
+                className={`h-8 sm:h-7 text-xs rounded-lg transition-all flex items-center justify-center ${!isSameMonth(day, currentMonth) ? 'text-content-muted opacity-20' : 'text-content hover:bg-blue-50 hover:text-blue-600'} ${isSameDay(day, date) ? 'bg-blue-600 !text-white font-bold' : ''}`}
+              >
+                {format(day, 'd')}
+              </button>
+            ))}
+          </div>
+        </motion.div>
       </motion.div>
     );
   }, [currentMonth, updateRow]);
