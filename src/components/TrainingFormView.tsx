@@ -200,7 +200,9 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
           )}
         </div>
 
-        <div className="w-full overflow-x-auto custom-scrollbar pb-32">
+        <div className={`w-full overflow-x-auto custom-scrollbar transition-all duration-300 ${
+          openDropdownId && (openDropdownId.startsWith('local-') || openDropdownId.startsWith('date-')) ? 'pb-72' : 'pb-2'
+        }`}>
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border-subtle">
