@@ -229,7 +229,7 @@ const TraineesListView = memo(({
                               </span>
                             )}
                             {selectedClass === 'global-estagio' && trainee.turma && (
-                              <span className="text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm bg-surface-muted text-content-muted border border-border-subtle">
+                              <span className="text-[9px] font-black px-2.5 py-1 rounded-full shadow-sm bg-surface-muted text-content-muted border border-border-subtle inline-flex items-center justify-center leading-none">
                                 TURMA {trainee.turma}
                               </span>
                             )}
