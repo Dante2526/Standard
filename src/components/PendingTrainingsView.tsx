@@ -36,9 +36,9 @@ const PendingTrainingsView = memo(({
       className="space-y-6"
     >
       <div className="bg-surface rounded-[28px] p-6 shadow-sm border border-border-subtle">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
+        <div className="flex flex-col md:flex-row justify-between items-center md:items-center gap-4 mb-6">
+          <div className="flex items-center justify-center md:justify-start gap-3 w-full md:w-auto">
+            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0">
               <Briefcase className="w-5 h-5" />
             </div>
             <h2 className="text-lg font-bold text-content">Meus Treinamentos</h2>
