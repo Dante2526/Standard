@@ -53,29 +53,29 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
       <div className="bg-surface rounded-[28px] p-8 shadow-sm border border-border-subtle relative overflow-visible">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32" />
         
-        <h1 className="text-xl md:text-2xl font-black text-content uppercase tracking-tight mb-8 border-b border-border-subtle pb-4 relative z-10">
+        <h1 className="text-xl md:text-2xl font-black text-content uppercase tracking-tight mb-8 border-b border-border-subtle pb-4 relative z-10 text-center md:text-left">
           Relatório de Progresso de Treinamento
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-          <div className="space-y-4">
-            <div className="flex justify-between items-start gap-4">
-              <div className="flex flex-col gap-1 min-w-0">
+          <div className="space-y-6 md:space-y-4">
+            <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-6 md:gap-4">
+              <div className="flex flex-col gap-1 items-center md:items-start text-center md:text-left min-w-0">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Nome do Colaborador</span>
                 <span className="text-lg font-bold text-content uppercase truncate">{trainee?.name || '---'}</span>
               </div>
-              <div className="flex flex-col gap-1 items-center shrink-0">
+              <div className="flex flex-col gap-1 items-center shrink-0 text-center">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Matrícula</span>
                 <span className="text-base font-bold text-content">{trainee?.matricula || '---'}</span>
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-x-8 gap-y-4 sm:gap-12">
-              <div className="flex flex-col gap-1 relative shrink-0">
+            <div className="flex flex-col md:flex-row flex-wrap gap-6 md:gap-x-8 md:gap-y-4 sm:gap-12">
+              <div className="flex flex-col gap-1 items-center md:items-start text-center md:text-left relative shrink-0">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Função</span>
                 <button 
                   onClick={() => setOpenDropdownId(openDropdownId === 'funcao' ? null : 'funcao')}
-                  className="text-base font-bold text-content uppercase text-left flex items-center gap-1 group cursor-pointer hover:text-blue-600 transition-colors"
+                  className="text-base font-bold text-content uppercase text-center md:text-left flex items-center justify-center md:justify-start gap-1 group cursor-pointer hover:text-blue-600 transition-colors"
                 >
                   {totalHours === 240 ? 'MAQUINISTA PÁTIO' : 'OFF'}
                   <ChevronDown className="w-4 h-4 text-content-muted group-hover:text-blue-600 transition-colors" />
@@ -87,7 +87,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                       initial={{ opacity: 0, y: -10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      className="absolute z-50 top-full mt-2 left-0 bg-surface border border-border-subtle rounded-xl shadow-xl overflow-hidden py-1 min-w-[200px]"
+                      className="absolute z-50 top-full mt-2 left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0 bg-surface border border-border-subtle rounded-xl shadow-xl overflow-hidden py-1 min-w-[200px]"
                     >
                       <button
                         onClick={() => { onUpdateTotalHours(432); setOpenDropdownId(null); }}
@@ -106,14 +106,14 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                 </AnimatePresence>
               </div>
               
-              <div className="flex flex-col gap-1 min-w-0 flex-1">
+              <div className="flex flex-col gap-1 items-center md:items-start text-center md:text-left min-w-0 flex-1">
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Supervisor</span>
                 <input 
                   type="text"
                   value={supervisor}
                   onChange={(e) => onUpdateSupervisor(e.target.value)}
                   placeholder="Nome do Supervisor"
-                  className="text-base font-bold text-content bg-transparent border-b border-transparent hover:border-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-content-muted/30 placeholder:font-normal uppercase w-full min-w-0 truncate"
+                  className="text-base font-bold text-content bg-transparent border-b border-transparent hover:border-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-content-muted/30 placeholder:font-normal uppercase w-full max-w-[300px] md:max-w-none text-center md:text-left truncate"
                 />
               </div>
             </div>
