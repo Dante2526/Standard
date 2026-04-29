@@ -75,10 +75,10 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                 <span className="text-[10px] font-black text-content-muted uppercase tracking-widest opacity-60">Função</span>
                 <button 
                   onClick={() => setOpenDropdownId(openDropdownId === 'funcao' ? null : 'funcao')}
-                  className="text-base font-bold text-content uppercase text-center md:text-left flex items-center justify-center md:justify-start gap-1 group cursor-pointer hover:text-blue-600 transition-colors"
+                  className="relative text-base font-bold text-content uppercase text-center flex items-center justify-center px-6 md:px-0 md:justify-start gap-1 group cursor-pointer hover:text-blue-600 transition-colors"
                 >
                   {totalHours === 240 ? 'MAQUINISTA PÁTIO' : 'OFF'}
-                  <ChevronDown className="w-4 h-4 text-content-muted group-hover:text-blue-600 transition-colors" />
+                  <ChevronDown className="absolute right-0 md:relative md:right-auto w-4 h-4 text-content-muted group-hover:text-blue-600 transition-colors" />
                 </button>
 
                 <AnimatePresence>
@@ -124,10 +124,10 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
               <span className="text-[9px] font-black text-content-muted uppercase tracking-tighter mb-1">Horas Previstas</span>
               <button 
                 onClick={() => setOpenDropdownId(openDropdownId === 'horas-previstas' ? null : 'horas-previstas')}
-                className="flex items-center gap-1 hover:bg-background px-3 py-1 rounded-lg transition-colors"
+                className="relative flex items-center justify-center hover:bg-background px-6 md:px-3 py-1 rounded-lg transition-colors group"
               >
                 <span className="text-xl font-black text-content">{totalHours}</span>
-                <ChevronDown className="w-4 h-4 text-content-muted" />
+                <ChevronDown className="absolute right-0 md:relative md:right-auto md:ml-1 w-4 h-4 text-content-muted" />
               </button>
               
               <AnimatePresence>
