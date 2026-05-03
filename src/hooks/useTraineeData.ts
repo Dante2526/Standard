@@ -16,6 +16,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [manualCompletedTitles, setManualCompletedTitles] = useState<string[]>([]);
+  const [manualCompletedDates, setManualCompletedDates] = useState<Record<string, string>>({});
   const [rawRealTrainings, setRawRealTrainings] = useState<any[]>([]);
   
   const lastServerDataRef = useRef<string>('');
@@ -50,6 +51,7 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
         setHorasPrevistas(data.horasPrevistas || null);
         setSupervisor(data.supervisor || '');
         setManualCompletedTitles(data.manualCompletedTitles || []);
+        setManualCompletedDates(data.manualCompletedDates || {});
         setNotifiedMilestones(data.notifiedMilestones || []);
         
         lastServerDataRef.current = JSON.stringify({
@@ -90,11 +92,18 @@ export function useTraineeData(selectedTrainee: Trainee | null) {
   }, [selectedTrainee]);
 
   const realTrainings = useMemo(() => {
-    return rawRealTrainings.map(t => ({
-      ...t,
-      status: manualCompletedTitles.includes(t.title) ? 'completed' : t.status
-    }));
-  }, [rawRealTrainings, manualCompletedTitles]);
+    return rawRealTrainings.map(t => {
+      const isManuallyCompleted = manualCompletedTitles.includes(t.title);
+      if (isManuallyCompleted) {
+        return {
+          ...t,
+          status: 'completed',
+          date: manualCompletedDates[t.title] || new Date().toLocaleDateString('pt-BR')
+        };
+      }
+      return t;
+    });
+  }, [rawRealTrainings, manualCompletedTitles, manualCompletedDates]);
 
   return {
     tableRows, setTableRows,

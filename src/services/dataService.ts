@@ -174,20 +174,28 @@ export const updateManualTrainingStatus = async (matricula: string, trainingTitl
     const docRef = doc(newDb, 'estagios', matricula);
     const snap = await getDoc(docRef);
     let completedList: string[] = [];
+    let completedDates: Record<string, string> = {};
     
     if (snap.exists()) {
       completedList = snap.data().manualCompletedTitles || [];
+      completedDates = snap.data().manualCompletedDates || {};
     }
 
     if (isCompleted) {
       if (!completedList.includes(trainingTitle)) {
         completedList.push(trainingTitle);
       }
+      // Salva a data atual no formato DD/MM/YYYY
+      completedDates[trainingTitle] = new Date().toLocaleDateString('pt-BR');
     } else {
       completedList = completedList.filter(t => t !== trainingTitle);
+      delete completedDates[trainingTitle];
     }
 
-    await setDoc(docRef, { manualCompletedTitles: completedList }, { merge: true });
+    await setDoc(docRef, { 
+      manualCompletedTitles: completedList,
+      manualCompletedDates: completedDates
+    }, { merge: true });
   } catch (error) {
     console.error("Erro ao atualizar status manual do treinamento:", error);
     throw error;

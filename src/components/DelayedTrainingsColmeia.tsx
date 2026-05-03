@@ -1,5 +1,5 @@
-import { memo } from 'react';
-import { motion } from 'motion/react';
+import { memo, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { User as UserIcon, AlertCircle, CalendarClock, ChevronRight, Check } from 'lucide-react';
 import { Trainee } from '../types';
 
@@ -18,6 +18,8 @@ const DelayedTrainingsColmeia = memo(({
   onSelectTrainee,
   onToggleManualStatus
 }: DelayedTrainingsColmeiaProps) => {
+  const [locallyCompleted, setLocallyCompleted] = useState<Set<string>>(new Set());
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -27,8 +29,12 @@ const DelayedTrainingsColmeia = memo(({
     );
   }
 
-  // Filtrar apenas colaboradores que POSSUEM treinamentos pendentes
-  const traineesWithDelays = trainees.filter(t => delayedMap[t.matricula] && delayedMap[t.matricula].length > 0);
+  // Filtrar apenas colaboradores que POSSUEM treinamentos pendentes, excluindo os marcados localmente
+  const traineesWithDelays = trainees.filter(t => {
+    const delays = delayedMap[t.matricula] || [];
+    const remaining = delays.filter(d => !locallyCompleted.has(`${t.matricula}::${d.title}`));
+    return remaining.length > 0;
+  });
 
   if (traineesWithDelays.length === 0) {
     return (
@@ -156,7 +162,7 @@ const DelayedTrainingsColmeia = memo(({
                 {/* Mobile Connection Line */}
                 <div className="md:hidden absolute left-8 top-[-24px] bottom-8 w-0.5 bg-red-500/20 border-l-2 border-dashed border-red-500/30" />
 
-                {delays.map((delay, dIndex) => {
+                {delays.filter(delay => !locallyCompleted.has(`${trainee.matricula}::${delay.title}`)).map((delay, dIndex) => {
                   const isAtrasado = delay.daysRemaining < 0;
                   
                   return (
@@ -207,9 +213,10 @@ const DelayedTrainingsColmeia = memo(({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (confirm(`Marcar "${delay.title}" como concluído para ${trainee.name}?`)) {
-                                  onToggleManualStatus(trainee.matricula, delay.title, true);
-                                }
+                                // Remove imediatamente da lista (otimista)
+                                setLocallyCompleted(prev => new Set(prev).add(`${trainee.matricula}::${delay.title}`));
+                                // Salva no Firestore
+                                onToggleManualStatus(trainee.matricula, delay.title, true);
                               }}
                               className="shrink-0 w-8 h-8 rounded-xl bg-surface border border-border-subtle flex items-center justify-center text-content-muted hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm group/btn"
                               title="Marcar como concluído"
