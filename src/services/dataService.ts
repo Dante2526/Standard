@@ -255,6 +255,7 @@ export const processRealTrainingsFromParsedData = (parsedData: any[], trainee: T
   if (idxDate === -1) idxDate = headers.findIndex((h: string) => h.includes('data') && !h.includes('revisão') && !h.includes('inclusão'));
   const idxDaysLeft = headers.findIndex((h: string) => h.includes('dias restantes') || h.includes('dias') || h.includes('prazo'));
   const idxTipoAcao = headers.findIndex((h: string) => h.includes('tipo da ação') || h.includes('modalidade'));
+  const idxCodigo = headers.findIndex((h: string) => h.includes('id de entidade') || h.includes('código') || h.includes('codigo') || h === 'id');
 
   return parsedData.filter((row: any, idx: number) => {
     if (idx <= headerIdx) return false; 
@@ -311,8 +312,11 @@ export const processRealTrainingsFromParsedData = (parsedData: any[], trainee: T
     }
     if (!date) date = 'Sem data';
 
+    const code = idxCodigo >= 0 ? (row.colunas[idxCodigo] || '').toString().trim() : '';
+
     return {
       title: sanitizeString(title),
+      code: sanitizeString(code),
       status: isCompleted ? 'completed' : 'pending',
       date: sanitizeString(date),
       priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 0 ? 'Alta' : (daysLeft < 30 ? 'Alta' : (daysLeft < 90 ? 'Média' : 'Baixa'))),
@@ -415,6 +419,7 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
   if (idxDate === -1) idxDate = headers.findIndex((h: string) => h.includes('data') && !h.includes('revisão') && !h.includes('inclusão'));
   const idxDaysLeft = headers.findIndex((h: string) => h.includes('dias restantes') || h.includes('dias') || h.includes('prazo'));
   const idxTipoAcao = headers.findIndex((h: string) => h.includes('tipo da ação') || h.includes('modalidade'));
+  const idxCodigo = headers.findIndex((h: string) => h.includes('id de entidade') || h.includes('código') || h.includes('codigo') || h === 'id');
 
   const results: Record<string, any[]> = {};
   trainees.forEach(t => { results[t.matricula] = []; });
@@ -487,8 +492,11 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
         }
         if (!date) date = 'Sem data';
 
+        const code = idxCodigo >= 0 ? (row.colunas[idxCodigo] || '').toString().trim() : '';
+
         results[matchedTrainee.matricula].push({
           title: sanitizeString(title),
+          code: sanitizeString(code),
           status: 'pending',
           date: sanitizeString(date),
           priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 0 ? 'Alta' : 'Média'),

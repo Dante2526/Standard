@@ -180,6 +180,11 @@ const DelayedTrainingsColmeia = memo(({
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <h4 className="font-bold text-content text-sm leading-snug">{delay.title}</h4>
+                            {delay.code && (
+                              <span className="inline-block mt-1 text-[9px] bg-background border border-border-subtle text-content-muted font-black uppercase tracking-widest px-1.5 py-0.5 rounded font-mono">
+                                {delay.code}
+                              </span>
+                            )}
                             <div className="flex flex-wrap items-center gap-3 mt-2">
                               {isAtrasado ? (
                                 <span className="flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-md">

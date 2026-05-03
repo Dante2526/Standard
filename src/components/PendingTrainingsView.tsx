@@ -113,6 +113,11 @@ const PendingTrainingsView = memo(({
                         {item.title}
                       </h4>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {item.code && (
+                          <span className="text-[9px] bg-surface border border-border-subtle text-content-muted font-black uppercase tracking-widest px-1.5 py-0.5 rounded font-mono">
+                            {item.code}
+                          </span>
+                        )}
                         <span className="text-[10px] text-content-muted font-medium uppercase tracking-wider">{item.category}</span>
                         {item.modality && (
                           <span className={`text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider ${
