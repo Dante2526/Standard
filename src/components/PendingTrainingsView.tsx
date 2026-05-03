@@ -112,8 +112,17 @@ const PendingTrainingsView = memo(({
                       <h4 className="font-bold text-content text-sm mb-1 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
                         {item.title}
                       </h4>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="text-[10px] text-content-muted font-medium uppercase tracking-wider">{item.category}</span>
+                        {item.modality && (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider ${
+                            item.modality === 'Online' ? 'bg-blue-50 text-blue-600' : 
+                            item.modality === 'OJT' ? 'bg-purple-50 text-purple-600' :
+                            'bg-indigo-50 text-indigo-600'
+                          }`}>
+                            {item.modality}
+                          </span>
+                        )}
                         {item.status === 'completed' && (
                           <span className="text-[10px] text-emerald-600 font-black uppercase tracking-tighter flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" /> Concluído

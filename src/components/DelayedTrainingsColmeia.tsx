@@ -190,6 +190,15 @@ const DelayedTrainingsColmeia = memo(({
                                   Prazo: {delay.date}
                                 </span>
                               )}
+                              {delay.modality && (
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider ${
+                                  delay.modality === 'Online' ? 'bg-blue-50 text-blue-600' : 
+                                  delay.modality === 'OJT' ? 'bg-purple-50 text-purple-600' :
+                                  'bg-indigo-50 text-indigo-600'
+                                }`}>
+                                  {delay.modality}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

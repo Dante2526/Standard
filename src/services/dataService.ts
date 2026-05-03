@@ -181,7 +181,7 @@ export const processRealTrainingsFromParsedData = (parsedData: any[], trainee: T
   let headerIdx = 0;
   while (headerIdx < parsedData.length) {
     const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
-    if (hRow.some((h: string) => h.includes('matrícula') || h.includes('empregado') || h.includes('treinamento'))) {
+    if (hRow.some((h: string) => h.includes('matrícula') || h.includes('empregado') || h.includes('treinamento') || h.includes('id do usuário') || h.includes('título da entidade'))) {
       break; 
     }
     headerIdx++;
@@ -191,12 +191,16 @@ export const processRealTrainingsFromParsedData = (parsedData: any[], trainee: T
 
   const headers = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
   
-  const idxNome = headers.findIndex((h: string) => h.includes('nome') || h.includes('empregado') || h.includes('colaborador'));
-  const idxMatricula = headers.findIndex((h: string) => h.includes('matrícula') || h.includes('matricula') || h.includes('id'));
-  const idxTitulo = headers.findIndex((h: string) => h.includes('treinamento') || h.includes('curso') || h.includes('título'));
+  const idxNome = headers.findIndex((h: string) => h === 'nome' || h === 'nome do empregado' || h.includes('empregado') || h.includes('colaborador'));
+  const idxMatricula = headers.findIndex((h: string) => h.includes('matrícula') || h.includes('matricula') || h.includes('id do usuário') || h === 'id');
+  const idxTitulo = headers.findIndex((h: string) => h.includes('treinamento') || h.includes('curso') || h.includes('título da entidade') || h === 'título');
   const idxStatus = headers.findIndex((h: string) => h.includes('status') || h.includes('situação'));
-  const idxDate = headers.findIndex((h: string) => h.includes('data') || h.includes('vencimento') || h.includes('realização'));
-  const idxDaysLeft = headers.findIndex((h: string) => h.includes('dias') || h.includes('prazo'));
+  const idxDataConclusao = headers.findIndex((h: string) => h.includes('data de conclusão') || h.includes('data da conclusão'));
+  let idxDate = headers.findIndex((h: string) => h.includes('vencimento') || h.includes('limite') || h.includes('prazo'));
+  if (idxDate === -1) idxDate = headers.findIndex((h: string) => h.includes('realização') || h.includes('data de conclusão'));
+  if (idxDate === -1) idxDate = headers.findIndex((h: string) => h.includes('data') && !h.includes('revisão') && !h.includes('inclusão'));
+  const idxDaysLeft = headers.findIndex((h: string) => h.includes('dias restantes') || h.includes('dias') || h.includes('prazo'));
+  const idxTipoAcao = headers.findIndex((h: string) => h.includes('tipo da ação') || h.includes('modalidade'));
 
   return parsedData.filter((row: any, idx: number) => {
     if (idx <= headerIdx) return false; 
@@ -211,12 +215,34 @@ export const processRealTrainingsFromParsedData = (parsedData: any[], trainee: T
     if (firstName && targetMatricula && rowName.includes(firstName) && rowMatricula.includes(targetMatricula)) return true;
     return false;
   }).map((row: any) => {
-    const statusRaw = idxStatus >= 0 ? (row.colunas[idxStatus] || '').toString().trim() : (row.colunas[4] || '').toString().trim();
+    const statusRaw = idxStatus >= 0 ? (row.colunas[idxStatus] || '').toString().trim() : '';
+    const dataConclusaoRaw = idxDataConclusao >= 0 ? (row.colunas[idxDataConclusao] || '').toString().trim() : '';
+    
+    let isCompleted = false;
+    if (statusRaw) {
+      const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
+      isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
+    } else if (dataConclusaoRaw) {
+      isCompleted = dataConclusaoRaw !== '' && dataConclusaoRaw !== '-';
+    } else if (idxStatus === -1 && idxDataConclusao === -1) {
+      const fallbackStatus = (row.colunas[4] || '').toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      isCompleted = fallbackStatus.includes('realizado') || fallbackStatus.includes('concluido') || fallbackStatus.includes('conclu');
+    }
+
     const daysLeftStr = idxDaysLeft >= 0 ? (row.colunas[idxDaysLeft] || '').toString().trim() : (row.colunas[6] || '').toString().trim();
     const daysLeft = parseInt(daysLeftStr);
     const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
     let date = idxDate >= 0 ? (row.colunas[idxDate] || '').toString().trim() : (row.colunas[5] || '').toString().trim();
     
+    // Extrair modalidade
+    const tipoAcao = idxTipoAcao >= 0 ? (row.colunas[idxTipoAcao] || '').toString().toUpperCase().trim() : '';
+    let modality = 'Presencial';
+    if (tipoAcao === 'ONL' || tipoAcao.includes('ONLINE') || tipoAcao.includes('E-LEARNING')) {
+      modality = 'Online';
+    } else if (tipoAcao === 'OJT') {
+      modality = 'OJT';
+    }
+
     // Se a data estiver vazia mas temos dias restantes, calcular a data limite
     if (!date && !isNaN(daysLeft)) {
       const targetDate = new Date();
@@ -225,15 +251,13 @@ export const processRealTrainingsFromParsedData = (parsedData: any[], trainee: T
     }
     if (!date) date = 'Sem data';
 
-    const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
-
     return {
       title: sanitizeString(title),
       status: isCompleted ? 'completed' : 'pending',
       date: sanitizeString(date),
       priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 0 ? 'Alta' : (daysLeft < 30 ? 'Alta' : (daysLeft < 90 ? 'Média' : 'Baixa'))),
-      daysRemaining: isNaN(daysLeft) ? null : daysLeft
+      daysRemaining: isNaN(daysLeft) ? null : daysLeft,
+      modality
     };
   });
 };
@@ -312,7 +336,7 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
   let headerIdx = 0;
   while (headerIdx < parsedData.length) {
     const hRow = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
-    if (hRow.some((h: string) => h.includes('matrícula') || h.includes('empregado') || h.includes('treinamento'))) {
+    if (hRow.some((h: string) => h.includes('matrícula') || h.includes('empregado') || h.includes('treinamento') || h.includes('id do usuário') || h.includes('título da entidade'))) {
       break; 
     }
     headerIdx++;
@@ -321,12 +345,16 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
   if (headerIdx >= parsedData.length) return {};
 
   const headers = parsedData[headerIdx].colunas.map((h: string) => (h || '').toLowerCase().trim());
-  const idxNome = headers.findIndex((h: string) => h.includes('nome') || h.includes('empregado') || h.includes('colaborador'));
-  const idxMatricula = headers.findIndex((h: string) => h.includes('matrícula') || h.includes('matricula') || h.includes('id'));
-  const idxTitulo = headers.findIndex((h: string) => h.includes('treinamento') || h.includes('curso') || h.includes('título'));
+  const idxNome = headers.findIndex((h: string) => h === 'nome' || h === 'nome do empregado' || h.includes('empregado') || h.includes('colaborador'));
+  const idxMatricula = headers.findIndex((h: string) => h.includes('matrícula') || h.includes('matricula') || h.includes('id do usuário') || h === 'id');
+  const idxTitulo = headers.findIndex((h: string) => h.includes('treinamento') || h.includes('curso') || h.includes('título da entidade') || h === 'título');
   const idxStatus = headers.findIndex((h: string) => h.includes('status') || h.includes('situação'));
-  const idxDate = headers.findIndex((h: string) => h.includes('data') || h.includes('vencimento') || h.includes('realização'));
-  const idxDaysLeft = headers.findIndex((h: string) => h.includes('dias') || h.includes('prazo'));
+  const idxDataConclusao = headers.findIndex((h: string) => h.includes('data de conclusão') || h.includes('data da conclusão'));
+  let idxDate = headers.findIndex((h: string) => h.includes('vencimento') || h.includes('limite') || h.includes('prazo'));
+  if (idxDate === -1) idxDate = headers.findIndex((h: string) => h.includes('realização') || h.includes('data de conclusão'));
+  if (idxDate === -1) idxDate = headers.findIndex((h: string) => h.includes('data') && !h.includes('revisão') && !h.includes('inclusão'));
+  const idxDaysLeft = headers.findIndex((h: string) => h.includes('dias restantes') || h.includes('dias') || h.includes('prazo'));
+  const idxTipoAcao = headers.findIndex((h: string) => h.includes('tipo da ação') || h.includes('modalidade'));
 
   const results: Record<string, any[]> = {};
   trainees.forEach(t => { results[t.matricula] = []; });
@@ -358,9 +386,19 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
     // Busca flexível: matrícula parcial OU nome
     const matchedTrainee = findMatchingTrainee(rowMatricula, rowName);
     if (matchedTrainee) {
-      const statusRaw = idxStatus >= 0 ? (row.colunas[idxStatus] || '').toString().trim() : (row.colunas[4] || '').toString().trim();
-      const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
+      const statusRaw = idxStatus >= 0 ? (row.colunas[idxStatus] || '').toString().trim() : '';
+      const dataConclusaoRaw = idxDataConclusao >= 0 ? (row.colunas[idxDataConclusao] || '').toString().trim() : '';
+      
+      let isCompleted = false;
+      if (statusRaw) {
+        const normalizedStatus = statusRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
+        isCompleted = normalizedStatus.includes('realizado') || normalizedStatus.includes('concluido') || normalizedStatus.includes('conclu');
+      } else if (dataConclusaoRaw) {
+        isCompleted = dataConclusaoRaw !== '' && dataConclusaoRaw !== '-';
+      } else if (idxStatus === -1 && idxDataConclusao === -1) {
+        const fallbackStatus = (row.colunas[4] || '').toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        isCompleted = fallbackStatus.includes('realizado') || fallbackStatus.includes('concluido') || fallbackStatus.includes('conclu');
+      }
       
       // Só nos interessam os não concluídos (pendentes)
       if (!isCompleted) {
@@ -372,6 +410,15 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
         const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
         let date = idxDate >= 0 ? (row.colunas[idxDate] || '').toString().trim() : (row.colunas[5] || '').toString().trim();
         
+        // Extrair modalidade
+        const tipoAcao = idxTipoAcao >= 0 ? (row.colunas[idxTipoAcao] || '').toString().toUpperCase().trim() : '';
+        let modality = 'Presencial';
+        if (tipoAcao === 'ONL' || tipoAcao.includes('ONLINE') || tipoAcao.includes('E-LEARNING')) {
+          modality = 'Online';
+        } else if (tipoAcao === 'OJT') {
+          modality = 'OJT';
+        }
+
         if (!date && !isNaN(daysLeft)) {
           const targetDate = new Date();
           targetDate.setDate(targetDate.getDate() + daysLeft);
@@ -384,7 +431,8 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
           status: 'pending',
           date: sanitizeString(date),
           priority: isNaN(daysLeft) ? 'Média' : (daysLeft < 0 ? 'Alta' : 'Média'),
-          daysRemaining: isNaN(daysLeft) ? 0 : daysLeft
+          daysRemaining: isNaN(daysLeft) ? 0 : daysLeft,
+          modality
         });
       }
     }
