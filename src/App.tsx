@@ -390,6 +390,9 @@ export default function App() {
         selectedClass={selectedClass} trainees={trainees}
         isLoading={isLoadingTrainees} onBack={() => setSelectedClass(null)}
         onSelectTrainee={setSelectedTrainee}
+        onToggleManualStatus={async (matricula, title, completed) => {
+          await DataService.updateManualTrainingStatus(matricula, title, completed);
+        }}
       />
     );
   }

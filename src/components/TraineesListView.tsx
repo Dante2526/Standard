@@ -14,6 +14,7 @@ interface TraineesListViewProps {
   trainees: Trainee[];
   onBack: () => void;
   onSelectTrainee: (trainee: Trainee) => void;
+  onToggleManualStatus?: (matricula: string, title: string, completed: boolean) => void;
 }
 
 const TraineeSkeleton = () => (
@@ -42,7 +43,8 @@ const TraineesListView = memo(({
   isLoading,
   trainees,
   onBack,
-  onSelectTrainee
+  onSelectTrainee,
+  onToggleManualStatus
 }: TraineesListViewProps) => {
 
   const scrollToLetter = (letter: string) => {
@@ -160,6 +162,7 @@ const TraineesListView = memo(({
             delayedMap={delayedMap} 
             isLoading={isLoadingDelayed} 
             onSelectTrainee={onSelectTrainee} 
+            onToggleManualStatus={onToggleManualStatus}
           />
         ) : activeTab === 'kaizen' ? (
           <KaizenRankingView

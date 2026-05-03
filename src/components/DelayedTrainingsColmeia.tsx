@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { motion } from 'motion/react';
-import { User as UserIcon, AlertCircle, CalendarClock, ChevronRight } from 'lucide-react';
+import { User as UserIcon, AlertCircle, CalendarClock, ChevronRight, Check } from 'lucide-react';
 import { Trainee } from '../types';
 
 interface DelayedTrainingsColmeiaProps {
@@ -8,13 +8,15 @@ interface DelayedTrainingsColmeiaProps {
   delayedMap: Record<string, any[]>;
   isLoading: boolean;
   onSelectTrainee: (trainee: Trainee) => void;
+  onToggleManualStatus?: (matricula: string, title: string, completed: boolean) => void;
 }
 
 const DelayedTrainingsColmeia = memo(({
   trainees,
   delayedMap,
   isLoading,
-  onSelectTrainee
+  onSelectTrainee,
+  onToggleManualStatus
 }: DelayedTrainingsColmeiaProps) => {
   if (isLoading) {
     return (
@@ -201,6 +203,20 @@ const DelayedTrainingsColmeia = memo(({
                               )}
                             </div>
                           </div>
+                          {onToggleManualStatus && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`Marcar "${delay.title}" como concluído para ${trainee.name}?`)) {
+                                  onToggleManualStatus(trainee.matricula, delay.title, true);
+                                }
+                              }}
+                              className="shrink-0 w-8 h-8 rounded-xl bg-surface border border-border-subtle flex items-center justify-center text-content-muted hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm group/btn"
+                              title="Marcar como concluído"
+                            >
+                              <Check className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </motion.div>

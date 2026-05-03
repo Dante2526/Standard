@@ -42,6 +42,52 @@ const findHeaderRow = (parsedData: any[], keywords: string[]): number => {
 };
 
 /**
+ * Sanitiza e formata uma data para o padrão brasileiro (DD/MM/YYYY).
+ */
+const formatToBRDate = (value: any): string => {
+  if (!value) return '';
+  const str = String(value).trim();
+  if (!str || str === '-' || str === 'Sem data') return str;
+
+  // Se for um número (serial do Excel)
+  if (!isNaN(Number(str)) && Number(str) > 20000 && Number(str) < 60000) {
+    const date = new Date((Number(str) - 25569) * 86400 * 1000);
+    return date.toLocaleDateString('pt-BR');
+  }
+
+  // Tenta tratar formatos comuns (9/15/2026 ou 15/9/2026)
+  if (str.includes('/')) {
+    const parts = str.split('/');
+    if (parts.length === 3) {
+      let p0 = parts[0];
+      let p1 = parts[1];
+      let p2 = parts[2];
+
+      const n0 = parseInt(p0);
+      const n1 = parseInt(p1);
+      
+      // Se n0 <= 12 e n1 > 12, é provável que seja MM/DD/YYYY
+      if (n0 <= 12 && n1 > 12) {
+        return `${n1.toString().padStart(2, '0')}/${n0.toString().padStart(2, '0')}/${p2}`;
+      }
+      
+      // Se já estiver no padrão DD/MM/YYYY ou for ambíguo, apenas garante zeros à esquerda
+      return `${p0.padStart(2, '0')}/${p1.padStart(2, '0')}/${p2}`;
+    }
+  }
+
+  // Se for YYYY-MM-DD
+  if (str.includes('-') && str.split('-').length === 3) {
+    const parts = str.split('-');
+    if (parts[0].length === 4) { // YYYY-MM-DD
+       return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+    }
+  }
+
+  return str;
+};
+
+/**
  * Garante que o usuário está autenticado anonimamente em ambos os bancos.
  */
 export const ensureAuth = async () => {
@@ -234,6 +280,12 @@ export const processRealTrainingsFromParsedData = (parsedData: any[], trainee: T
     const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
     let date = idxDate >= 0 ? (row.colunas[idxDate] || '').toString().trim() : (row.colunas[5] || '').toString().trim();
     
+    if (isCompleted && dataConclusaoRaw) {
+      date = dataConclusaoRaw;
+    }
+    
+    date = formatToBRDate(date);
+    
     // Extrair modalidade
     const tipoAcao = idxTipoAcao >= 0 ? (row.colunas[idxTipoAcao] || '').toString().toUpperCase().trim() : '';
     let modality = 'Presencial';
@@ -409,6 +461,7 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
         // pois o usuário considera "Pendência" como algo a ser acompanhado na colmeia
         const title = idxTitulo >= 0 ? (row.colunas[idxTitulo] || 'Treinamento sem título') : (row.colunas[3] || 'Treinamento sem título');
         let date = idxDate >= 0 ? (row.colunas[idxDate] || '').toString().trim() : (row.colunas[5] || '').toString().trim();
+        date = formatToBRDate(date);
         
         // Extrair modalidade
         const tipoAcao = idxTipoAcao >= 0 ? (row.colunas[idxTipoAcao] || '').toString().toUpperCase().trim() : '';
