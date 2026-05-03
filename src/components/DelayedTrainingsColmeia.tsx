@@ -182,7 +182,7 @@ const DelayedTrainingsColmeia = memo(({
                             <h4 className="font-bold text-content text-sm leading-snug">{delay.title}</h4>
                             {delay.code && (
                               <span className="inline-block mt-1 text-[9px] bg-background border border-border-subtle text-content-muted font-black uppercase tracking-widest px-1.5 py-0.5 rounded font-mono">
-                                {delay.code}
+                                Cód: {delay.code}
                               </span>
                             )}
                             <div className="flex flex-wrap items-center gap-3 mt-2">
