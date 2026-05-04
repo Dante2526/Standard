@@ -25,10 +25,21 @@ const DelayedTrainingsColmeia = memo(({
     const idStr = String(traineeId);
     setExpandedCards(prev => {
       const next = new Set(prev);
-      if (next.has(idStr)) {
+      const isExpanding = !next.has(idStr);
+      
+      if (!isExpanding) {
         next.delete(idStr);
       } else {
         next.add(idStr);
+        // Rolagem automática para o cartão após pequena pausa para a renderização
+        setTimeout(() => {
+          const element = document.getElementById(`trainee-colmeia-inner-${idStr}`);
+          if (element) {
+            const yOffset = -150; 
+            const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          }
+        }, 150);
       }
       return next;
     });
