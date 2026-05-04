@@ -21,13 +21,14 @@ const DelayedTrainingsColmeia = memo(({
   const [locallyCompleted, setLocallyCompleted] = useState<Set<string>>(new Set());
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
-  const toggleExpand = (traineeId: string) => {
+  const toggleExpand = (traineeId: string | number) => {
+    const idStr = String(traineeId);
     setExpandedCards(prev => {
       const next = new Set(prev);
-      if (next.has(traineeId)) {
-        next.delete(traineeId);
+      if (next.has(idStr)) {
+        next.delete(idStr);
       } else {
-        next.add(traineeId);
+        next.add(idStr);
       }
       return next;
     });
@@ -106,7 +107,7 @@ const DelayedTrainingsColmeia = memo(({
         {traineesWithDelays.map((trainee, index) => {
           const allDelays = delayedMap[trainee.matricula];
           const delays = allDelays.filter(d => !locallyCompleted.has(`${trainee.matricula}::${d.title}`));
-          const isExpanded = expandedCards.has(trainee.id);
+          const isExpanded = expandedCards.has(String(trainee.id));
           
           return (
             <motion.div 
