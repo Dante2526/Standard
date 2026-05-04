@@ -31,15 +31,18 @@ const DelayedTrainingsColmeia = memo(({
         next.delete(idStr);
       } else {
         next.add(idStr);
-        // Rolagem automática para o cartão após pequena pausa para a renderização
+        // Aguarda a animação do framer-motion (300ms) finalizar para pegar a posição exata
         setTimeout(() => {
           const element = document.getElementById(`trainee-colmeia-inner-${idStr}`);
           if (element) {
-            const yOffset = -150; 
+            // Usa scrollIntoView com block: 'center' se a tela for grande, 
+            // ou calcula um offset se precisar de mais controle.
+            // Para garantir que fique visível sem colar no topo (por causa de headers):
+            const yOffset = -100; 
             const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
             window.scrollTo({ top: y, behavior: 'smooth' });
           }
-        }, 150);
+        }, 350);
       }
       return next;
     });
