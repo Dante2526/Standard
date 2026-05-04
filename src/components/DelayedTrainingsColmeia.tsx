@@ -122,21 +122,25 @@ const DelayedTrainingsColmeia = memo(({
           
           return (
             <motion.div 
+              layout
               key={trainee.id}
               id={`trainee-colmeia-${trainee.id}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(index * 0.05, 0.5) }}
+              transition={{ delay: Math.min(index * 0.05, 0.5), layout: { duration: 0.3 } }}
               className="relative"
             >
               {/* Mindmap Layout Container */}
               <div className="flex flex-col md:flex-row items-stretch gap-0">
                 
                 {/* Parent Node (Trainee) */}
-                <div className={`relative z-10 flex-shrink-0 flex items-center transition-all duration-300 ${isExpanded ? 'md:w-1/3' : 'md:w-full'}`}>
+                <motion.div 
+                  layout
+                  className={`relative z-10 flex-shrink-0 flex items-center ${isExpanded ? 'md:w-1/3' : 'md:w-full'}`}
+                >
                   <div 
                     id={`trainee-colmeia-inner-${trainee.id}`}
-                    className={`w-full bg-surface p-5 rounded-[24px] border-2 ${isExpanded ? 'border-red-500/40 shadow-xl' : 'border-red-500/20 shadow-lg'} hover:border-red-500/50 hover:shadow-xl transition-all group`}
+                    className={`w-full bg-surface p-5 rounded-[24px] border-2 ${isExpanded ? 'border-red-500/40 shadow-xl' : 'border-red-500/20 shadow-lg'} hover:border-red-500/50 hover:shadow-xl transition-colors group`}
                   >
                     <div className="flex items-center gap-4">
                       {/* Ícone do usuário - clica para ir ao perfil */}
@@ -176,17 +180,18 @@ const DelayedTrainingsColmeia = memo(({
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Connectors & Children Nodes (Delays) - Condicional à expansão */}
                 <AnimatePresence>
                   {isExpanded && (
                     <motion.div 
-                      initial={{ opacity: 0, scaleX: 0, originX: 0 }}
-                      animate={{ opacity: 1, scaleX: 1, originX: 0 }}
-                      exit={{ opacity: 0, scaleX: 0, originX: 0 }}
-                      transition={{ duration: 0.3, ease: 'easeOut' }}
-                      className="relative mt-6 md:mt-0 md:ml-12 flex-1 flex flex-col justify-center gap-4"
+                      layout
+                      initial={{ opacity: 0, filter: 'blur(4px)' }}
+                      animate={{ opacity: 1, filter: 'blur(0px)' }}
+                      exit={{ opacity: 0, filter: 'blur(4px)' }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="relative mt-6 md:mt-0 md:ml-12 flex-1 flex flex-col justify-center gap-4 min-w-[280px]"
                     >
                       
                       {/* SVG Connections (Desktop Only) */}
@@ -221,9 +226,11 @@ const DelayedTrainingsColmeia = memo(({
                         return (
                           <motion.div 
                             key={dIndex}
-                            initial={{ opacity: 0, x: -20 }}
+                            layout
+                            initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: dIndex * 0.05 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            transition={{ delay: dIndex * 0.03, duration: 0.2 }}
                             className="relative md:ml-0 ml-16"
                           >
                             {/* Mobile Horizontal Connector */}
