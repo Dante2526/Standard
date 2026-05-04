@@ -187,7 +187,7 @@ const DelayedTrainingsColmeia = memo(({
                              const yPos = (spacing / 2) + (i * spacing);
                              
                              return (
-                               <motion.path 
+                               <path 
                                  key={i}
                                  d={`M 0 50 C 50 50, 50 ${yPos}, 100 ${yPos}`} 
                                  fill="none" 
@@ -195,9 +195,6 @@ const DelayedTrainingsColmeia = memo(({
                                  strokeWidth="2"
                                  strokeDasharray="4 4"
                                  vectorEffect="non-scaling-stroke"
-                                 initial={{ pathLength: 0 }}
-                                 animate={{ pathLength: 1 }}
-                                 transition={{ duration: 0.4, delay: i * 0.05 }}
                                />
                              );
                            })}
