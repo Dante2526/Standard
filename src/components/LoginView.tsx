@@ -160,19 +160,19 @@ const LoginView = memo(({
       </div>
       
       <div className="flex-1 flex items-center justify-center w-full py-4">
-        <div className="bg-surface rounded-[32px] p-6 shadow-xl max-w-md w-full border border-border-subtle flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mb-4">
-            <Briefcase className="w-6 h-6 text-white" />
+        <div className="bg-surface rounded-[32px] p-8 shadow-xl max-w-md w-full border border-border-subtle flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6">
+            <Briefcase className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-content mb-1 tracking-tight">Bem-vindo</h1>
-          <p className="text-content-muted mb-4 text-sm">Faça login para acessar o painel</p>
+          <h1 className="text-3xl font-bold text-content mb-2 tracking-tight">Bem-vindo</h1>
+          <p className="text-content-muted mb-8">Faça login para acessar o painel</p>
           
-          <form onSubmit={handleLogin} className="space-y-3 w-full text-left">
+          <form onSubmit={handleLogin} className="space-y-4 w-full text-left">
             <div className="space-y-2">
               <div className="flex flex-col gap-0.5 pl-1">
-                <span className="text-[11px] text-yellow-600 font-black uppercase tracking-wide">* Digite tudo em minúsculo</span>
-                <span className="text-[10px] text-yellow-600/80 font-bold leading-tight">• Colaborador loga com matrícula</span>
-                <span className="text-[10px] text-yellow-600/80 font-bold leading-tight">• Acesso ADM com e-mail corporativo</span>
+                <span className="text-[13px] text-yellow-600 font-black uppercase tracking-wide">* Digite tudo em minúsculo</span>
+                <span className="text-[11px] text-yellow-600/80 font-bold leading-tight">• Colaborador loga com matrícula</span>
+                <span className="text-[11px] text-yellow-600/80 font-bold leading-tight">• Acesso ADM com e-mail corporativo</span>
               </div>
               <input
                 type="text"
@@ -180,22 +180,22 @@ const LoginView = memo(({
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
                 placeholder="Matrícula ou E-mail"
-                className="w-full px-4 py-2.5 rounded-2xl border border-border-subtle focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-background focus:bg-surface font-medium text-sm"
+                className="w-full px-4 py-3.5 rounded-2xl border border-border-subtle focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-background focus:bg-surface font-medium"
                 required
                 disabled={isLoadingLogin}
               />
               {loginError && (
-                <p className="text-red-500 text-[12px] mt-1 pl-1 font-medium">{loginError}</p>
+                <p className="text-red-500 text-sm mt-2 pl-1 font-medium">{loginError}</p>
               )}
             </div>
             <button
               type="submit"
               disabled={isLoadingLogin}
-              className="w-full bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] text-white font-black py-3 rounded-2xl transition-all shadow-xl shadow-black/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wide text-xs"
+              className="w-full bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-black/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
             >
               {isLoadingLogin ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Verificando...
                 </>
               ) : (
