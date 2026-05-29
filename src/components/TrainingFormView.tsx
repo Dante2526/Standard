@@ -189,15 +189,13 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
               )}
             </AnimatePresence>
           </div>
-          {isAdmin && (
-            <button
-              onClick={addRow}
-              className="flex items-center gap-2 bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] text-white px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-wide transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-blue-500/20 border border-white/10"
-            >
-              <Plus className="w-4 h-4" />
-              Nova Linha
-            </button>
-          )}
+          <button
+            onClick={addRow}
+            className="flex items-center gap-2 bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] text-white px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-wide transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-blue-500/20 border border-white/10"
+          >
+            <Plus className="w-4 h-4" />
+            Nova Linha
+          </button>
         </div>
 
         <div className="w-full overflow-x-auto custom-scrollbar">
@@ -211,7 +209,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[70px] md:w-[80px]">Dur.</th>
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[120px]">Instrutor</th>
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[120px]">Avaliação</th>
-                {isAdmin && <th className="py-2 px-1 w-10"></th>}
+                <th className="py-2 px-1 w-10"></th>
               </tr>
             </thead>
             <tbody>
@@ -220,13 +218,13 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   <td className="py-2 px-1">
                     <div className="relative">
                       <button
-                        onClick={() => isAdmin && setOpenDropdownId(openDropdownId === `local-${row.id}` ? null : `local-${row.id}`)}
-                        className={`w-full text-left px-2 py-3 md:py-1.5 text-sm rounded-lg border border-border-subtle/50 transition-colors flex items-center justify-between ${isAdmin ? 'hover:border-blue-300 hover:bg-surface' : ''}`}
+                        onClick={() => setOpenDropdownId(openDropdownId === `local-${row.id}` ? null : `local-${row.id}`)}
+                        className="w-full text-left px-2 py-3 md:py-1.5 text-sm rounded-lg border border-border-subtle/50 transition-colors flex items-center justify-between hover:border-blue-300 hover:bg-surface"
                       >
                         <span className={row.local ? 'text-content' : 'text-content-muted truncate'}>
                           {row.local || 'Selecione...'}
                         </span>
-                        {isAdmin && <ChevronDown className="w-3 h-3 text-content-muted" />}
+                        <ChevronDown className="w-3 h-3 text-content-muted" />
                       </button>
                       <AnimatePresence>
                         {openDropdownId === `local-${row.id}` && (
@@ -268,7 +266,6 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   <td className="py-2 px-1">
                     <input 
                       type="text" 
-                      readOnly={!isAdmin}
                       className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.equipamento} 
                       onChange={e => updateRow(row.id, 'equipamento', e.target.value)} 
@@ -276,13 +273,13 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   </td>
                   <td className="py-2 px-1 relative text-center">
                     <button
-                      onClick={() => isAdmin && setOpenDropdownId(openDropdownId === `date-${row.id}` ? null : `date-${row.id}`)}
+                      onClick={() => setOpenDropdownId(openDropdownId === `date-${row.id}` ? null : `date-${row.id}`)}
                       className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors flex items-center justify-between"
                     >
                       <span className={row.data ? 'text-content' : 'text-content-muted'}>
                         {row.data ? format(parseISO(row.data), 'dd/MM/yyyy') : 'DD/MM/AAAA'}
                       </span>
-                      {isAdmin && <Calendar className="w-3.5 h-3.5 text-content-muted" />}
+                      <Calendar className="w-3.5 h-3.5 text-content-muted" />
                     </button>
                     <AnimatePresence>
                       {openDropdownId === `date-${row.id}` && renderCalendar(row.id, row.data)}
@@ -291,7 +288,6 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   <td className="py-2 px-1">
                     <input 
                       type="text" 
-                      readOnly={!isAdmin}
                       placeholder="00:00" 
                       className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.hora} 
@@ -301,7 +297,6 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   <td className="py-2 px-1">
                     <input 
                       type="text" 
-                      readOnly={!isAdmin}
                       placeholder="0h" 
                       className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.duracao} 
@@ -311,7 +306,6 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   <td className="py-2 px-1">
                     <input 
                       type="text" 
-                      readOnly={!isAdmin}
                       className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.instrutor} 
                       onChange={e => updateRow(row.id, 'instrutor', e.target.value)} 
@@ -320,19 +314,16 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   <td className="py-2 px-1">
                     <input 
                       type="text" 
-                      readOnly={!isAdmin}
                       className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.avaliacao} 
                       onChange={e => updateRow(row.id, 'avaliacao', e.target.value)} 
                     />
                   </td>
-                  {isAdmin && (
-                    <td className="py-2 px-1 text-center">
-                      <button onClick={() => removeRow(row.id)} className="p-1.5 text-content-muted hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all focus:opacity-100">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  )}
+                  <td className="py-2 px-1 text-center">
+                    <button onClick={() => removeRow(row.id)} className="p-1.5 text-content-muted hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all focus:opacity-100">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
