@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trash2, Plus, Calendar, ChevronDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -42,6 +42,15 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
 }) => {
   const progressHours = tableRows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
   const hoursLeft = Math.max(0, totalHours - progressHours);
+  
+  const [activeDropdownRect, setActiveDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    if (!openDropdownId) return;
+    const handleScroll = () => setOpenDropdownId(null);
+    window.addEventListener('scroll', handleScroll, { capture: true });
+    return () => window.removeEventListener('scroll', handleScroll, { capture: true });
+  }, [openDropdownId, setOpenDropdownId]);
 
   return (
     <motion.div
@@ -218,7 +227,15 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   <td className="py-2 px-1">
                     <div className="relative">
                       <button
-                        onClick={() => setOpenDropdownId(openDropdownId === `local-${row.id}` ? null : `local-${row.id}`)}
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setActiveDropdownRect({
+                            top: rect.bottom + 4,
+                            left: rect.left,
+                            width: rect.width
+                          });
+                          setOpenDropdownId(openDropdownId === `local-${row.id}` ? null : `local-${row.id}`);
+                        }}
                         className="w-full text-left px-2 py-3 md:py-1.5 text-sm rounded-lg border border-border-subtle/50 transition-colors flex items-center justify-between hover:border-blue-300 hover:bg-surface"
                       >
                         <span className={row.local ? 'text-content' : 'text-content-muted truncate'}>
@@ -240,7 +257,12 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                               animate={{ scale: 1 }}
                               exit={{ scale: 0.95 }}
                               onClick={(e) => e.stopPropagation()}
-                              className="bg-surface border border-border-subtle rounded-2xl shadow-2xl py-2 w-[calc(100vw-3rem)] sm:w-full max-w-[320px] sm:max-w-none sm:min-w-[160px] max-h-[60vh] sm:max-h-48 overflow-y-auto custom-scrollbar"
+                              className="bg-surface border border-border-subtle rounded-2xl shadow-2xl py-2 w-[calc(100vw-3rem)] sm:w-full max-w-[320px] sm:max-w-none sm:min-w-[160px] max-h-[60vh] sm:max-h-48 overflow-y-auto custom-scrollbar sm:fixed"
+                              style={window.innerWidth >= 640 && activeDropdownRect ? {
+                                top: `${activeDropdownRect.top}px`,
+                                left: `${activeDropdownRect.left}px`,
+                                width: `${activeDropdownRect.width}px`
+                              } : {}}
                             >
                               <div className="sm:hidden px-4 pb-3 mb-2 mt-1 border-b border-border-subtle flex justify-between items-center">
                                 <span className="text-sm font-bold text-content">Selecionar Local</span>

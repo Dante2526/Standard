@@ -312,7 +312,7 @@ export default function App() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm sm:bg-transparent sm:backdrop-blur-none sm:absolute sm:inset-auto sm:left-1/2 sm:-translate-x-1/2 sm:mt-2 flex items-center justify-center sm:block"
+        className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm flex items-center justify-center"
         onClick={() => setOpenDropdownId(null)}
       >
         <motion.div
