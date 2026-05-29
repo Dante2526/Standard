@@ -47,7 +47,13 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
 
   useEffect(() => {
     if (!openDropdownId) return;
-    const handleScroll = () => setOpenDropdownId(null);
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target && target.closest('.dropdown-scrollable')) {
+        return;
+      }
+      setOpenDropdownId(null);
+    };
     window.addEventListener('scroll', handleScroll, { capture: true });
     return () => window.removeEventListener('scroll', handleScroll, { capture: true });
   }, [openDropdownId, setOpenDropdownId]);
@@ -257,7 +263,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                               animate={{ scale: 1 }}
                               exit={{ scale: 0.95 }}
                               onClick={(e) => e.stopPropagation()}
-                              className="bg-surface border border-border-subtle rounded-2xl shadow-2xl py-2 w-[calc(100vw-3rem)] sm:w-full max-w-[320px] sm:max-w-none sm:min-w-[160px] max-h-[60vh] sm:max-h-48 overflow-y-auto custom-scrollbar sm:fixed"
+                              className="dropdown-scrollable bg-surface border border-border-subtle rounded-2xl shadow-2xl py-2 w-[calc(100vw-3rem)] sm:w-full max-w-[320px] sm:max-w-none sm:min-w-[160px] max-h-[60vh] sm:max-h-48 overflow-y-auto custom-scrollbar sm:fixed"
                               style={window.innerWidth >= 640 && activeDropdownRect ? {
                                 top: `${activeDropdownRect.top}px`,
                                 left: `${activeDropdownRect.left}px`,
