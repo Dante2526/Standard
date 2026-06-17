@@ -80,7 +80,7 @@ const LoginView = memo(({
         failedAttemptsRef.current++;
       } else {
         // 2. Acesso Colaborador: Verifica se é matrícula em alguma turma
-        const turmas = ['turma a', 'turma b', 'turma c', 'turma d'];
+        const turmas = ['turma a', 'turma b', 'turma c', 'turma d', 'estagio'];
         let found = false;
 
         for (const turma of turmas) {
