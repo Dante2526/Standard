@@ -220,7 +220,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[140px] md:w-[180px]">Local</th>
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[120px]">Equipamento</th>
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[110px] md:w-[140px]">Data</th>
-                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[80px] md:w-[80px]">Hora</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[130px] md:w-[130px]">Hora</th>
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[70px] md:w-[80px]">Dur.</th>
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[120px]">Instrutor</th>
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[120px]">Avaliação</th>
@@ -326,7 +326,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                     <input 
                       type="text" 
                       placeholder="0h" 
-                      className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full text-center bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.duracao} 
                       onChange={e => updateRow(row.id, 'duracao', e.target.value)} 
                     />
@@ -334,9 +334,9 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   <td className="py-2 px-1">
                     <input 
                       type="text" 
-                      className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full uppercase bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.instrutor} 
-                      onChange={e => updateRow(row.id, 'instrutor', e.target.value)} 
+                      onChange={e => updateRow(row.id, 'instrutor', e.target.value.toUpperCase())} 
                     />
                   </td>
                   <td className="py-2 px-1">

@@ -203,11 +203,11 @@ const TraineesListView = memo(({
                   whileHover={{ scale: 0.98 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => onSelectTrainee(trainee)}
-                  className="bg-surface rounded-[24px] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border border-border-subtle"
+                  className="bg-surface rounded-[24px] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border border-border-subtle h-full flex flex-col justify-between"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
                         <UserIcon className="w-5 h-5" />
                       </div>
                       <div>
