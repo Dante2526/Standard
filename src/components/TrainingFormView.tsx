@@ -217,9 +217,9 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border-subtle">
-                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[140px] md:w-[180px]">Local</th>
-                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[180px] md:w-[220px]">Equipamento</th>
-                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-content-muted uppercase tracking-wider min-w-[110px] md:w-[140px]">Data</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-center text-content-muted uppercase tracking-wider min-w-[140px] md:w-[180px]">Local</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-center text-content-muted uppercase tracking-wider min-w-[180px] md:w-[220px]">Equipamento</th>
+                <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-center text-content-muted uppercase tracking-wider min-w-[110px] md:w-[140px]">Data</th>
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-center text-content-muted uppercase tracking-wider min-w-[130px] md:w-[130px]">Hora</th>
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-center text-content-muted uppercase tracking-wider min-w-[70px] md:w-[80px]">Dur.</th>
                 <th className="py-3 md:py-2 px-1 text-[10px] font-bold text-center text-content-muted uppercase tracking-wider min-w-[120px]">Instrutor</th>
@@ -242,9 +242,9 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                           });
                           setOpenDropdownId(openDropdownId === `local-${row.id}` ? null : `local-${row.id}`);
                         }}
-                        className="w-full text-left px-2 py-3 md:py-1.5 text-sm rounded-lg border border-border-subtle/50 transition-colors flex items-center justify-between hover:border-blue-300 hover:bg-surface"
+                        className="w-full px-2 py-3 md:py-1.5 text-sm rounded-lg border border-border-subtle/50 transition-colors flex items-center justify-between hover:border-blue-300 hover:bg-surface"
                       >
-                        <span className={row.local ? 'text-content' : 'text-content-muted truncate'}>
+                        <span className={row.local ? 'text-content flex-1 text-center' : 'text-content-muted truncate flex-1 text-center'}>
                           {row.local || 'Selecione...'}
                         </span>
                         <ChevronDown className="w-3 h-3 text-content-muted" />
@@ -294,7 +294,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                   <td className="py-2 px-1">
                     <input 
                       type="text" 
-                      className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
+                      className="w-full text-center bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors" 
                       value={row.equipamento} 
                       onChange={e => updateRow(row.id, 'equipamento', e.target.value)} 
                     />
@@ -304,7 +304,7 @@ const TrainingFormView: React.FC<TrainingFormViewProps> = memo(({
                       onClick={() => setOpenDropdownId(openDropdownId === `date-${row.id}` ? null : `date-${row.id}`)}
                       className="w-full bg-transparent border border-border-subtle/50 hover:border-blue-300 focus:border-blue-500 focus:bg-surface rounded-lg px-2 py-3 md:py-1.5 outline-none text-sm transition-colors flex items-center justify-between"
                     >
-                      <span className={row.data ? 'text-content' : 'text-content-muted'}>
+                      <span className={row.data ? 'text-content flex-1 text-center' : 'text-content-muted flex-1 text-center'}>
                         {row.data ? format(parseISO(row.data), 'dd/MM/yyyy') : 'DD/MM/AAAA'}
                       </span>
                       <Calendar className="w-3.5 h-3.5 text-content-muted" />
