@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import newFirebaseConfig from '../firebase-applet-config.json';
@@ -16,12 +16,16 @@ const oldFirebaseConfig = {
 
 // Inicializa o app antigo (leitura)
 const oldApp = initializeApp(oldFirebaseConfig, 'oldApp');
-export const db = getFirestore(oldApp);
+export const db = initializeFirestore(oldApp, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
 export const auth = getAuth(oldApp);
 
 // Inicializa o app novo (escrita/leitura do novo banco de Kaizens)
 const newApp = initializeApp(newFirebaseConfig, 'newApp');
-export const newDb = getFirestore(newApp, (newFirebaseConfig as any).firestoreDatabaseId || '(default)');
+export const newDb = initializeFirestore(newApp, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+}, (newFirebaseConfig as any).firestoreDatabaseId || '(default)');
 export const newAuth = getAuth(newApp);
 
 let storageInstance: any = null;

@@ -8,7 +8,10 @@ import {
   getDoc, 
   onSnapshot, 
   serverTimestamp, 
-  addDoc 
+  addDoc,
+  orderBy,
+  limit,
+  documentId
 } from 'firebase/firestore';
 import { signInAnonymously, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { db, auth, newDb, newAuth } from '../firebase';
@@ -345,7 +348,12 @@ export const processRealTrainingsFromSnap = (snap: any, trainee: Trainee) => {
  * Busca os treinamentos reais (Promise-based) com suporte a chunks.
  */
 export const fetchRealTrainings = async (trainee: Trainee) => {
-  const q = query(collection(newDb, 'global_files'), where('type', '==', 'treinamento'));
+  const q = query(
+    collection(newDb, 'global_files'), 
+    where('type', '==', 'treinamento'),
+    orderBy('uploadedAt', 'desc'),
+    limit(1)
+  );
   const snap = await getDocs(q);
   if (snap.empty) return [];
   const sortedDocs = snap.docs.sort((a: any, b: any) => {
@@ -362,7 +370,12 @@ export const fetchRealTrainings = async (trainee: Trainee) => {
  * Assina atualizações de treinamentos reais (com suporte a chunks).
  */
 export const subscribeToRealTrainings = (trainee: Trainee, onUpdate: (data: any[]) => void) => {
-  const q = query(collection(newDb, 'global_files'), where('type', '==', 'treinamento'));
+  const q = query(
+    collection(newDb, 'global_files'), 
+    where('type', '==', 'treinamento'),
+    orderBy('uploadedAt', 'desc'),
+    limit(1)
+  );
   return onSnapshot(q, async (snap) => {
     if (snap.empty) { onUpdate([]); return; }
     const sortedDocs = snap.docs.sort((a: any, b: any) => {
@@ -383,7 +396,12 @@ export const subscribeToRealTrainings = (trainee: Trainee, onUpdate: (data: any[
 export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promise<Record<string, any[]>> => {
   if (trainees.length === 0) return {};
 
-  const q = query(collection(newDb, 'global_files'), where('type', '==', 'treinamento'));
+  const q = query(
+    collection(newDb, 'global_files'), 
+    where('type', '==', 'treinamento'),
+    orderBy('uploadedAt', 'desc'),
+    limit(1)
+  );
   const snap = await getDocs(q);
   if (snap.empty) return {};
 
@@ -516,7 +534,12 @@ export const fetchDelayedTrainingsForClass = async (trainees: Trainee[]): Promis
 export const fetchKaizenRankingForClass = async (trainees: Trainee[]) => {
   if (!trainees || trainees.length === 0) return [];
 
-  const q = query(collection(newDb, 'global_files'), where('type', '==', 'kaizen'));
+  const q = query(
+    collection(newDb, 'global_files'), 
+    where('type', '==', 'kaizen'),
+    orderBy('uploadedAt', 'desc'),
+    limit(1)
+  );
   const snap = await getDocs(q);
   
   if (snap.empty) return [];
@@ -908,7 +931,12 @@ export const processKaizenDataFromSnap = (snap: any, trainee: Trainee) => {
  * Busca dados de Kaizen (Promise-based) com suporte a chunks.
  */
 export const fetchKaizenData = async (trainee: Trainee) => {
-  const q = query(collection(newDb, 'global_files'), where('type', '==', 'kaizen'));
+  const q = query(
+    collection(newDb, 'global_files'), 
+    where('type', '==', 'kaizen'),
+    orderBy('uploadedAt', 'desc'),
+    limit(1)
+  );
   const snap = await getDocs(q);
   if (snap.empty) return { _debug: [] };
   const sortedDocs = snap.docs.sort((a: any, b: any) => {
@@ -929,7 +957,12 @@ export const fetchKaizenData = async (trainee: Trainee) => {
  * Assina atualizações de dados de Kaizen (com suporte a chunks).
  */
 export const subscribeToKaizenData = (trainee: Trainee, onUpdate: (data: any) => void) => {
-  const q = query(collection(newDb, 'global_files'), where('type', '==', 'kaizen'));
+  const q = query(
+    collection(newDb, 'global_files'), 
+    where('type', '==', 'kaizen'),
+    orderBy('uploadedAt', 'desc'),
+    limit(1)
+  );
   return onSnapshot(q, async (snap) => {
     if (snap.empty) { onUpdate({ _debug: [] }); return; }
     const sortedDocs = snap.docs.sort((a: any, b: any) => {
@@ -970,13 +1003,15 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
   };
 
   if (clsId === 'global-estagio') {
-    let baseFromDb: Trainee[] = [];
+    let baseFromDb: any[] = [];
     let stageFromNewDb: any[] = [];
+    let unsubsStageChunks: (() => void)[] = [];
+    let unsubStageStatus: (() => void) | null = null;
 
     const updateGlobalList = () => {
       const map = new Map<string, Trainee>();
 
-      // Primeiro, adicionamos os que vêm da coleção 'estagio' (banco de leitura)
+      // Adicionamos os que vêm da coleção 'estagio' (banco de leitura)
       baseFromDb.forEach(trainee => {
         const stageData = stageDataMap[trainee.matricula];
         const progressHours = (stageData?.tableRows || []).reduce((acc: number, row: any) => acc + (parseFloat(row.duracao) || 0), 0);
@@ -988,7 +1023,7 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
         });
       });
 
-      // Depois, adicionamos os que já têm status 'estagio' no newDb
+      // Adicionamos os que já têm status 'estagio' no newDb
       stageFromNewDb.forEach(docSnapshot => {
         const data = docSnapshot.data() as any;
         const matricula = data.matricula || docSnapshot.id;
@@ -1023,22 +1058,48 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
           turma: 'ESTAGIO'
         };
       });
+
+      const matriculas = baseFromDb.map(t => t.matricula).filter(Boolean);
+      const uniqueMatriculas = Array.from(new Set(matriculas));
+
+      unsubsStageChunks.forEach(unsub => unsub());
+      unsubsStageChunks = [];
+
+      if (uniqueMatriculas.length > 0) {
+        const chunks: string[][] = [];
+        for (let i = 0; i < uniqueMatriculas.length; i += 10) {
+          chunks.push(uniqueMatriculas.slice(i, i + 10));
+        }
+
+        chunks.forEach(chunk => {
+          const qStage = query(collection(newDb, 'estagios'), where(documentId(), 'in', chunk));
+          const unsub = onSnapshot(qStage, (stageSnap) => {
+            stageSnap.docChanges().forEach(change => {
+              if (change.type === 'removed') {
+                delete stageDataMap[change.doc.id];
+              } else {
+                stageDataMap[change.doc.id] = change.doc.data();
+              }
+            });
+            updateGlobalList();
+          });
+          unsubsStageChunks.push(unsub);
+        });
+      }
+      
       updateGlobalList();
     });
 
-    // Mantém a lógica de buscar quem já tem status 'estagio' no novo banco
-    // e atualiza os dados de estágio (stageDataMap) para todos
-    const unsubStage = onSnapshot(collection(newDb, 'estagios'), (snap) => {
-      stageDataMap = {};
-      stageFromNewDb = [];
+    // Busca quem já tem status 'estagio' no novo banco separadamente
+    const qStatus = query(collection(newDb, 'estagios'), where('status', '==', 'estagio'));
+    unsubStageStatus = onSnapshot(qStatus, (snap) => {
+      stageFromNewDb = snap.docs;
       
-      snap.docs.forEach(d => {
-        const data = d.data();
-        const matricula = data.matricula || d.id;
-        stageDataMap[matricula] = data;
-        
-        if (data.status === 'estagio') {
-          stageFromNewDb.push(d);
+      snap.docChanges().forEach(change => {
+        if (change.type === 'removed') {
+          delete stageDataMap[change.doc.id];
+        } else {
+          stageDataMap[change.doc.id] = change.doc.data();
         }
       });
 
@@ -1047,10 +1108,13 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
 
     return () => {
       unsubBase();
-      unsubStage();
+      if (unsubStageStatus) unsubStageStatus();
+      unsubsStageChunks.forEach(unsub => unsub());
     };
   } else {
     // Lista por Turma: Combina base (banco antigo) + progresso (novo banco) em tempo real
+    let unsubsStage: (() => void)[] = [];
+
     const unsubBase = onSnapshot(collection(db, clsId), (snap) => {
       baseTrainees = snap.docs.map(d => {
         const data = d.data();
@@ -1063,26 +1127,47 @@ export const subscribeToTraineeList = (clsId: string, onUpdate: (trainees: Train
           turma: clsId.split(' ').pop()?.toUpperCase() || ''
         };
       });
-      updateFinalList();
-    });
 
-    const qStage = collection(newDb, 'estagios');
-    
-    const unsubStage = onSnapshot(qStage, (snap) => {
-      stageDataMap = {};
-      // Só armazena documentos cujas matrículas estão na turma
-      const validMatriculas = new Set(baseTrainees.map(t => t.matricula));
-      snap.docs.forEach(d => {
-        if (validMatriculas.has(d.id) || validMatriculas.size === 0) {
-          stageDataMap[d.id] = d.data();
-        }
+      const matriculas = baseTrainees.map(t => t.matricula).filter(Boolean);
+      const uniqueMatriculas = Array.from(new Set(matriculas));
+
+      // Limpa os listeners antigos de estagios
+      unsubsStage.forEach(unsub => unsub());
+      unsubsStage = [];
+
+      if (uniqueMatriculas.length === 0) {
+        stageDataMap = {};
+        updateFinalList();
+        return;
+      }
+
+      // O Firestore permite no máximo 10 itens por consulta 'in'
+      const chunks: string[][] = [];
+      for (let i = 0; i < uniqueMatriculas.length; i += 10) {
+        chunks.push(uniqueMatriculas.slice(i, i + 10));
+      }
+
+      chunks.forEach(chunk => {
+        const qStage = query(collection(newDb, 'estagios'), where(documentId(), 'in', chunk));
+        const unsub = onSnapshot(qStage, (stageSnap) => {
+          stageSnap.docChanges().forEach(change => {
+            if (change.type === 'removed') {
+              delete stageDataMap[change.doc.id];
+            } else {
+              stageDataMap[change.doc.id] = change.doc.data();
+            }
+          });
+          updateFinalList();
+        });
+        unsubsStage.push(unsub);
       });
+
       updateFinalList();
     });
 
     return () => {
       unsubBase();
-      unsubStage();
+      unsubsStage.forEach(unsub => unsub());
     };
   }
 };
