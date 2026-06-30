@@ -183,6 +183,7 @@ const LoginView = memo(({
                 className="w-full px-4 py-3.5 rounded-2xl border border-border-subtle focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-background focus:bg-surface font-medium"
                 required
                 disabled={isLoadingLogin}
+                autoComplete="off"
               />
               {loginError && (
                 <p className="text-red-500 text-sm mt-2 pl-1 font-medium">{loginError}</p>
