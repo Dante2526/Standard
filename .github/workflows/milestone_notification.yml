@@ -34,7 +34,7 @@ jobs:
           password: ${{ secrets.EMAIL_PASS }}
           subject: 'Pré-avaliação solicitada: ${{ env.TRAINEE_NAME }}'
           to: ${{ secrets.EMAIL_TO }}
-          from: Standard System <${{ secrets.EMAIL_USER }}>
+          from: Standard <${{ secrets.EMAIL_USER }}>
           body: |
             Olá,
 
