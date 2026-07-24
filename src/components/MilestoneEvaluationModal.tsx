@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X } from 'lucide-react';
+import { Mail, X } from 'lucide-react';
 import { MilestoneEvaluations } from '../types';
 
 interface MilestoneEvaluationModalProps {
@@ -8,13 +8,15 @@ interface MilestoneEvaluationModalProps {
   onClose: () => void;
   evaluations: MilestoneEvaluations;
   onUpdate: (milestone: number, comment: string) => void;
+  onResendEmail?: (milestone: number) => void;
 }
 
 const MilestoneEvaluationModal: React.FC<MilestoneEvaluationModalProps> = ({
   milestone,
   onClose,
   evaluations,
-  onUpdate
+  onUpdate,
+  onResendEmail
 }) => {
   if (milestone === null) return null;
 
@@ -44,9 +46,23 @@ const MilestoneEvaluationModal: React.FC<MilestoneEvaluationModalProps> = ({
             </button>
           </div>
           
-          <p className="text-sm text-content-muted mb-4 font-medium">
-            {milestone === 432 ? 'Conclusão do Treinamento' : `Marco de ${milestone} horas`}
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-content-muted font-medium">
+              {milestone === 432 ? 'Conclusão do Treinamento' : `Marco de ${milestone} horas`}
+            </p>
+            {onResendEmail && (
+              <button 
+                onClick={() => {
+                  onResendEmail(milestone);
+                  alert(`Disparo de e-mail solicitado para o marco de ${milestone}h!`);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg text-xs font-bold transition-all hover:bg-orange-100"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                Re-enviar E-mail
+              </button>
+            )}
+          </div>
           
           <textarea
             autoFocus
