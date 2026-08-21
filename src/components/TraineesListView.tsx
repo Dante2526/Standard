@@ -233,6 +233,19 @@ const TraineesListView = memo(({
                                 )}
                               </span>
                             )}
+                            {trainee.status === 'active' && onEfetivarTrainee && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(`Tem certeza que deseja promover ${trainee.name} a EFETIVADO?`)) {
+                                    onEfetivarTrainee(trainee.matricula);
+                                  }
+                                }}
+                                className="text-[9px] font-black px-2 py-1 rounded-lg shadow-sm flex items-center justify-center gap-1 bg-surface border border-border-subtle hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-colors text-content-muted"
+                              >
+                                EFETIVAR
+                              </button>
+                            )}
                             {selectedClass === 'global-estagio' && trainee.turma && (
                               <span className="text-[9px] font-black px-2.5 py-1 rounded-full shadow-sm bg-surface-muted text-content-muted border border-border-subtle inline-flex items-center justify-center leading-none">
                                 TURMA {trainee.turma}
