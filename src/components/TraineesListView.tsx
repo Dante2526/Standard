@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, User as UserIcon, Check, GraduationCap, LayoutGrid, Network, Trophy } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Check, GraduationCap, LayoutGrid, Network, Trophy, Award, AlertTriangle } from 'lucide-react';
 import { Trainee } from '../types';
 import Footer from './Footer';
 import DelayedTrainingsColmeia from './DelayedTrainingsColmeia';
@@ -74,6 +74,8 @@ const TraineesListView = memo(({
   };
   const { delayedMap, isLoading: isLoadingDelayed } = useDelayedTrainings(activeTab === 'colmeia' ? trainees : []);
   const { ranking: kaizenRanking, isLoading: isLoadingKaizen } = useKaizenRanking(activeTab === 'kaizen' ? trainees : []);
+
+  const [confirmEfetivarTrainee, setConfirmEfetivarTrainee] = useState<Trainee | null>(null);
 
   return (
     <motion.div 
@@ -235,12 +237,10 @@ const TraineesListView = memo(({
                             )}
                             {trainee.status === 'active' && onEfetivarTrainee && (
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (window.confirm(`Tem certeza que deseja promover ${trainee.name} a EFETIVADO?`)) {
-                                    onEfetivarTrainee(trainee.matricula);
-                                  }
-                                }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmEfetivarTrainee(trainee);
+                                  }}
                                 className="text-[9px] font-black px-2 py-1 rounded-lg shadow-sm flex items-center justify-center gap-1 bg-surface border border-border-subtle hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-colors text-content-muted"
                               >
                                 EFETIVAR
@@ -280,6 +280,62 @@ const TraineesListView = memo(({
       <div className="mt-12 mb-8">
         <Footer />
       </div>
+
+      {/* Modal de Confirmação de Efetivação */}
+      {confirmEfetivarTrainee && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setConfirmEfetivarTrainee(null)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="bg-surface w-full max-w-md rounded-[32px] p-8 shadow-2xl border border-border-subtle relative z-10 overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+            
+            <div className="flex justify-center mb-6 relative">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center shadow-xl shadow-emerald-500/30">
+                <Award className="w-8 h-8" />
+              </div>
+            </div>
+
+            <div className="text-center mb-8 relative z-10">
+              <h3 className="text-2xl font-black text-content uppercase tracking-tight mb-2">
+                Confirmar Efetivação
+              </h3>
+              <p className="text-content-muted text-sm leading-relaxed">
+                Tem certeza que deseja promover o colaborador <strong className="text-content">{confirmEfetivarTrainee.name}</strong> a EFETIVADO? Esta ação mudará o status global dele no sistema.
+              </p>
+            </div>
+
+            <div className="flex gap-3 relative z-10">
+              <button
+                onClick={() => setConfirmEfetivarTrainee(null)}
+                className="flex-1 py-3.5 px-4 rounded-xl font-bold text-sm bg-surface-alt hover:bg-surface-muted text-content transition-colors border border-border-subtle"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (onEfetivarTrainee) {
+                    onEfetivarTrainee(confirmEfetivarTrainee.matricula);
+                  }
+                  setConfirmEfetivarTrainee(null);
+                }}
+                className="flex-1 py-3.5 px-4 rounded-xl font-black uppercase tracking-wider text-sm bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-emerald-500/20 border border-white/10"
+              >
+                Confirmar
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 });
