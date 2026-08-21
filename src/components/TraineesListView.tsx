@@ -214,8 +214,8 @@ const TraineesListView = memo(({
                       </div>
                       <div>
                         <h3 className="font-semibold text-content">{trainee.name}</h3>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-content-muted">Mat: {trainee.matricula}</p>
+                        <div className="flex flex-col gap-1.5 mt-0.5">
+                          <p className="text-xs text-content-muted whitespace-nowrap">Mat: {trainee.matricula}</p>
                           <div className="flex gap-1.5 flex-wrap">
                             {trainee.status !== 'none' && (
                               <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1 ${
