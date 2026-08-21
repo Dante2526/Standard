@@ -235,6 +235,20 @@ export const updateManualTrainingStatus = async (matricula: string, trainingTitl
 };
 
 /**
+ * Atualiza apenas o status global do colaborador (ex: de 'estagio' para 'efetivado')
+ */
+export const updateTraineeStatus = async (matricula: string, newStatus: string) => {
+  if (!matricula) return;
+  try {
+    const docRef = doc(newDb, 'estagios', matricula);
+    await setDoc(docRef, { status: newStatus }, { merge: true });
+  } catch (error) {
+    console.error("Erro ao atualizar status do colaborador:", error);
+    throw error;
+  }
+};
+
+/**
  * Carrega parsedData de um documento, buscando chunks se necessário.
  */
 const loadParsedDataForDoc = async (fileData: any): Promise<any[]> => {

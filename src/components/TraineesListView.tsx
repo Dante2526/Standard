@@ -15,6 +15,7 @@ interface TraineesListViewProps {
   onBack: () => void;
   onSelectTrainee: (trainee: Trainee) => void;
   onToggleManualStatus?: (matricula: string, title: string, completed: boolean) => void;
+  onEfetivarTrainee?: (matricula: string) => void;
 }
 
 const TraineeSkeleton = () => (
@@ -44,7 +45,8 @@ const TraineesListView = memo(({
   trainees,
   onBack,
   onSelectTrainee,
-  onToggleManualStatus
+  onToggleManualStatus,
+  onEfetivarTrainee
 }: TraineesListViewProps) => {
 
   const scrollToLetter = (letter: string) => {

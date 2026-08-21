@@ -429,6 +429,9 @@ export default function App() {
         onToggleManualStatus={async (matricula, title, completed) => {
           await DataService.updateManualTrainingStatus(matricula, title, completed);
         }}
+        onEfetivarTrainee={async (matricula) => {
+          await DataService.updateTraineeStatus(matricula, 'efetivado');
+        }}
       />
     );
   }
@@ -590,7 +593,7 @@ export default function App() {
 
       <main className="pt-6 pb-12 px-6 max-w-7xl mx-auto">
 
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-8 custom-scrollbar no-scrollbar scroll-smooth">
+        <div className="flex gap-2 overflow-x-auto pb-4 mb-8 custom-scrollbar no-scrollbar">
           {(userStatus === 'efetivado' 
             ? ['pending', 'kaizen'] 
             : ['timeline', 'form', 'pending', 'kaizen']
