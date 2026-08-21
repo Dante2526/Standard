@@ -46,7 +46,7 @@ export default function MigrationBanner() {
 
         {/* Descrição */}
         <p className="text-sm font-medium text-content-muted leading-relaxed mb-2">
-          O Trainify agora vive em um novo endereço, mais rápido e estável.
+          O Standard agora vive em um novo endereço, mais rápido e estável.
           Atualize seu favorito para continuar sem interrupções.
         </p>
         <p className="text-xs font-bold text-blue-600 mb-8 tracking-wider">
