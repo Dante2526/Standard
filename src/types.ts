@@ -35,6 +35,7 @@ export interface TrainingRow {
 export interface MilestoneEvaluation {
   comment: string;
   inspector: string;
+  readByTrainee?: boolean;
 }
 
 export type MilestoneEvaluations = Record<number, MilestoneEvaluation>;

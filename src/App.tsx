@@ -25,10 +25,11 @@ import KaizenView from './components/KaizenView';
 import DarkModeToggle from './components/DarkModeToggle';
 import GlobalUploadModal from './components/GlobalUploadModal';
 import MilestoneEvaluationModal from './components/MilestoneEvaluationModal';
+import FeedbackNotificationModal from './components/FeedbackNotificationModal';
 import Footer from './components/Footer';
 
 // Serviços e Tipos
-import { Trainee, TrainingRow, MilestoneEvaluations, LOCAL_OPTIONS, FUNCAO_OPTIONS, PRESET_HOURS } from './types';
+import { Trainee, TrainingRow, MilestoneEvaluations, MilestoneEvaluation, LOCAL_OPTIONS, FUNCAO_OPTIONS, PRESET_HOURS } from './types';
 import * as DataService from './services/dataService';
 import * as ExportService from './services/exportService';
 import { triggerMilestoneEmail } from './services/githubActionsService';
@@ -81,6 +82,41 @@ export default function App() {
     const rows = Array.isArray(tableRows) ? tableRows : [];
     return rows.reduce((acc, row) => acc + (parseFloat(row.duracao) || 0), 0);
   }, [userStatus, tableRows, totalHours]);
+  
+  // --- Avaliações não lidas (Feedback Notifications) ---
+  const unreadEvaluations = useMemo(() => {
+    if (isAdmin || !hasLoadedDataFromHook || !selectedTrainee) return [];
+    return Object.entries(milestoneEvaluations)
+      .filter(([_, evalData]) => {
+        const data = evalData as MilestoneEvaluation;
+        return data.comment && data.readByTrainee !== true;
+      })
+      .map(([m, evalData]) => ({ milestone: Number(m), ...(evalData as MilestoneEvaluation) }));
+  }, [milestoneEvaluations, isAdmin, hasLoadedDataFromHook, selectedTrainee]);
+
+  const handleViewFeedback = useCallback(async () => {
+    if (!selectedTrainee || unreadEvaluations.length === 0) return;
+
+    // 1. Atualizar o estado local
+    const updatedEvaluations = { ...milestoneEvaluations };
+    unreadEvaluations.forEach(ev => {
+      if (updatedEvaluations[ev.milestone]) {
+        updatedEvaluations[ev.milestone] = { ...updatedEvaluations[ev.milestone], readByTrainee: true };
+      }
+    });
+    setMilestoneEvaluations(updatedEvaluations);
+
+    // 2. Salvar no Firebase diretamente sem ativar auto-save global
+    try {
+      await DataService.markEvaluationsAsRead(selectedTrainee.matricula, updatedEvaluations);
+    } catch (e) {
+      console.error("Falha ao marcar avaliações como lidas", e);
+    }
+
+    // 3. Forçar a aba ativa para timeline
+    setActiveTab('timeline');
+  }, [selectedTrainee, unreadEvaluations, milestoneEvaluations, setMilestoneEvaluations, setActiveTab]);
+
   
   // --- Estados de UI ---
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
@@ -613,9 +649,16 @@ export default function App() {
 
       <MilestoneEvaluationModal 
         milestone={editingMilestone} onClose={() => setEditingMilestone(null)}
-        evaluations={milestoneEvaluations} onUpdate={(m, c) => setMilestoneEvaluations(prev => ({ ...prev, [m]: { comment: c, inspector: c.trim() ? userName : '' } }))}
+        evaluations={milestoneEvaluations} onUpdate={(m, c) => setMilestoneEvaluations(prev => ({ ...prev, [m]: { comment: c, inspector: c.trim() ? userName : '', readByTrainee: false } }))}
         onResendEmail={isAdmin && selectedTrainee ? (m) => triggerMilestoneEmail(selectedTrainee.name, selectedTrainee.matricula, m) : undefined}
       />
+
+      {!isAdmin && unreadEvaluations.length > 0 && (
+        <FeedbackNotificationModal 
+          unreadEvaluations={unreadEvaluations} 
+          onViewFeedback={handleViewFeedback}
+        />
+      )}
 
       <AnimatePresence>
         {isDownloading && (

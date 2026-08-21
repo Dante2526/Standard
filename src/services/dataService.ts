@@ -149,7 +149,8 @@ export const saveStageData = async (
         const k = Number(key);
         acc[k] = {
           comment: sanitizeString(milestoneEvaluations[k].comment),
-          inspector: sanitizeString(milestoneEvaluations[k].inspector)
+          inspector: sanitizeString(milestoneEvaluations[k].inspector),
+          readByTrainee: milestoneEvaluations[k].readByTrainee
         };
         return acc;
       }, {} as MilestoneEvaluations),
@@ -164,6 +165,34 @@ export const saveStageData = async (
     await setDoc(docRef, payload, { merge: true });
   } catch (error) {
     console.error("Erro ao salvar dados de estágio:", error);
+    throw error;
+  }
+};
+
+/**
+ * Marca avaliações de marco específicas como lidas no banco de dados, cirurgicamente.
+ */
+export const markEvaluationsAsRead = async (matricula: string, evaluations: MilestoneEvaluations) => {
+  if (!matricula) return;
+  try {
+    const docRef = doc(newDb, 'estagios', matricula);
+    
+    // Converte o objeto de avaliações para o formato sanitizado
+    const payloadEvaluations = Object.keys(evaluations).reduce((acc, key) => {
+      const k = Number(key);
+      acc[k] = {
+        comment: sanitizeString(evaluations[k].comment),
+        inspector: sanitizeString(evaluations[k].inspector),
+        readByTrainee: evaluations[k].readByTrainee
+      };
+      return acc;
+    }, {} as MilestoneEvaluations);
+
+    await setDoc(docRef, {
+      milestoneEvaluations: payloadEvaluations
+    }, { merge: true });
+  } catch (error) {
+    console.error("Erro ao marcar avaliações como lidas:", error);
     throw error;
   }
 };
